@@ -993,3 +993,8 @@ code {
     align-items: flex-start;
   }
 }
+
+.pill-live {
+  color: var(--post);
+  border-color: rgba(52, 201, 138, 0.4);
+}

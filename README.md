@@ -31,9 +31,14 @@ Same build, any environment — configuration is read at runtime (`config.js` / 
 
 ```bash
 npm run dev                          # Codespaces / local dev (Vite, :5173)
+npm run server                       # HTTP API + static app on :8787
 docker compose up --build            # container → nginx on :8080
 npm run build                        # static dist/ for Vercel/Netlify/S3/Pages
 ```
+
+The app runs fully client-side by default; set `apiBaseUrl` to route through the
+HTTP API (`server/index.ts`, sharing `src/api/handlers.ts` with the browser). See
+**`docs/demo.md`** for the end-to-end backend + frontend + analysis + admin proof.
 
 See **`docs/deployment.md`** for the full config matrix and backend-swap guide,
 and **`docs/user-flows.md`** for the per-role journeys (athlete, coach,

@@ -1,7 +1,8 @@
 import type { AppConfig } from "../config";
 import { PLANS, TIER_ORDER, type Tier } from "../subscription";
 import { PERSONAS } from "../personas";
-import { ROLE_LABELS } from "../auth";
+import { ROLE_LABELS, type Role } from "../auth";
+import { ServerStatus } from "./ServerStatus";
 
 const FEATURE_ROWS: { key: keyof (typeof PLANS)["free"]["features"]; label: string }[] = [
   { key: "maxConnectedProviders", label: "Connected services" },
@@ -15,11 +16,12 @@ const FEATURE_ROWS: { key: keyof (typeof PLANS)["free"]["features"]; label: stri
 const cell = (v: unknown) => (typeof v === "boolean" ? (v ? "✓" : "—") : String(v));
 
 /** Org admin: tenant configuration, seats, plan, and the deployment surface. */
-export function AdminView({ config, tier, orgId }: { config: AppConfig; tier: Tier; orgId?: string }) {
+export function AdminView({ config, tier, orgId, role }: { config: AppConfig; tier: Tier; orgId?: string; role: Role }) {
   const members = PERSONAS.filter((p) => p.orgId === orgId);
 
   return (
     <main className="dash">
+      <ServerStatus role={role} />
       <section className="panel">
         <div className="section-head">
           <h2>Organization</h2>

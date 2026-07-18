@@ -1,0 +1,85 @@
+import { describe, expect, it, beforeEach } from "vitest";
+import { createApiRouter, type ApiRequest } from "./handlers";
+import { createRuntime } from "../runtime";
+import { getConfig } from "../config";
+import type { Principal } from "../auth";
+import type { AthleteInput } from "../engine";
+
+const athlete: Principal = { id: "a1", name: "A", role: "athlete", tier: "free" };
+const admin: Principal = { id: "ad1", name: "Admin", role: "admin", orgId: "swiss-tri-club", tier: "elite" };
+
+const input: AthleteInput = {
+  goal: "endurance-performance",
+  activity: "cycling",
+  durationMin: 120,
+  intensity: "moderate",
+  bodyWeightKg: 70,
+};
+
+function req(method: string, path: string, over: Partial<ApiRequest> = {}): ApiRequest {
+  return { method, path, query: {}, principal: athlete, ...over };
+}
+
+describe("API router", () => {
+  let route: ReturnType<typeof createApiRouter>;
+  beforeEach(() => {
+    // Fresh runtime (and store) per test.
+    route = createApiRouter(createRuntime({ ...getConfig(), enabledProviders: ["garmin", "strava"] }));
+  });
+
+  it("reports health with the store count", async () => {
+    const res = await route(req("GET", "/api/health"));
+    expect(res.status).toBe(200);
+    expect((res.data as { status: string }).status).toBe("ok");
+  });
+
+  it("recommends from a posted AthleteInput", async () => {
+    const res = await route(req("POST", "/api/recommend", { body: input }));
+    expect(res.status).toBe(200);
+    expect(res.data).toHaveProperty("target");
+    expect(res.data).toHaveProperty("phases");
+  });
+
+  it("rejects an invalid AthleteInput", async () => {
+    const res = await route(req("POST", "/api/recommend", { body: { goal: "x" } }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns a timed schedule", async () => {
+    const res = await route(req("POST", "/api/schedule", { body: input }));
+    expect(res.status).toBe(200);
+    expect(res.data).toHaveProperty("cues");
+  });
+
+  it("ingests, then analyzes the stored data (end-to-end backend loop)", async () => {
+    const ingest = await route(req("POST", "/api/ingest", { body: { provider: "garmin", days: 28 } }));
+    expect(ingest.status).toBe(200);
+    expect((ingest.data as { inserted: number }).inserted).toBeGreaterThan(0);
+
+    const analysis = await route(req("GET", "/api/analysis", { query: { bodyWeightKg: "70" } }));
+    expect(analysis.status).toBe(200);
+    expect(analysis.data).toHaveProperty("acwr");
+    expect(analysis.data).toHaveProperty("nutrition");
+  });
+
+  it("derives physiology from ingested providers", async () => {
+    await route(req("POST", "/api/ingest", { body: { provider: "garmin", days: 21 } }));
+    const res = await route(req("GET", "/api/physiology", { query: {} }));
+    expect(res.status).toBe(200);
+    expect(res.data).toHaveProperty("hasSignals", true);
+  });
+
+  it("enforces RBAC on the admin endpoint", async () => {
+    const denied = await route(req("GET", "/api/admin/overview", { principal: athlete }));
+    expect(denied.status).toBe(403);
+
+    const allowed = await route(req("GET", "/api/admin/overview", { principal: admin }));
+    expect(allowed.status).toBe(200);
+    expect(allowed.data).toHaveProperty("members");
+    expect(allowed.data).toHaveProperty("deployment");
+  });
+
+  it("404s unknown routes", async () => {
+    expect((await route(req("GET", "/api/nope"))).status).toBe(404);
+  });
+});

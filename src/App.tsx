@@ -102,7 +102,7 @@ export function App() {
       {tab === "connect" && <Dashboard tier={tier} />}
       {tab === "team" && <TeamView canExport={hasPermission(principal, "data:export")} />}
       {tab === "catalog" && <CatalogView canEdit={hasPermission(principal, "catalog:edit")} />}
-      {tab === "admin" && <AdminView config={config} tier={tier} orgId={principal.orgId} />}
+      {tab === "admin" && <AdminView config={config} tier={tier} orgId={principal.orgId} role={principal.role} />}
 
       <footer className="foot">
         {config.environment} · v{config.version} · General guidance for healthy adults — not medical
