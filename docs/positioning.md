@@ -57,12 +57,15 @@ These are honest gaps between today's foundation and the purpose:
    **timed cue schedule** ("0:20 — 15 g carb + 140 ml") with a live simulate/replay
    clock that highlights the cue due now and the one coming next. Next: push it to
    the watch as a Garmin Connect IQ data field / notifications instead of on-screen.
-3. **A feedback loop that learns.** Log what was *actually* consumed and how the
-   session went (GI distress, bonk, splits), then tune the next recommendation.
-   This is the real moat: **data-based optimization that improves per athlete** —
-   something a device maker and a product brand structurally don't do.
-4. **Close to commerce.** Turn a recommendation into fulfillment (cart/affiliate
-   for Sponser/Winforce/MOOV). Monetize the decision, not just the subscription.
+3. **A feedback loop that learns.** ✅ *Shipped.* Athletes log how a session went
+   (GI distress, energy); `src/feedback` derives a carb **ceiling/bias** that tunes
+   future targets, with a live "what we learned" panel. This is the moat:
+   per-athlete optimization a device maker and a product brand don't build. Next:
+   move the store server-side and blend it with device outcomes.
+4. **Close to commerce.** ✅ *Shipped.* `src/commerce` turns a recommendation into a
+   priced, shoppable **cart** (quantities derived from the plan × sessions), with a
+   checkout stub. Next: wire real fulfilment (Shopify / brand stores) and affiliate
+   tracking for Sponser/Winforce/MOOV.
 
 ## One-line positioning
 

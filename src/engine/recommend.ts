@@ -48,6 +48,12 @@ function carbPerHour(input: AthleteInput): number {
   if (input.goal === "weight-loss" && input.durationMin < 90 && input.intensity !== "race") {
     c = 0;
   }
+  // Apply learned adaptation from the athlete's own logged sessions.
+  if (c > 0 && input.adaptation) {
+    c += input.adaptation.carbBiasG ?? 0;
+    const ceiling = input.adaptation.carbCeilingG;
+    if (ceiling !== undefined) c = Math.min(c, ceiling);
+  }
   return clamp(round5(c), 0, 120);
 }
 
@@ -291,6 +297,14 @@ function buildNotes(input: AthleteInput, target: FuelingTarget): string[] {
   const hrv = hrvStatus(input);
   if (hrv === "suppressed") {
     notes.push("Overnight HRV is below your baseline — keep an eye on load and prioritise carbs + protein afterwards.");
+  }
+
+  // Learned-from-your-logs notes — the feedback loop closing.
+  if (input.adaptation?.carbCeilingG !== undefined && target.carbPerHourG > 0) {
+    notes.push(`Carb rate is capped at ~${input.adaptation.carbCeilingG} g/h — learned from the gut-distress you logged.`);
+  }
+  if ((input.adaptation?.carbBiasG ?? 0) > 0 && target.carbPerHourG > 0) {
+    notes.push("Fueling nudged up from the low-energy sessions you logged — let's keep you from fading.");
   }
 
   notes.push("General guidance for healthy adults, not medical advice. Check current product labels before racing.");

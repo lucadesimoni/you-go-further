@@ -998,3 +998,222 @@ code {
   color: var(--post);
   border-color: rgba(52, 201, 138, 0.4);
 }
+
+/* ---- Cart (commerce) ---- */
+.cart-sessions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.step:hover {
+  border-color: var(--accent);
+}
+
+.step-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 78px;
+  text-align: center;
+}
+
+.cart-lines {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-line {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.cart-qty {
+  font-weight: 700;
+  color: var(--during);
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-price {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 12px 4px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.cart-subtotal {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-checkout {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  font-size: 15px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cart-checkout.done,
+.btn.done {
+  background: var(--post);
+  border-color: var(--post);
+  color: #0f1417;
+}
+
+/* ---- Feedback (learning loop) ---- */
+.fb-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 560px) {
+  .fb-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feedback .btn-primary {
+  width: 100%;
+  padding: 11px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.fb-insight {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 11px;
+  background: var(--panel-2);
+}
+
+.fb-insight.on {
+  border-style: solid;
+  border-color: var(--post);
+}
+
+.fb-insight-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.fb-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.fb-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #10161a;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.fb-badge.cap {
+  color: var(--accent);
+  border-color: rgba(228, 0, 43, 0.4);
+}
+
+.fb-badge.up {
+  color: var(--post);
+  border-color: rgba(52, 201, 138, 0.4);
+}
+
+.fb-rationale {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fb-history {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fb-history li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.fb-when {
+  min-width: 78px;
+}
+
+.fb-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #10161a;
+}
+
+.fb-tag.gi-severe {
+  color: var(--accent);
+}
+.fb-tag.gi-mild {
+  color: var(--during);
+}
+.fb-tag.en-bonked,
+.fb-tag.en-faded {
+  color: var(--during);
+}
+.fb-tag.en-strong {
+  color: var(--post);
+}
+
+.fb-planned {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}

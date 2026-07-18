@@ -19,9 +19,11 @@ npm run server                                  # API + static app on :8787
 ```
 GET  /api/health         → { status:"ok", environment, version, storeBackend, activitiesStored }
 GET  /api/providers      → Strava/Garmin/Polar/Suunto descriptors + scopes
-POST /api/recommend      → full recommendation (accepts measured physiology)
+POST /api/recommend      → full recommendation (accepts measured physiology + adaptation)
 POST /api/schedule       → timed in-session cue schedule
 POST /api/target         → fueling targets only
+POST /api/cart           → priced, shoppable cart from a recommendation × sessions
+POST /api/adaptation     → learned carb ceiling/bias from logged session feedback
 POST /api/ingest         → pull sample activities into the store (stateful)
 GET  /api/activities     → query the store
 GET  /api/analysis       → training load, ACWR, weekly buckets, nutrition demand

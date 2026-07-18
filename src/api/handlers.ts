@@ -9,6 +9,8 @@
 
 import { recommend, buildSchedule, computeTarget } from "../engine";
 import type { AthleteInput } from "../engine";
+import { buildCart } from "../commerce";
+import { deriveAdaptation, type SessionFeedback } from "../feedback";
 import { analyze, derivePhysiology } from "../analysis";
 import { generateSampleWellness } from "../providers";
 import { lastNDays } from "../data";
@@ -84,6 +86,18 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           const input = asAthleteInput(body);
           if (!input) return bad("Invalid AthleteInput");
           return ok(buildSchedule(input));
+        }
+
+        case key === "POST /api/cart": {
+          const b = (body ?? {}) as { input?: unknown; sessions?: number };
+          const input = asAthleteInput(b.input);
+          if (!input) return bad("Invalid AthleteInput");
+          return ok(buildCart(recommend(input), Math.max(1, Math.min(20, b.sessions ?? 1))));
+        }
+
+        case key === "POST /api/adaptation": {
+          const b = (body ?? {}) as { feedback?: SessionFeedback[] };
+          return ok(deriveAdaptation(Array.isArray(b.feedback) ? b.feedback : []));
         }
 
         case key === "POST /api/target": {

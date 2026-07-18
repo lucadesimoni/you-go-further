@@ -2,9 +2,32 @@ import { useMemo, useState } from "react";
 import { buildSchedule, recommend } from "../engine";
 import type { AthleteInput } from "../engine";
 import { estimateSweatRateMlPerH } from "../analysis";
+import { deriveAdaptation, toAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
 import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_LABELS, SWEAT_LEVELS } from "../options";
 import { Stat } from "./Stat";
 import { SessionTimeline } from "./SessionTimeline";
+import { CartPanel } from "./CartPanel";
+import { FeedbackPanel } from "./FeedbackPanel";
+
+const FEEDBACK_KEY = "ygf.feedback.v1";
+
+function loadFeedback(): SessionFeedback[] {
+  try {
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(FEEDBACK_KEY) : null;
+    return raw ? (JSON.parse(raw) as SessionFeedback[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFeedback(list: SessionFeedback[]): SessionFeedback[] {
+  try {
+    if (typeof localStorage !== "undefined") localStorage.setItem(FEEDBACK_KEY, JSON.stringify(list));
+  } catch {
+    /* ignore quota / disabled storage */
+  }
+  return list;
+}
 
 const DEFAULT_INPUT: AthleteInput = {
   goal: "endurance-performance",
@@ -27,17 +50,35 @@ export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
   const [sweatSodium, setSweatSodium] = useState(800);
   const [readiness, setReadiness] = useState(65);
 
+  // Feedback loop — learned adaptation from the athlete's own logged sessions.
+  const [feedbacks, setFeedbacks] = useState<SessionFeedback[]>(() => loadFeedback());
+  const insight = useMemo(() => deriveAdaptation(feedbacks), [feedbacks]);
+
   const effectiveInput = useMemo<AthleteInput>(
     () => ({
       ...input,
       physiology: useSignals
         ? { sweatRateMlPerH: sweatRate, sweatSodiumMgPerL: sweatSodium, readiness }
         : undefined,
+      adaptation: insight.samples > 0 ? toAdaptation(insight) : undefined,
     }),
-    [input, useSignals, sweatRate, sweatSodium, readiness],
+    [input, useSignals, sweatRate, sweatSodium, readiness, insight],
   );
   const rec = useMemo(() => recommend(effectiveInput), [effectiveInput]);
   const schedule = useMemo(() => buildSchedule(effectiveInput), [effectiveInput]);
+
+  const logFeedback = (gi: GiRating, energy: EnergyRating) => {
+    const entry: SessionFeedback = {
+      id: `${Date.now()}`,
+      date: new Date().toISOString(),
+      durationMin: input.durationMin,
+      plannedCarbPerHourG: rec.target.carbPerHourG,
+      gi,
+      energy,
+    };
+    setFeedbacks((prev) => saveFeedback([entry, ...prev]));
+  };
+  const resetFeedback = () => setFeedbacks(saveFeedback([]));
 
   const set = <K extends keyof AthleteInput>(key: K, value: AthleteInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
@@ -261,6 +302,10 @@ export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
             ))}
           </ul>
         </div>
+
+        <CartPanel rec={rec} />
+
+        <FeedbackPanel insight={insight} feedbacks={feedbacks} onLog={logFeedback} onReset={resetFeedback} />
       </section>
     </main>
   );

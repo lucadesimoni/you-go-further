@@ -4,9 +4,10 @@ import type { Product } from "./types";
  * Swiss sports-nutrition product catalog.
  *
  * Products are from established Swiss brands — Sponser Sport Food (Wollerau, ZH)
- * and Winforce (Winterthur, ZH). Nutritional values are approximate per-serving
- * figures used to drive recommendations; always check the current label before
- * a race. This list is intentionally editable data, not hard-coded logic.
+ * and Winforce (Winterthur, ZH). Nutritional values and prices are approximate
+ * per-serving figures used to drive recommendations and the cart; always check
+ * the current label and price before a race. This list is intentionally editable
+ * data, not hard-coded logic.
  */
 export const CATALOG: Product[] = [
   // ---- Sponser ----
@@ -20,6 +21,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 250,
     multiTransportable: true,
     servingLabel: "40 g scoop in 500 ml",
+    priceChf: 2.2,
     notes: "Glucose + maltodextrin + fructose isotonic mix for long sessions.",
   },
   {
@@ -31,6 +33,7 @@ export const CATALOG: Product[] = [
     carbsG: 26,
     sodiumMg: 300,
     servingLabel: "30 g in 500 ml",
+    priceChf: 1.8,
     notes: "Light hydration mix for easy or shorter sessions.",
   },
   {
@@ -42,6 +45,7 @@ export const CATALOG: Product[] = [
     carbsG: 26,
     sodiumMg: 100,
     servingLabel: "40 g gel",
+    priceChf: 2.8,
     multiTransportable: true,
     notes: "Fast carbs on the move; take with water.",
   },
@@ -55,6 +59,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 100,
     caffeineMg: 50,
     servingLabel: "40 g gel",
+    priceChf: 3.2,
     notes: "Carb gel with a caffeine hit for the back half of a race.",
   },
   {
@@ -66,6 +71,7 @@ export const CATALOG: Product[] = [
     carbsG: 0,
     sodiumMg: 300,
     servingLabel: "1 capsule",
+    priceChf: 0.5,
     notes: "Top up sodium in heat or for heavy sweaters, independent of carbs.",
   },
   {
@@ -78,6 +84,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 40,
     multiTransportable: true,
     servingLabel: "60 g in 500 ml",
+    priceChf: 2.5,
     notes: "High-carb loader for carb-up and very long sessions.",
   },
   {
@@ -90,6 +97,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 180,
     proteinG: 20,
     servingLabel: "60 g in 300 ml",
+    priceChf: 3.5,
     notes: "Carb + whey/casein blend for the post-session window.",
   },
   {
@@ -102,6 +110,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 60,
     proteinG: 10,
     servingLabel: "60 g bar",
+    priceChf: 3.0,
     notes: "Slower-release option before easy sessions or as a snack.",
   },
 
@@ -116,6 +125,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 220,
     multiTransportable: true,
     servingLabel: "40 g in 500 ml",
+    priceChf: 2.1,
     notes: "Swiss multi-carb endurance drink for 60 min+ efforts.",
   },
   {
@@ -128,6 +138,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 90,
     multiTransportable: true,
     servingLabel: "40 g gel",
+    priceChf: 2.6,
     notes: "Natural-flavour carb gel; pairs with water.",
   },
   {
@@ -140,6 +151,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 90,
     caffeineMg: 40,
     servingLabel: "40 g gel",
+    priceChf: 2.9,
     notes: "Caffeinated gel for the final third of long races.",
   },
   {
@@ -152,6 +164,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 400,
     multiTransportable: true,
     servingLabel: "35 g in 500 ml",
+    priceChf: 2.3,
     notes: "Higher-sodium mix aimed at ultra and hot-weather racing.",
   },
   {
@@ -164,6 +177,7 @@ export const CATALOG: Product[] = [
     sodiumMg: 150,
     proteinG: 20,
     servingLabel: "50 g in 300 ml",
+    priceChf: 3.4,
     notes: "Carbohydrate + protein recovery blend.",
   },
   {
@@ -175,6 +189,7 @@ export const CATALOG: Product[] = [
     carbsG: 1,
     sodiumMg: 350,
     servingLabel: "1 tab in 500 ml",
+    priceChf: 0.6,
     notes: "Calorie-free hydration — good for easy sessions and weight-loss goals.",
   },
 ];

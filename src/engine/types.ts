@@ -40,6 +40,19 @@ export interface AthleteInput {
   caffeineOk?: boolean;
   /** Measured body signals from connected devices — used to personalize. */
   physiology?: PhysiologySignals;
+  /** Learned adjustments from the athlete's own session feedback. */
+  adaptation?: Adaptation;
+}
+
+/**
+ * Adjustments the system has *learned* from logged session outcomes (gut
+ * tolerance, bonking). Produced by `src/feedback`, applied to the carb target.
+ */
+export interface Adaptation {
+  /** Hard cap on carb/h derived from GI-distress logs. */
+  carbCeilingG?: number;
+  /** Signed nudge to carb/h (e.g. +8 after repeated low-energy sessions). */
+  carbBiasG?: number;
 }
 
 /**
@@ -93,6 +106,8 @@ export interface Product {
    */
   multiTransportable?: boolean;
   servingLabel: string;
+  /** Retail price per serving/unit in CHF (approximate). */
+  priceChf?: number;
   notes?: string;
 }
 
