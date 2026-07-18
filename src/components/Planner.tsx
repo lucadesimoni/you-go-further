@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { recommend } from "../engine";
+import { buildSchedule, recommend } from "../engine";
 import type { AthleteInput } from "../engine";
 import { estimateSweatRateMlPerH } from "../analysis";
 import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_LABELS, SWEAT_LEVELS } from "../options";
 import { Stat } from "./Stat";
+import { SessionTimeline } from "./SessionTimeline";
 
 const DEFAULT_INPUT: AthleteInput = {
   goal: "endurance-performance",
@@ -36,6 +37,7 @@ export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
     [input, useSignals, sweatRate, sweatSodium, readiness],
   );
   const rec = useMemo(() => recommend(effectiveInput), [effectiveInput]);
+  const schedule = useMemo(() => buildSchedule(effectiveInput), [effectiveInput]);
 
   const set = <K extends keyof AthleteInput>(key: K, value: AthleteInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
@@ -216,6 +218,8 @@ export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
             note={rec.target.sodiumSource === "measured" ? "measured" : undefined}
           />
         </div>
+
+        <SessionTimeline schedule={schedule} />
 
         {rec.phases.map((phase) => (
           <div className="panel phase" key={phase.phase}>

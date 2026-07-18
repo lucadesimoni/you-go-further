@@ -53,10 +53,10 @@ These are honest gaps between today's foundation and the purpose:
    **training readiness + HRV** from the wearables adjust recovery fueling and
    surface flags. Next: pull per-activity sweat-loss estimates and thermal load
    straight from the device instead of a modeled estimate.
-2. **Real-time, in-session fueling.** The biggest "go further" moment is mid-race.
-   Push the plan to the watch (Garmin Connect IQ data field / notifications) and
-   cue "take 25 g now, drink 200 ml" on schedule. Neither Garmin nor MOOV closes
-   this loop with a personalized plan.
+2. **Real-time, in-session fueling.** ✅ *In progress.* The planner now generates a
+   **timed cue schedule** ("0:20 — 15 g carb + 140 ml") with a live simulate/replay
+   clock that highlights the cue due now and the one coming next. Next: push it to
+   the watch as a Garmin Connect IQ data field / notifications instead of on-screen.
 3. **A feedback loop that learns.** Log what was *actually* consumed and how the
    session went (GI distress, bonk, splits), then tune the next recommendation.
    This is the real moat: **data-based optimization that improves per athlete** —
