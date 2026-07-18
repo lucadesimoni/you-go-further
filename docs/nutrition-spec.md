@@ -68,6 +68,26 @@ This mirrors mainstream guidance: ~30 g/h for 1–2 h efforts, 30–60 g/h up to
 
 - Base 500 · heavy sweat → 800 · light sweat → 350 · hot +150
 
+## 4b. Physiology-driven personalization ("optimized for your body")
+
+When measured body signals are supplied (a sweat test, or a wearable via the
+connectors), they **override** the population estimates above and the output is
+marked with its provenance (`hydrationSource` / `sodiumSource` = `measured` vs
+`estimated`):
+
+- **Measured sweat rate** → fluid target replaces ~80 % of losses, capped at
+  gut-absorption (~1200 ml/h). Beats the intensity/heat bucket.
+- **Measured sweat sodium** (mg/L) → used directly (clamped 300–1500). ≥ 900 mg/L
+  flags a salty sweater and adds a standalone electrolyte.
+- **Training readiness** (0–100) → below 45 raises post-session recovery carbs
+  (×1.15) and emphasizes recovery; a note surfaces the reason.
+- **Overnight HRV vs. baseline** → below 0.9× baseline flags suppressed recovery.
+
+Device signals (readiness, HRV, resting HR, sleep) are derived from wellness data
+in `src/analysis` (`derivePhysiology`); sweat metrics come from a sweat test the
+athlete enters (or `estimateSweatRateMlPerH` as a labelled estimate). This is the
+layer that moves recommendations from *a body like yours* to *your body*.
+
 ## 5. Pre-session (`preCarbGrams`)
 
 A carbohydrate-focused meal/snack 1–3 h out, low in fat and fibre:

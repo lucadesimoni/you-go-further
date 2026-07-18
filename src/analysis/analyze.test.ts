@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { Activity, AthleteProfile } from "../model";
-import { acwr, analyze, inferIntensity, nutritionDemand, sessionLoad, weeklyBuckets } from "./analyze";
+import type { Activity, AthleteProfile, Wellness } from "../model";
+import {
+  acwr,
+  analyze,
+  derivePhysiology,
+  estimateSweatRateMlPerH,
+  inferIntensity,
+  nutritionDemand,
+  sessionLoad,
+  weeklyBuckets,
+} from "./analyze";
 
 const profile: AthleteProfile = { bodyWeightKg: 68, maxHr: 190 };
 const now = new Date("2026-07-18T12:00:00Z");
@@ -85,6 +94,39 @@ describe("nutritionDemand", () => {
     expect(d.fueledSessions).toBeGreaterThanOrEqual(1);
     expect(d.weeklyDuringCarbG).toBeGreaterThan(0);
     expect(d.avgCarbPerHourG).toBeGreaterThan(0);
+  });
+});
+
+describe("derivePhysiology", () => {
+  const w = (date: string, over: Partial<Wellness> = {}): Wellness => ({ provider: "garmin", date, ...over });
+
+  it("returns no signals for empty wellness", () => {
+    expect(derivePhysiology([], now).hasSignals).toBe(false);
+  });
+
+  it("takes the latest readiness/HRV and a rolling HRV baseline", () => {
+    const wellness = [
+      w("2026-07-01", { hrvMs: 60, readiness: 55, restingHr: 48 }),
+      w("2026-07-17", { hrvMs: 50, readiness: 40, restingHr: 50 }),
+      w("2026-07-18", { hrvMs: 46, readiness: 35, restingHr: 51 }),
+    ];
+    const snap = derivePhysiology(wellness, now);
+    expect(snap.hasSignals).toBe(true);
+    expect(snap.readiness).toBe(35); // latest
+    expect(snap.hrvMs).toBe(46); // latest
+    expect(snap.hrvBaselineMs).toBe(52); // mean(60,50,46)
+    expect(snap.restingHr).toBe(51);
+  });
+});
+
+describe("estimateSweatRateMlPerH", () => {
+  it("scales with body mass, intensity, and heat", () => {
+    const moderate = estimateSweatRateMlPerH(70, "moderate", "temperate");
+    const raceHot = estimateSweatRateMlPerH(70, "race", "hot");
+    const lightCool = estimateSweatRateMlPerH(70, "easy", "cool");
+    expect(raceHot).toBeGreaterThan(moderate);
+    expect(moderate).toBeGreaterThan(lightCool);
+    expect(moderate).toBe(700); // 70 * 10 * 1.0
   });
 });
 

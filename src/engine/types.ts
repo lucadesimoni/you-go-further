@@ -38,7 +38,28 @@ export interface AthleteInput {
   sweatLevel?: SweatLevel;
   /** Whether the athlete tolerates caffeine and wants it suggested. */
   caffeineOk?: boolean;
+  /** Measured body signals from connected devices — used to personalize. */
+  physiology?: PhysiologySignals;
 }
+
+/**
+ * Individualized body signals sourced from wearables / sweat testing. When
+ * present these move the plan off population buckets and onto *this* athlete.
+ */
+export interface PhysiologySignals {
+  /** Measured sweat rate (ml/h) from a sweat test or device estimate. */
+  sweatRateMlPerH?: number;
+  /** Measured sweat sodium concentration (mg/L). */
+  sweatSodiumMgPerL?: number;
+  /** Training readiness 0–100 (Garmin / Polar / Suunto). */
+  readiness?: number;
+  /** Latest overnight HRV (ms) and the athlete's rolling baseline. */
+  hrvMs?: number;
+  hrvBaselineMs?: number;
+}
+
+/** Whether a target was computed from measured data or a population estimate. */
+export type Provenance = "measured" | "estimated";
 
 /** Which part of the session a product or guideline applies to. */
 export type Phase = "pre" | "during" | "post";
@@ -86,6 +107,10 @@ export interface FuelingTarget {
   sodiumPerLitreMg: number;
   /** Whether multiple transportable carbohydrates are required to hit the target. */
   requiresMultiTransportable: boolean;
+  /** Whether the fluid target came from measured sweat rate or an estimate. */
+  hydrationSource: Provenance;
+  /** Whether the sodium target came from a measured sweat test or an estimate. */
+  sodiumSource: Provenance;
 }
 
 export interface PhasePlan {

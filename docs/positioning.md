@@ -48,10 +48,11 @@ sales — we can be a demand channel for brands like MOOV, Sponser, and Winforce
 
 These are honest gaps between today's foundation and the purpose:
 
-1. **Deeper body signal.** We infer intensity from average HR. Pull Garmin/Polar/
-   Suunto **sweat-rate, HRV, and training-readiness** to individualize hydration,
-   sodium, and how hard to fuel — moving from population defaults toward *this
-   body*. (Our model already prefers provider training load; extend that pattern.)
+1. **Deeper body signal.** ✅ *In progress.* Measured **sweat rate & sweat sodium**
+   now override population hydration/sodium (with provenance badges), and
+   **training readiness + HRV** from the wearables adjust recovery fueling and
+   surface flags. Next: pull per-activity sweat-loss estimates and thermal load
+   straight from the device instead of a modeled estimate.
 2. **Real-time, in-session fueling.** The biggest "go further" moment is mid-race.
    Push the plan to the watch (Garmin Connect IQ data field / notifications) and
    cue "take 25 g now, drink 200 ml" on schedule. Neither Garmin nor MOOV closes

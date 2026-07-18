@@ -1,6 +1,6 @@
 import { recommend } from "../engine";
-import type { Activity as EngineActivity, Intensity } from "../engine";
-import type { Activity, AthleteProfile, SportType } from "../model";
+import type { Activity as EngineActivity, Conditions, Intensity } from "../engine";
+import type { Activity, AthleteProfile, SportType, Wellness } from "../model";
 import { toHours } from "../model";
 
 /** Map a normalized sport to the nutrition engine's activity vocabulary. */
@@ -161,6 +161,58 @@ export function nutritionDemand(
     weeklyDuringCarbG: Math.round(weeklyDuringCarbG),
     avgCarbPerHourG: fueledSessions ? Math.round(carbPerHourSum / fueledSessions) : 0,
   };
+}
+
+/**
+ * A device-derived body-signal snapshot. The subset that the nutrition engine
+ * consumes (readiness / HRV) is measured; sweat metrics come from a sweat test
+ * the athlete enters, or from {@link estimateSweatRateMlPerH} for display.
+ */
+export interface PhysiologySnapshot {
+  readiness?: number;
+  hrvMs?: number;
+  hrvBaselineMs?: number;
+  restingHr?: number;
+  sleepScore?: number;
+  /** True if any device signal was found. */
+  hasSignals: boolean;
+}
+
+const mean = (xs: number[]): number | undefined => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : undefined);
+
+/** Collapse recent wellness readings into a single current snapshot. */
+export function derivePhysiology(wellness: Wellness[], now = new Date()): PhysiologySnapshot {
+  if (!wellness.length) return { hasSignals: false };
+  const sorted = [...wellness].sort((a, b) => b.date.localeCompare(a.date));
+  const latest = <K extends keyof Wellness>(key: K): number | undefined => {
+    const found = sorted.find((w) => typeof w[key] === "number");
+    return found ? (found[key] as number) : undefined;
+  };
+  const windowMs = 28 * 86_400_000;
+  const inWindow = sorted.filter((w) => now.getTime() - Date.parse(w.date) <= windowMs);
+  const hrvBaselineMs = mean(inWindow.map((w) => w.hrvMs).filter((v): v is number => typeof v === "number"));
+  const readiness = latest("readiness");
+  const hrvMs = latest("hrvMs");
+  const restingHr = latest("restingHr");
+  const sleepScore = latest("sleepScore");
+  return {
+    readiness,
+    hrvMs,
+    hrvBaselineMs: hrvBaselineMs !== undefined ? Math.round(hrvBaselineMs) : undefined,
+    restingHr,
+    sleepScore,
+    hasSignals: [readiness, hrvMs, restingHr, sleepScore].some((v) => v !== undefined),
+  };
+}
+
+/**
+ * Modeled sweat rate (ml/h) from body mass, intensity and heat. An *estimate*
+ * for display and as a sensible default before the athlete has a real sweat test.
+ */
+export function estimateSweatRateMlPerH(bodyWeightKg: number, intensity: Intensity, conditions: Conditions = "temperate"): number {
+  const perKg: Record<Intensity, number> = { easy: 7, moderate: 10, hard: 13, race: 15 };
+  const heat: Record<Conditions, number> = { cool: 0.8, temperate: 1, hot: 1.35 };
+  return Math.round((bodyWeightKg * perKg[intensity] * heat[conditions]) / 5) * 5;
 }
 
 export interface AnalysisReport {

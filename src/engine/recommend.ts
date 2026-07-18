@@ -6,6 +6,7 @@ import type {
   Intensity,
   PhasePlan,
   Product,
+  Provenance,
   Recommendation,
 } from "./types";
 
@@ -50,33 +51,47 @@ function carbPerHour(input: AthleteInput): number {
   return clamp(round5(c), 0, 120);
 }
 
-function fluidPerHour(input: AthleteInput): number {
+function fluidPerHour(input: AthleteInput): { ml: number; source: Provenance } {
+  // Measured sweat rate wins: replace ~80% of losses, capped at gut absorption.
+  const sweat = input.physiology?.sweatRateMlPerH;
+  if (sweat && sweat > 0) {
+    return { ml: clamp(round5(sweat * 0.8), 350, 1200), source: "measured" };
+  }
   const base: Record<Intensity, number> = { easy: 400, moderate: 550, hard: 650, race: 700 };
   let ml = base[input.intensity];
   if (input.conditions === "hot") ml += 200;
   if (input.conditions === "cool") ml -= 100;
   if (input.sweatLevel === "heavy") ml += 150;
   if (input.sweatLevel === "light") ml -= 100;
-  return clamp(round5(ml), 300, 1000);
+  return { ml: clamp(round5(ml), 300, 1000), source: "estimated" };
 }
 
-function sodiumPerLitre(input: AthleteInput): number {
+function sodiumPerLitre(input: AthleteInput): { mg: number; source: Provenance } {
+  // A sweat test gives the athlete's actual concentration — use it directly.
+  const measured = input.physiology?.sweatSodiumMgPerL;
+  if (measured && measured > 0) {
+    return { mg: clamp(round5(measured), 300, 1500), source: "measured" };
+  }
   let mg = 500;
   if (input.sweatLevel === "heavy") mg = 800;
   if (input.sweatLevel === "light") mg = 350;
   if (input.conditions === "hot") mg += 150;
-  return clamp(round5(mg), 300, 1100);
+  return { mg: clamp(round5(mg), 300, 1100), source: "estimated" };
 }
 
 export function computeTarget(input: AthleteInput): FuelingTarget {
   const carbPerHourG = carbPerHour(input);
   const hours = input.durationMin / 60;
+  const fluid = fluidPerHour(input);
+  const sodium = sodiumPerLitre(input);
   return {
     carbPerHourG,
     carbTotalG: Math.round(carbPerHourG * hours),
-    fluidPerHourMl: fluidPerHour(input),
-    sodiumPerLitreMg: sodiumPerLitre(input),
+    fluidPerHourMl: fluid.ml,
+    sodiumPerLitreMg: sodium.mg,
     requiresMultiTransportable: carbPerHourG > 60,
+    hydrationSource: fluid.source,
+    sodiumSource: sodium.source,
   };
 }
 
@@ -97,15 +112,30 @@ function postGrams(input: AthleteInput): { carbG: number; proteinG: number } {
   if (input.goal === "recovery-focus") carbPerKg = 1.2;
   if (input.goal === "endurance-performance" || input.goal === "race-preparation") carbPerKg = 1.0;
   if (input.goal === "weight-loss") carbPerKg = 0.4;
+  // Low training readiness → lean into recovery to close the gap faster.
+  const readiness = input.physiology?.readiness;
+  if (readiness !== undefined && readiness < 45 && input.goal !== "weight-loss") carbPerKg *= 1.15;
   const demanding = input.durationMin >= 60 || input.intensity === "hard" || input.intensity === "race";
   return { carbG: Math.round(input.bodyWeightKg * carbPerKg * (demanding ? 1 : 0.5)), proteinG };
+}
+
+/** HRV status relative to the athlete's baseline. */
+function hrvStatus(input: AthleteInput): "suppressed" | "balanced" | "elevated" | undefined {
+  const { hrvMs, hrvBaselineMs } = input.physiology ?? {};
+  if (!hrvMs || !hrvBaselineMs) return undefined;
+  const ratio = hrvMs / hrvBaselineMs;
+  if (ratio < 0.9) return "suppressed";
+  if (ratio > 1.1) return "elevated";
+  return "balanced";
 }
 
 const wantsCaffeine = (input: AthleteInput) =>
   Boolean(input.caffeineOk) && (input.durationMin >= 90 || input.intensity === "race" || input.intensity === "hard");
 
 const needsExtraSodium = (input: AthleteInput) =>
-  input.sweatLevel === "heavy" || input.conditions === "hot";
+  input.sweatLevel === "heavy" ||
+  input.conditions === "hot" ||
+  (input.physiology?.sweatSodiumMgPerL ?? 0) >= 900;
 
 /** Rank the during-session products for this athlete and return the top matches. */
 function duringProducts(input: AthleteInput, target: FuelingTarget): Product[] {
@@ -239,6 +269,30 @@ function buildNotes(input: AthleteInput, target: FuelingTarget): string[] {
   if (input.activity === "swimming") {
     notes.push("Fueling mid-swim is impractical — front-load carbs pre-session and refuel promptly after.");
   }
+
+  // Physiology-driven, personalized notes — the "optimized for your body" layer.
+  if (target.hydrationSource === "measured") {
+    notes.push(
+      `Hydration is set from your measured sweat rate (${input.physiology?.sweatRateMlPerH} ml/h), not a population estimate.`,
+    );
+  }
+  if (target.sodiumSource === "measured") {
+    notes.push(
+      `Sodium matches your sweat test (${input.physiology?.sweatSodiumMgPerL} mg/L) — ${
+        (input.physiology?.sweatSodiumMgPerL ?? 0) >= 900 ? "you're a salty sweater, so this runs high." : "dialled to your chemistry."
+      }`,
+    );
+  }
+  const readiness = input.physiology?.readiness;
+  if (readiness !== undefined) {
+    if (readiness < 45) notes.push(`Readiness is low (${readiness}/100) — recovery fueling is emphasized today.`);
+    else if (readiness >= 75) notes.push(`Readiness is high (${readiness}/100) — you're primed to absorb a harder, well-fueled session.`);
+  }
+  const hrv = hrvStatus(input);
+  if (hrv === "suppressed") {
+    notes.push("Overnight HRV is below your baseline — keep an eye on load and prioritise carbs + protein afterwards.");
+  }
+
   notes.push("General guidance for healthy adults, not medical advice. Check current product labels before racing.");
   return notes;
 }

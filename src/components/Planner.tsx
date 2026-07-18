@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { recommend } from "../engine";
 import type { AthleteInput } from "../engine";
+import { estimateSweatRateMlPerH } from "../analysis";
 import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_LABELS, SWEAT_LEVELS } from "../options";
 import { Stat } from "./Stat";
 
@@ -18,10 +19,28 @@ const DEFAULT_INPUT: AthleteInput = {
 /** Standalone session fuel planner (the Base-tier feature). */
 export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
   const [input, setInput] = useState<AthleteInput>({ ...DEFAULT_INPUT, ...initial });
-  const rec = useMemo(() => recommend(input), [input]);
+
+  // Optional measured body signals — the "optimized for your body" layer.
+  const [useSignals, setUseSignals] = useState(false);
+  const [sweatRate, setSweatRate] = useState(1000);
+  const [sweatSodium, setSweatSodium] = useState(800);
+  const [readiness, setReadiness] = useState(65);
+
+  const effectiveInput = useMemo<AthleteInput>(
+    () => ({
+      ...input,
+      physiology: useSignals
+        ? { sweatRateMlPerH: sweatRate, sweatSodiumMgPerL: sweatSodium, readiness }
+        : undefined,
+    }),
+    [input, useSignals, sweatRate, sweatSodium, readiness],
+  );
+  const rec = useMemo(() => recommend(effectiveInput), [effectiveInput]);
 
   const set = <K extends keyof AthleteInput>(key: K, value: AthleteInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
+
+  const seedSweat = () => setSweatRate(estimateSweatRateMlPerH(input.bodyWeightKg, input.intensity, input.conditions));
 
   const hours = Math.floor(input.durationMin / 60);
   const mins = input.durationMin % 60;
@@ -141,14 +160,61 @@ export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
           />
           <span>Suggest caffeine for long / hard efforts</span>
         </label>
+
+        <div className="signals">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={useSignals}
+              onChange={(e) => {
+                if (e.target.checked && sweatRate === 1000) seedSweat();
+                setUseSignals(e.target.checked);
+              }}
+            />
+            <span>Personalize with my body signals</span>
+          </label>
+          {useSignals && (
+            <div className="signals-body">
+              <div className="field">
+                <label htmlFor="sweat-rate">
+                  Sweat rate <span className="value">{sweatRate} ml/h</span>
+                </label>
+                <input id="sweat-rate" type="range" min={400} max={2200} step={50} value={sweatRate} onChange={(e) => setSweatRate(Number(e.target.value))} />
+              </div>
+              <div className="field">
+                <label htmlFor="sweat-na">
+                  Sweat sodium <span className="value">{sweatSodium} mg/L</span>
+                </label>
+                <input id="sweat-na" type="range" min={300} max={1500} step={50} value={sweatSodium} onChange={(e) => setSweatSodium(Number(e.target.value))} />
+              </div>
+              <div className="field">
+                <label htmlFor="readiness">
+                  Training readiness <span className="value">{readiness}/100</span>
+                </label>
+                <input id="readiness" type="range" min={10} max={100} step={1} value={readiness} onChange={(e) => setReadiness(Number(e.target.value))} />
+              </div>
+              <p className="detail" style={{ margin: 0 }}>
+                From a sweat test or your watch. Values here override the population estimates below.
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="results" aria-live="polite">
         <div className="targets panel">
           <Stat label="Carb / hour" value={rec.target.carbPerHourG ? `${rec.target.carbPerHourG} g` : "—"} />
           <Stat label="Carb total" value={rec.target.carbTotalG ? `${rec.target.carbTotalG} g` : "—"} />
-          <Stat label="Fluid / hour" value={`${rec.target.fluidPerHourMl} ml`} />
-          <Stat label="Sodium / litre" value={`${rec.target.sodiumPerLitreMg} mg`} />
+          <Stat
+            label="Fluid / hour"
+            value={`${rec.target.fluidPerHourMl} ml`}
+            note={rec.target.hydrationSource === "measured" ? "measured" : undefined}
+          />
+          <Stat
+            label="Sodium / litre"
+            value={`${rec.target.sodiumPerLitreMg} mg`}
+            note={rec.target.sodiumSource === "measured" ? "measured" : undefined}
+          />
         </div>
 
         {rec.phases.map((phase) => (

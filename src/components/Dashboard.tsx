@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Activity, ProviderId } from "../model";
-import { ALL_PROVIDER_IDS, DESCRIPTORS, ProviderRegistry } from "../providers";
+import { ALL_PROVIDER_IDS, DESCRIPTORS, generateSampleWellness, ProviderRegistry } from "../providers";
 import type { ProviderCredential } from "../providers/types";
 import { IngestionPipeline, InMemoryActivityStore, lastNDays, toNdjson } from "../data";
-import { analyze } from "../analysis";
+import { analyze, derivePhysiology } from "../analysis";
 import { GOALS } from "../options";
 import { can, limit, PLANS, requiredTierFor, type Tier } from "../subscription";
 import type { AthleteInput } from "../engine";
@@ -74,6 +74,13 @@ export function Dashboard({ tier }: { tier: Tier }) {
     () => (activities.length ? analyze(activities, profile, goal) : null),
     [activities, profile, goal],
   );
+  const physiology = useMemo(() => {
+    const wellness = [...connected].flatMap((p) => generateSampleWellness(p, 21));
+    return derivePhysiology(wellness);
+  }, [connected]);
+  const hrvRatio =
+    physiology.hrvMs && physiology.hrvBaselineMs ? physiology.hrvMs / physiology.hrvBaselineMs : undefined;
+  const hrvStatus = hrvRatio === undefined ? "—" : hrvRatio < 0.9 ? "below baseline" : hrvRatio > 1.1 ? "above baseline" : "balanced";
 
   const maxWeekLoad = report ? Math.max(1, ...report.weeks.map((w) => w.load)) : 1;
 
@@ -174,6 +181,27 @@ export function Dashboard({ tier }: { tier: Tier }) {
           </div>
         </div>
       </section>
+
+      {/* Body signals — the "optimized for your body" layer */}
+      {physiology.hasSignals && (
+        <section className="panel">
+          <div className="section-head">
+            <h2>Body signals</h2>
+            <span className="pill">from your devices</span>
+          </div>
+          <div className="targets" style={{ padding: 0, border: "none", background: "none" }}>
+            <Stat label="Readiness" value={physiology.readiness !== undefined ? `${physiology.readiness}/100` : "—"} />
+            <Stat label="Overnight HRV" value={physiology.hrvMs ? `${physiology.hrvMs} ms` : "—"} note={hrvStatus !== "—" ? hrvStatus : undefined} />
+            <Stat label="Resting HR" value={physiology.restingHr ? `${physiology.restingHr} bpm` : "—"} />
+            <Stat label="Sleep" value={physiology.sleepScore ? `${physiology.sleepScore}/100` : "—"} />
+          </div>
+          <p className="detail" style={{ margin: "12px 0 0" }}>
+            These personalize your fueling — low readiness dials up recovery carbs, and a sweat test
+            (add it in the Fuel planner) sets hydration and sodium to your own chemistry instead of
+            population averages.
+          </p>
+        </section>
+      )}
 
       {/* Analysis */}
       <section className="panel">

@@ -12,6 +12,56 @@ const base: AthleteInput = {
   sweatLevel: "average",
 };
 
+describe("physiology-driven personalization", () => {
+  it("defaults hydration and sodium to estimates without body signals", () => {
+    const t = computeTarget(base);
+    expect(t.hydrationSource).toBe("estimated");
+    expect(t.sodiumSource).toBe("estimated");
+  });
+
+  it("uses measured sweat rate for hydration (≈80% replacement)", () => {
+    const t = computeTarget({ ...base, physiology: { sweatRateMlPerH: 1400 } });
+    expect(t.hydrationSource).toBe("measured");
+    expect(t.fluidPerHourMl).toBe(1120); // 1400 * 0.8, rounded to 5
+  });
+
+  it("caps measured hydration at gut-absorption ceiling", () => {
+    const t = computeTarget({ ...base, physiology: { sweatRateMlPerH: 2500 } });
+    expect(t.fluidPerHourMl).toBeLessThanOrEqual(1200);
+  });
+
+  it("uses measured sweat sodium directly", () => {
+    const t = computeTarget({ ...base, physiology: { sweatSodiumMgPerL: 1100 } });
+    expect(t.sodiumSource).toBe("measured");
+    expect(t.sodiumPerLitreMg).toBe(1100);
+  });
+
+  it("adds a standalone electrolyte for a measured salty sweater", () => {
+    const r = recommend({ ...base, physiology: { sweatSodiumMgPerL: 1200 } });
+    const during = r.phases.find((p) => p.phase === "during")!;
+    expect(during.products.some((p) => p.category === "electrolyte")).toBe(true);
+  });
+
+  it("raises recovery carbs when readiness is low", () => {
+    const normal = recommend(base);
+    const tired = recommend({ ...base, physiology: { readiness: 30 } });
+    const carbG = (r: ReturnType<typeof recommend>) =>
+      Number(/~(\d+) g carbohydrate/.exec(r.phases.find((p) => p.phase === "post")!.headline)?.[1]);
+    expect(carbG(tired)).toBeGreaterThan(carbG(normal));
+    expect(tired.notes.some((n) => /readiness is low/i.test(n))).toBe(true);
+  });
+
+  it("explains that hydration came from measured data", () => {
+    const r = recommend({ ...base, physiology: { sweatRateMlPerH: 1000 } });
+    expect(r.notes.some((n) => /measured sweat rate/i.test(n))).toBe(true);
+  });
+
+  it("flags suppressed HRV relative to baseline", () => {
+    const r = recommend({ ...base, physiology: { hrvMs: 45, hrvBaselineMs: 60 } });
+    expect(r.notes.some((n) => /hrv is below your baseline/i.test(n))).toBe(true);
+  });
+});
+
 describe("computeTarget – carbohydrate scaling", () => {
   it("gives no during-carbs for a short easy session", () => {
     const t = computeTarget({ ...base, durationMin: 40, intensity: "easy" });
