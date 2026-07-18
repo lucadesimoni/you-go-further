@@ -1,0 +1,245 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Activity, ProviderId } from "../model";
+import { ALL_PROVIDER_IDS, DESCRIPTORS, ProviderRegistry } from "../providers";
+import type { ProviderCredential } from "../providers/types";
+import { IngestionPipeline, InMemoryActivityStore, lastNDays, toNdjson } from "../data";
+import { analyze } from "../analysis";
+import { GOALS } from "../options";
+import { can, limit, PLANS, requiredTierFor, type Tier } from "../subscription";
+import type { AthleteInput } from "../engine";
+import { Stat } from "./Stat";
+
+const STATUS_LABEL: Record<string, string> = {
+  detraining: "Detraining",
+  optimal: "Optimal",
+  caution: "Caution",
+  "high-risk": "High risk",
+};
+
+/** Connections + analysis workspace. Feature access is gated by the active tier. */
+export function Dashboard({ tier }: { tier: Tier }) {
+  const registry = useRef(new ProviderRegistry());
+  const store = useRef(new InMemoryActivityStore());
+  const pipeline = useRef(new IngestionPipeline(registry.current, store.current));
+
+  const [connected, setConnected] = useState<Set<ProviderId>>(new Set());
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [busy, setBusy] = useState<ProviderId | "all" | null>(null);
+  const [bodyWeightKg, setBodyWeightKg] = useState(70);
+  const [maxHr, setMaxHr] = useState(190);
+  const [goal, setGoal] = useState<AthleteInput["goal"]>("endurance-performance");
+
+  const maxProviders = limit(tier, "maxConnectedProviders");
+  const historyDays = limit(tier, "historyDays");
+  const loadAnalytics = can(tier, "loadAnalytics");
+  const exportEnabled = can(tier, "dataExport");
+
+  // Rebuild the store from the currently-connected providers.
+  const sync = useCallback(
+    async (providers: Set<ProviderId>) => {
+      setBusy("all");
+      await store.current.clear();
+      const creds: ProviderCredential[] = [...providers].map((p) => ({ provider: p, accessToken: "demo" }));
+      const window = lastNDays(Math.min(historyDays, 120));
+      if (creds.length) await pipeline.current.ingestAll(creds, window);
+      setActivities(await store.current.query());
+      setBusy(null);
+    },
+    [historyDays],
+  );
+
+  // If a downgrade drops the provider cap below the connected count, trim.
+  useEffect(() => {
+    if (connected.size > maxProviders) {
+      const trimmed = new Set([...connected].slice(0, maxProviders));
+      setConnected(trimmed);
+      void sync(trimmed);
+    }
+  }, [maxProviders, connected, sync]);
+
+  const toggle = async (id: ProviderId) => {
+    const next = new Set(connected);
+    if (next.has(id)) next.delete(id);
+    else {
+      if (next.size >= maxProviders) return;
+      next.add(id);
+    }
+    setConnected(next);
+    setBusy(id);
+    await sync(next);
+  };
+
+  const profile = useMemo(() => ({ bodyWeightKg, maxHr }), [bodyWeightKg, maxHr]);
+  const report = useMemo(
+    () => (activities.length ? analyze(activities, profile, goal) : null),
+    [activities, profile, goal],
+  );
+
+  const maxWeekLoad = report ? Math.max(1, ...report.weeks.map((w) => w.load)) : 1;
+
+  const exportData = () => {
+    const blob = new Blob([toNdjson(activities)], { type: "application/x-ndjson" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "activities.ndjson";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <main className="dash">
+      {/* Connections */}
+      <section className="panel">
+        <div className="section-head">
+          <h2>Connections</h2>
+          <span className="pill">
+            {connected.size}/{maxProviders} connected
+          </span>
+        </div>
+        <p className="detail">
+          Link your training services. Data is normalized into one model and fed to the analysis and
+          fueling engine.
+        </p>
+        <div className="providers">
+          {ALL_PROVIDER_IDS.map((id) => {
+            const d = DESCRIPTORS[id];
+            const isOn = connected.has(id);
+            const atCap = !isOn && connected.size >= maxProviders;
+            const caps = Object.entries(d.capabilities)
+              .filter(([, v]) => v)
+              .map(([k]) => k);
+            return (
+              <div key={id} className={`provider-card${isOn ? " on" : ""}`}>
+                <div className="provider-top">
+                  <span className="provider-name">{d.displayName}</span>
+                  <button
+                    type="button"
+                    className={isOn ? "btn btn-ghost" : "btn btn-primary"}
+                    disabled={atCap || busy !== null}
+                    onClick={() => toggle(id)}
+                    title={atCap ? `Upgrade to connect more than ${maxProviders}` : undefined}
+                  >
+                    {busy === id ? "…" : isOn ? "Disconnect" : atCap ? "Locked" : "Connect"}
+                  </button>
+                </div>
+                <div className="tags">
+                  {caps.map((c) => (
+                    <span key={c} className="tag">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+                <p className="provider-note">{d.syncNote}</p>
+              </div>
+            );
+          })}
+        </div>
+        {connected.size >= maxProviders && maxProviders < ALL_PROVIDER_IDS.length && (
+          <p className="upgrade-note">
+            Connect all {ALL_PROVIDER_IDS.length} services with{" "}
+            <strong>{PLANS[requiredTierFor("autoSync") ?? "pro"].name}</strong>.
+          </p>
+        )}
+      </section>
+
+      {/* Profile controls */}
+      <section className="panel">
+        <div className="section-head">
+          <h2>Athlete profile</h2>
+          <span className="pill">history: {historyDays >= 365 ? `${Math.round(historyDays / 365)} yr` : `${historyDays} d`}</span>
+        </div>
+        <div className="profile-grid">
+          <div className="field">
+            <label htmlFor="bw">
+              Body weight <span className="value">{bodyWeightKg} kg</span>
+            </label>
+            <input id="bw" type="range" min={40} max={120} value={bodyWeightKg} onChange={(e) => setBodyWeightKg(Number(e.target.value))} />
+          </div>
+          <div className="field">
+            <label htmlFor="mhr">
+              Max HR <span className="value">{maxHr} bpm</span>
+            </label>
+            <input id="mhr" type="range" min={160} max={210} value={maxHr} onChange={(e) => setMaxHr(Number(e.target.value))} />
+          </div>
+          <div className="field">
+            <label htmlFor="dgoal">Goal</label>
+            <select id="dgoal" value={goal} onChange={(e) => setGoal(e.target.value as AthleteInput["goal"])}>
+              {GOALS.map((g) => (
+                <option key={g.value} value={g.value}>
+                  {g.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </section>
+
+      {/* Analysis */}
+      <section className="panel">
+        <div className="section-head">
+          <h2>Training analysis</h2>
+          {exportEnabled && activities.length > 0 && (
+            <button type="button" className="btn btn-ghost" onClick={exportData}>
+              Export NDJSON
+            </button>
+          )}
+        </div>
+
+        {!report ? (
+          <p className="detail">Connect a service to sync activities and see your analysis.</p>
+        ) : (
+          <>
+            <div className="targets" style={{ padding: 0, border: "none", background: "none" }}>
+              <Stat label="Activities" value={String(report.totalActivities)} />
+              <Stat label="Hours" value={`${report.totalHours}`} />
+              <Stat label="Distance" value={`${report.totalDistanceKm} km`} />
+              <Stat label="Weekly carbs" value={`${report.nutrition.weeklyDuringCarbG} g`} />
+            </div>
+
+            {loadAnalytics ? (
+              <>
+                <div className="acwr">
+                  <div className={`acwr-badge acwr-${report.acwr.status}`}>{STATUS_LABEL[report.acwr.status]}</div>
+                  <div className="acwr-body">
+                    <strong>Acute : chronic load {report.acwr.ratio || "—"}</strong>
+                    <span className="detail">
+                      7-day load {report.acwr.acuteLoad} vs. 28-day weekly avg {report.acwr.chronicWeeklyLoad}. The 0.8–1.3
+                      band is the sweet spot for adapting without overreaching.
+                    </span>
+                  </div>
+                </div>
+
+                <h4 className="chart-title">Weekly training load</h4>
+                <div className="bars">
+                  {report.weeks.slice(-10).map((w) => (
+                    <div className="bar-col" key={w.weekStart} title={`${w.weekStart}: load ${w.load}, ${w.durationHr} h`}>
+                      <div className="bar" style={{ height: `${Math.round((w.load / maxWeekLoad) * 100)}%` }} />
+                      <span className="bar-label">{w.weekStart.slice(5)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="nutrition-demand">
+                  This week: <strong>{report.nutrition.fueledSessions}</strong> of {report.nutrition.totalSessions} sessions
+                  need in-session fuel · avg <strong>{report.nutrition.avgCarbPerHourG} g/h</strong> · total{" "}
+                  <strong>{report.nutrition.weeklyDuringCarbG} g</strong> carbohydrate on the bike/run.
+                </div>
+              </>
+            ) : (
+              <div className="locked">
+                <p>
+                  <strong>Load analytics & weekly trends</strong> — acute:chronic workload, injury-risk flags and the full
+                  weekly load chart.
+                </p>
+                <p className="detail">
+                  Available on <strong>{PLANS[requiredTierFor("loadAnalytics") ?? "pro"].name}</strong> and up.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+    </main>
+  );
+}

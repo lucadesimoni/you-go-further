@@ -1,9 +1,9 @@
 # You Go Further
 
-Personalized **Swiss sports nutrition recommendations** for endurance athletes.
-Give it your **goal** and the **session** (activity, duration, intensity, body
-weight, conditions) and it returns a before / during / after fueling plan with
-matching Swiss products from **Sponser** and **Winforce**.
+A **Swiss endurance-nutrition platform**. Connect your training services
+(**Strava, Garmin, Polar, Suunto**), analyse your training load, and get
+personalized before / during / after fueling with Swiss products from **Sponser**
+and **Winforce** — tailored to your goal and each session.
 
 Scope: general endurance — running, trail running, cycling, triathlon, swimming.
 
@@ -11,11 +11,21 @@ Scope: general endurance — running, trail running, cycling, triathlon, swimmin
 
 | Piece | Path | What it is |
 | --- | --- | --- |
-| **Recommendation engine** | `src/engine/` | Framework-agnostic TypeScript. Turns an `AthleteInput` into a full `Recommendation`. No React/DOM dependency. |
+| **Recommendation engine** | `src/engine/` | Framework-agnostic TypeScript. Turns an `AthleteInput` into a full `Recommendation`. |
 | **Swiss product catalog** | `src/engine/catalog.ts` | Editable data: Sponser & Winforce products with macros, sodium, caffeine, phase tags. |
-| **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fueling formulas — the "why" behind the numbers. |
-| **Web app** | `src/App.tsx`, `src/main.tsx` | React + Vite UI over the engine, live-updating as you change inputs. |
-| **Tests** | `src/engine/recommend.test.ts` | Vitest suite for the engine (carb bands, goals, hydration, product selection). |
+| **Provider connectors** | `src/providers/` | Strava/Garmin/Polar/Suunto: real OAuth config + a common `ActivityProvider` interface, with a runnable sample-data implementation. |
+| **Data connectivity** | `src/data/` | Backend-neutral `ActivityStore`, an `IngestionPipeline` (fetch → normalize → dedup → store), and an `ExportSink` seam for a warehouse/lake. |
+| **Analysis** | `src/analysis/` | Training load, acute:chronic workload ratio, weekly trends, and weekly nutrition demand (feeds the engine). |
+| **Subscription (Abo)** | `src/subscription/` | Base / Pro / Elite tiers with data-driven feature gating. |
+| **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fueling formulas. |
+| **Architecture** | `docs/architecture.md` | How the modules fit together and where real backends plug in. |
+| **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: a fuel planner plus a connect-&-analyse dashboard. |
+| **Tests** | `src/**/*.test.ts` | 35 Vitest cases across engine, analysis, data pipeline, and subscription. |
+
+> **Status:** connectors and the data store are production-shaped interfaces with
+> a working **mock** implementation — OAuth URLs are real, but live token
+> exchange, API calls, and a real warehouse backend are the documented next step.
+> Sample activity data is labelled as such in the UI. See `docs/architecture.md`.
 
 ## Getting started
 
