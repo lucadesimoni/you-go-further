@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.github
+.devcontainer
+*.log
+tsconfig.tsbuildinfo
+docs
+.DS_Store

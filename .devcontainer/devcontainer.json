@@ -1,0 +1,25 @@
+{
+  "name": "you-go-further",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [5173, 8080],
+  "portsAttributes": {
+    "5173": { "label": "Vite dev server", "onAutoForward": "openBrowser" },
+    "8080": { "label": "Docker (nginx)" }
+  },
+  "postCreateCommand": "npm install",
+  "postAttachCommand": "echo 'Run: npm run dev  (app)  |  npm test  (tests)  |  npm run build'",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "vitest.explorer"],
+      "settings": {
+        "editor.formatOnSave": true
+      }
+    }
+  },
+  "remoteEnv": {
+    "VITE_APP_ENV": "codespace"
+  }
+}

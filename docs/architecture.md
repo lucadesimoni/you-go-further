@@ -9,8 +9,19 @@ touching the UI or the nutrition logic.
 providers ──► data (ingest + store + export) ──► analysis ──► engine (nutrition)
     ▲                                                              ▲
     └──────────────── model (shared Activity) ─────────────────────┘
-                         subscription (feature gating, cross-cutting)
+
+config ──► runtime (composition root) ──► wires providers + store + sinks
+auth (RBAC) + subscription (tiers)  ──► cross-cutting access control
 ```
+
+The **composition root** (`src/runtime.ts`) reads `src/config.ts` and constructs
+the concrete store/providers/sinks. Nothing else instantiates a backend directly,
+so switching from in-memory to a warehouse — or enabling a subset of providers —
+is a config change. Config itself resolves from `window.__APP_CONFIG__` (injected
+at deploy time) → env → defaults, which is what makes "build once, run anywhere"
+work. Access is enforced on two axes: **RBAC** (`src/auth`) decides what a *user*
+may do, **subscription** (`src/subscription`) decides what the *account* has paid
+for.
 
 ## Modules
 

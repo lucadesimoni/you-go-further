@@ -17,10 +17,28 @@ Scope: general endurance — running, trail running, cycling, triathlon, swimmin
 | **Data connectivity** | `src/data/` | Backend-neutral `ActivityStore`, an `IngestionPipeline` (fetch → normalize → dedup → store), and an `ExportSink` seam for a warehouse/lake. |
 | **Analysis** | `src/analysis/` | Training load, acute:chronic workload ratio, weekly trends, and weekly nutrition demand (feeds the engine). |
 | **Subscription (Abo)** | `src/subscription/` | Base / Pro / Elite tiers with data-driven feature gating. |
+| **RBAC** | `src/auth/` | Roles → permissions (athlete, coach, nutritionist, admin, owner), orthogonal to tiers. |
+| **Runtime config** | `src/config.ts`, `public/config.js` | Env + runtime-injected config so one build runs in any environment. |
+| **Composition root** | `src/runtime.ts` | Wires store/providers/sinks from config — swap a backend without code changes. |
 | **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fueling formulas. |
-| **Architecture** | `docs/architecture.md` | How the modules fit together and where real backends plug in. |
-| **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: a fuel planner plus a connect-&-analyse dashboard. |
-| **Tests** | `src/**/*.test.ts` | 35 Vitest cases across engine, analysis, data pipeline, and subscription. |
+| **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `user-flows.md`. |
+| **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |
+| **Tests** | `src/**/*.test.ts` | 46 Vitest cases across engine, analysis, data pipeline, subscription, RBAC, and runtime. |
+
+## Deploy anywhere
+
+Same build, any environment — configuration is read at runtime (`config.js` / env).
+
+```bash
+npm run dev                          # Codespaces / local dev (Vite, :5173)
+docker compose up --build            # container → nginx on :8080
+npm run build                        # static dist/ for Vercel/Netlify/S3/Pages
+```
+
+See **`docs/deployment.md`** for the full config matrix and backend-swap guide,
+and **`docs/user-flows.md`** for the per-role journeys (athlete, coach,
+nutritionist, org admin/owner). A `.devcontainer` is included for GitHub
+Codespaces and CI runs typecheck → test → build → Docker on every push.
 
 > **Status:** connectors and the data store are production-shaped interfaces with
 > a working **mock** implementation — OAuth URLs are real, but live token

@@ -1,0 +1,13 @@
+# Local / on-prem deployment. `docker compose up` builds and serves on :8080.
+services:
+  web:
+    build:
+      context: .
+      args:
+        BASE_PATH: /
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    # Reconfigure per environment without rebuilding by mounting a config.js:
+    # volumes:
+    #   - ./deploy/config.production.js:/usr/share/nginx/html/config.js:ro
