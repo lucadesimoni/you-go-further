@@ -385,6 +385,14 @@ input[type="range"] {
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -396,6 +404,8 @@ input[type="range"] {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .tab.active {
@@ -629,10 +639,17 @@ input[type="range"] {
 /* ---- Persona bar (role switcher) ---- */
 .personabar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin: 20px 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.personabar::-webkit-scrollbar {
+  display: none;
 }
 
 .persona-label {
@@ -642,6 +659,7 @@ input[type="range"] {
   letter-spacing: 0.08em;
   color: var(--muted);
   margin-right: 4px;
+  flex: 0 0 auto;
 }
 
 .persona {
@@ -657,6 +675,8 @@ input[type="range"] {
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .persona.active {
@@ -743,8 +763,14 @@ input[type="range"] {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 11px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   margin-top: 8px;
+  scrollbar-width: thin;
+}
+
+.table.matrix .tr {
+  min-width: 360px;
 }
 
 .tr {
@@ -1216,4 +1242,41 @@ code {
 .fb-planned {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---- Mobile polish ---- */
+@media (max-width: 560px) {
+  .page {
+    padding: 20px 14px 56px;
+  }
+  .hero {
+    padding: 12px 0 4px;
+  }
+  /* Comfortable tap targets on touch screens */
+  .seg {
+    padding: 12px 4px;
+  }
+  .tab {
+    padding: 11px 15px;
+  }
+  .btn {
+    padding: 10px 15px;
+  }
+  .step {
+    width: 34px;
+    height: 34px;
+  }
+  .tl-now {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tierbar {
+    margin: 16px 0;
+  }
+}
+
+/* Belt-and-suspenders: the page itself never scrolls sideways; wide children
+   (tables, tab strips) scroll inside their own containers. */
+.page {
+  overflow-x: clip;
 }
