@@ -1,33 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buildSchedule, recommend } from "../engine";
 import type { AthleteInput } from "../engine";
 import { estimateSweatRateMlPerH } from "../analysis";
 import { deriveAdaptation, toAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
+import type { Role } from "../auth";
+import { addFeedback, clearFeedback, feedbackPersistence, loadFeedback } from "../api/feedbackStore";
 import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_LABELS, SWEAT_LEVELS } from "../options";
 import { Stat } from "./Stat";
 import { SessionTimeline } from "./SessionTimeline";
 import { CartPanel } from "./CartPanel";
 import { FeedbackPanel } from "./FeedbackPanel";
-
-const FEEDBACK_KEY = "ygf.feedback.v1";
-
-function loadFeedback(): SessionFeedback[] {
-  try {
-    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(FEEDBACK_KEY) : null;
-    return raw ? (JSON.parse(raw) as SessionFeedback[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveFeedback(list: SessionFeedback[]): SessionFeedback[] {
-  try {
-    if (typeof localStorage !== "undefined") localStorage.setItem(FEEDBACK_KEY, JSON.stringify(list));
-  } catch {
-    /* ignore quota / disabled storage */
-  }
-  return list;
-}
 
 const DEFAULT_INPUT: AthleteInput = {
   goal: "endurance-performance",
@@ -41,7 +23,7 @@ const DEFAULT_INPUT: AthleteInput = {
 };
 
 /** Standalone session fuel planner (the Base-tier feature). */
-export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
+export function Planner({ initial, role = "athlete" }: { initial?: Partial<AthleteInput>; role?: Role }) {
   const [input, setInput] = useState<AthleteInput>({ ...DEFAULT_INPUT, ...initial });
 
   // Optional measured body signals — the "optimized for your body" layer.
@@ -50,9 +32,19 @@ export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
   const [sweatSodium, setSweatSodium] = useState(800);
   const [readiness, setReadiness] = useState(65);
 
-  // Feedback loop — learned adaptation from the athlete's own logged sessions.
-  const [feedbacks, setFeedbacks] = useState<SessionFeedback[]>(() => loadFeedback());
+  // Feedback loop — learned adaptation, persisted server-side (or localStorage).
+  const [feedbacks, setFeedbacks] = useState<SessionFeedback[]>([]);
   const insight = useMemo(() => deriveAdaptation(feedbacks), [feedbacks]);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadFeedback(role)
+      .then((list) => !cancelled && setFeedbacks(list))
+      .catch(() => !cancelled && setFeedbacks([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
 
   const effectiveInput = useMemo<AthleteInput>(
     () => ({
@@ -68,17 +60,14 @@ export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
   const schedule = useMemo(() => buildSchedule(effectiveInput), [effectiveInput]);
 
   const logFeedback = (gi: GiRating, energy: EnergyRating) => {
-    const entry: SessionFeedback = {
-      id: `${Date.now()}`,
-      date: new Date().toISOString(),
-      durationMin: input.durationMin,
-      plannedCarbPerHourG: rec.target.carbPerHourG,
+    void addFeedback(role, {
       gi,
       energy,
-    };
-    setFeedbacks((prev) => saveFeedback([entry, ...prev]));
+      durationMin: input.durationMin,
+      plannedCarbPerHourG: rec.target.carbPerHourG,
+    }).then(setFeedbacks);
   };
-  const resetFeedback = () => setFeedbacks(saveFeedback([]));
+  const resetFeedback = () => void clearFeedback(role).then(setFeedbacks);
 
   const set = <K extends keyof AthleteInput>(key: K, value: AthleteInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
@@ -305,7 +294,13 @@ export function Planner({ initial }: { initial?: Partial<AthleteInput> }) {
 
         <CartPanel rec={rec} />
 
-        <FeedbackPanel insight={insight} feedbacks={feedbacks} onLog={logFeedback} onReset={resetFeedback} />
+        <FeedbackPanel
+          insight={insight}
+          feedbacks={feedbacks}
+          onLog={logFeedback}
+          onReset={resetFeedback}
+          persistence={feedbackPersistence.mode()}
+        />
       </section>
     </main>
   );

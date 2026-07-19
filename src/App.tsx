@@ -98,7 +98,7 @@ export function App() {
         ))}
       </nav>
 
-      {tab === "plan" && <Planner />}
+      {tab === "plan" && <Planner role={principal.role} />}
       {tab === "connect" && <Dashboard tier={tier} />}
       {tab === "team" && <TeamView canExport={hasPermission(principal, "data:export")} />}
       {tab === "catalog" && <CatalogView canEdit={hasPermission(principal, "catalog:edit")} />}

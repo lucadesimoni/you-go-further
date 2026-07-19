@@ -48,9 +48,25 @@ export interface AdminOverview {
   };
 }
 
+import type { SessionFeedback } from "../feedback";
+
+interface FeedbackResponse {
+  feedback: SessionFeedback[];
+}
+
+export interface NewFeedback {
+  gi: SessionFeedback["gi"];
+  energy: SessionFeedback["energy"];
+  durationMin: number;
+  plannedCarbPerHourG: number;
+}
+
 export const api = {
   health: () => call<HealthResponse>("GET", "/api/health"),
   ingest: (provider: string, days = 28) => call("POST", "/api/ingest", { body: { provider, days } }),
   analysis: (bodyWeightKg = 70) => call("GET", `/api/analysis?bodyWeightKg=${bodyWeightKg}`),
   adminOverview: (role: Role) => call<AdminOverview>("GET", "/api/admin/overview", { role }),
+  feedbackList: (role: Role) => call<FeedbackResponse>("GET", "/api/feedback", { role }),
+  feedbackAdd: (role: Role, body: NewFeedback) => call<FeedbackResponse>("POST", "/api/feedback", { body, role }),
+  feedbackClear: (role: Role) => call<FeedbackResponse>("DELETE", "/api/feedback", { role }),
 };

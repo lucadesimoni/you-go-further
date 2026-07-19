@@ -79,6 +79,32 @@ describe("API router", () => {
     expect(allowed.data).toHaveProperty("deployment");
   });
 
+  it("persists feedback per principal and derives adaptation", async () => {
+    const add = await route(
+      req("POST", "/api/feedback", { body: { gi: "severe", energy: "steady", durationMin: 120, plannedCarbPerHourG: 90 } }),
+    );
+    expect(add.status).toBe(200);
+    expect((add.data as { feedback: unknown[] }).feedback).toHaveLength(1);
+
+    const list = await route(req("GET", "/api/feedback"));
+    expect((list.data as { feedback: unknown[] }).feedback).toHaveLength(1);
+    expect((list.data as { adaptation: { carbCeilingG?: number } }).adaptation.carbCeilingG).toBeDefined();
+  });
+
+  it("rejects malformed feedback", async () => {
+    expect((await route(req("POST", "/api/feedback", { body: { gi: "nope" } }))).status).toBe(400);
+  });
+
+  it("isolates feedback between users and supports clear", async () => {
+    await route(req("POST", "/api/feedback", { body: { gi: "mild", energy: "faded", durationMin: 90, plannedCarbPerHourG: 60 }, principal: athlete }));
+    const adminList = await route(req("GET", "/api/feedback", { principal: admin }));
+    expect((adminList.data as { feedback: unknown[] }).feedback).toHaveLength(0); // different user
+
+    await route(req("DELETE", "/api/feedback", { principal: athlete }));
+    const after = await route(req("GET", "/api/feedback", { principal: athlete }));
+    expect((after.data as { feedback: unknown[] }).feedback).toHaveLength(0);
+  });
+
   it("404s unknown routes", async () => {
     expect((await route(req("GET", "/api/nope"))).status).toBe(404);
   });

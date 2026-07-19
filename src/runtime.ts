@@ -11,11 +11,13 @@ import type { ActivityProvider } from "./providers/types";
 import { InMemoryActivityStore, IngestionPipeline } from "./data";
 import type { ActivityStore, ExportSink } from "./data";
 import { BufferSink } from "./data";
+import { InMemoryFeedbackStore, type FeedbackStore } from "./feedback";
 
 export interface Runtime {
   config: AppConfig;
   registry: ProviderRegistry;
   store: ActivityStore;
+  feedback: FeedbackStore;
   sinks: ExportSink[];
   pipeline: IngestionPipeline;
 }
@@ -49,5 +51,6 @@ export function createRuntime(config: AppConfig = getConfig()): Runtime {
   const store = createStore(config);
   const sinks: ExportSink[] = config.exportEnabled ? [new BufferSink()] : [];
   const pipeline = new IngestionPipeline(registry, store, sinks);
-  return { config, registry, store, sinks, pipeline };
+  const feedback = new InMemoryFeedbackStore();
+  return { config, registry, store, feedback, sinks, pipeline };
 }

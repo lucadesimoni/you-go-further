@@ -29,11 +29,13 @@ export function FeedbackPanel({
   feedbacks,
   onLog,
   onReset,
+  persistence,
 }: {
   insight: AdaptationInsight;
   feedbacks: SessionFeedback[];
   onLog: (gi: GiRating, energy: EnergyRating) => void;
   onReset: () => void;
+  persistence: "server" | "local";
 }) {
   const [gi, setGi] = useState<GiRating>("none");
   const [energy, setEnergy] = useState<EnergyRating>("steady");
@@ -49,11 +51,16 @@ export function FeedbackPanel({
     <div className="panel feedback">
       <div className="section-head">
         <h3 style={{ margin: 0, fontSize: 17 }}>Log &amp; learn</h3>
-        {feedbacks.length > 0 && (
-          <button type="button" className="btn btn-ghost" onClick={onReset}>
-            Clear history
-          </button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span className={`pill${persistence === "server" ? " pill-live" : ""}`}>
+            {persistence === "server" ? "● synced to account" : "saved on this device"}
+          </span>
+          {feedbacks.length > 0 && (
+            <button type="button" className="btn btn-ghost" onClick={onReset}>
+              Clear
+            </button>
+          )}
+        </div>
       </div>
       <p className="detail">
         After a session, tell us how it went. We learn your gut tolerance and energy needs and tune

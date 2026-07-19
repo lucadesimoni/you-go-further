@@ -1280,3 +1280,90 @@ code {
 .page {
   overflow-x: clip;
 }
+
+/* ---- Plans as cards on mobile (no sideways scroll) ---- */
+.plan-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.plan-card {
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 14px;
+  background: var(--panel-2);
+}
+
+.plan-card.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.plan-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.plan-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-card-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.plan-card-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.plan-card-feats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.plan-card-feats li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.plan-card-feats li:last-child {
+  border-bottom: none;
+}
+
+.plan-card-feats li span:last-child {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .plan-cards {
+    display: flex;
+  }
+  .table.matrix {
+    display: none;
+  }
+}

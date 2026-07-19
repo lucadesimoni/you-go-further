@@ -59,9 +59,10 @@ These are honest gaps between today's foundation and the purpose:
    the watch as a Garmin Connect IQ data field / notifications instead of on-screen.
 3. **A feedback loop that learns.** ✅ *Shipped.* Athletes log how a session went
    (GI distress, energy); `src/feedback` derives a carb **ceiling/bias** that tunes
-   future targets, with a live "what we learned" panel. This is the moat:
-   per-athlete optimization a device maker and a product brand don't build. Next:
-   move the store server-side and blend it with device outcomes.
+   future targets, with a live "what we learned" panel. Feedback is now
+   **persisted server-side per user** (`/api/feedback`, in-memory store swappable
+   for a DB) so it follows the athlete across devices, with localStorage fallback
+   when running client-side only. Next: blend logged outcomes with device signals.
 4. **Close to commerce.** ✅ *Shipped.* `src/commerce` turns a recommendation into a
    priced, shoppable **cart** (quantities derived from the plan × sessions), with a
    checkout stub. Next: wire real fulfilment (Shopify / brand stores) and affiliate

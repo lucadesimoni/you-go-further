@@ -10,7 +10,7 @@
 import { recommend, buildSchedule, computeTarget } from "../engine";
 import type { AthleteInput } from "../engine";
 import { buildCart } from "../commerce";
-import { deriveAdaptation, type SessionFeedback } from "../feedback";
+import { deriveAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
 import { analyze, derivePhysiology } from "../analysis";
 import { generateSampleWellness } from "../providers";
 import { lastNDays } from "../data";
@@ -48,8 +48,11 @@ function asAthleteInput(body: unknown): AthleteInput | null {
 }
 
 /** Build a router bound to a runtime (its in-memory store persists per process). */
+const GI_RATINGS: GiRating[] = ["none", "mild", "severe"];
+const ENERGY_RATINGS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
+
 export function createApiRouter(runtime: Runtime = createRuntime()) {
-  const { config, store, pipeline } = runtime;
+  const { config, store, pipeline, feedback } = runtime;
 
   return async function route(req: ApiRequest): Promise<ApiResponse> {
     const { method, path, query, body, principal } = req;
@@ -98,6 +101,33 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         case key === "POST /api/adaptation": {
           const b = (body ?? {}) as { feedback?: SessionFeedback[] };
           return ok(deriveAdaptation(Array.isArray(b.feedback) ? b.feedback : []));
+        }
+
+        case key === "GET /api/feedback": {
+          const list = await feedback.list(principal.id);
+          return ok({ feedback: list, adaptation: deriveAdaptation(list) });
+        }
+
+        case key === "POST /api/feedback": {
+          const b = (body ?? {}) as Partial<SessionFeedback>;
+          if (!b.gi || !GI_RATINGS.includes(b.gi) || !b.energy || !ENERGY_RATINGS.includes(b.energy)) {
+            return bad("Invalid feedback (gi/energy required)");
+          }
+          const entry: SessionFeedback = {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            date: new Date().toISOString(),
+            durationMin: typeof b.durationMin === "number" ? b.durationMin : 0,
+            plannedCarbPerHourG: typeof b.plannedCarbPerHourG === "number" ? b.plannedCarbPerHourG : 0,
+            gi: b.gi,
+            energy: b.energy,
+          };
+          const list = await feedback.add(principal.id, entry);
+          return ok({ feedback: list, adaptation: deriveAdaptation(list) });
+        }
+
+        case key === "DELETE /api/feedback": {
+          await feedback.clear(principal.id);
+          return ok({ feedback: [], adaptation: deriveAdaptation([]) });
         }
 
         case key === "POST /api/target": {

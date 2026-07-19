@@ -95,6 +95,31 @@ export function AdminView({ config, tier, orgId, role }: { config: AppConfig; ti
             ))}
           </div>
         </div>
+
+        {/* Mobile: one card per tier instead of a scrolling matrix */}
+        <div className="plan-cards">
+          {TIER_ORDER.map((t) => (
+            <div key={t} className={`plan-card${t === tier ? " active" : ""}`}>
+              <div className="plan-card-head">
+                <span className="plan-card-name">
+                  {PLANS[t].name}
+                  {t === tier && <span className="plan-card-badge">current</span>}
+                </span>
+                <span className="plan-card-price">
+                  {PLANS[t].priceChfPerMonth === 0 ? "Free" : `CHF ${PLANS[t].priceChfPerMonth}/mo`}
+                </span>
+              </div>
+              <ul className="plan-card-feats">
+                {FEATURE_ROWS.map((row) => (
+                  <li key={row.key}>
+                    <span>{row.label}</span>
+                    <span>{cell(PLANS[t].features[row.key])}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="panel">

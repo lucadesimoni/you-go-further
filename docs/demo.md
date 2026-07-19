@@ -24,6 +24,9 @@ POST /api/schedule       → timed in-session cue schedule
 POST /api/target         → fueling targets only
 POST /api/cart           → priced, shoppable cart from a recommendation × sessions
 POST /api/adaptation     → learned carb ceiling/bias from logged session feedback
+GET  /api/feedback       → this user's stored session feedback + derived adaptation
+POST /api/feedback       → persist a session outcome (per-user, survives reload)
+DELETE /api/feedback     → clear this user's feedback
 POST /api/ingest         → pull sample activities into the store (stateful)
 GET  /api/activities     → query the store
 GET  /api/analysis       → training load, ACWR, weekly buckets, nutrition demand

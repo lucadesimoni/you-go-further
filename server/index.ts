@@ -37,7 +37,7 @@ function principalFrom(headers: http.IncomingHttpHeaders): Principal {
 
 function cors(res: http.ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "content-type,x-role");
 }
 
