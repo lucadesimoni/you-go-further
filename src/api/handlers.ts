@@ -34,6 +34,9 @@ export interface ApiResponse {
   data: unknown;
 }
 
+const getEnv = (k: string): string | undefined =>
+  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.[k];
+
 const ok = (data: unknown): ApiResponse => ({ status: 200, data });
 const bad = (message: string): ApiResponse => ({ status: 400, data: { error: message } });
 const notFound = (): ApiResponse => ({ status: 404, data: { error: "Not found" } });
@@ -52,13 +55,85 @@ const GI_RATINGS: GiRating[] = ["none", "mild", "severe"];
 const ENERGY_RATINGS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
 
 export function createApiRouter(runtime: Runtime = createRuntime()) {
-  const { config, store, pipeline, feedback } = runtime;
+  const { config, store, pipeline, feedback, registry, connections } = runtime;
+
+  const isProvider = (v: string): v is ProviderId => (ALL_PROVIDER_IDS as string[]).includes(v);
 
   return async function route(req: ApiRequest): Promise<ApiResponse> {
     const { method, path, query, body, principal } = req;
     const key = `${method} ${path}`;
+    const segs = path.split("/").filter(Boolean); // ["api","oauth","strava","callback"]
 
     try {
+      // --- OAuth connect flow: /api/oauth/:provider/(authorize-url|dev-consent|callback) ---
+      if (segs[0] === "api" && segs[1] === "oauth" && method === "GET") {
+        const provider = segs[2];
+        const action = segs[3];
+        if (!provider || !isProvider(provider)) return bad("Unknown provider");
+        const prov = registry.get(provider);
+        const configured = Boolean(prov.exchangeToken); // real adapter present
+
+        if (action === "start") {
+          // Top-level navigation entry point: 302 the browser to the provider's
+          // consent screen (or the dev stub), which returns to the callback.
+          const returnTo = query.return_to ?? "";
+          const state = query.state ?? Math.random().toString(36).slice(2);
+          const hasCreds = Boolean(getEnv(`${provider.toUpperCase()}_CLIENT_ID`));
+          const redirect = hasCreds
+            ? prov.authorizeUrl(query.redirect_uri ?? `/api/oauth/${provider}/callback`, state)
+            : `/api/oauth/${provider}/dev-consent?return_to=${encodeURIComponent(returnTo)}&state=${state}`;
+          return { status: 302, data: { redirect } };
+        }
+
+        if (action === "authorize-url") {
+          const returnTo = query.return_to ?? "";
+          const state = query.state ?? Math.random().toString(36).slice(2);
+          // Dev (or no real adapter): route to a local consent stub so the flow
+          // completes without a registered app. Prod: the real provider URL.
+          const hasCreds = Boolean(getEnv(`${provider.toUpperCase()}_CLIENT_ID`));
+          const redirectUri = query.redirect_uri ?? `/api/oauth/${provider}/callback`;
+          const authorizeUrl = hasCreds
+            ? prov.authorizeUrl(redirectUri, state)
+            : `/api/oauth/${provider}/dev-consent?return_to=${encodeURIComponent(returnTo)}&state=${state}`;
+          return ok({ authorizeUrl, configured, live: hasCreds, redirectUri, state });
+        }
+
+        if (action === "dev-consent") {
+          // Stand-in for the provider's consent screen (dev only).
+          const returnTo = query.return_to ?? "";
+          return {
+            status: 302,
+            data: { redirect: `/api/oauth/${provider}/callback?code=dev-code&return_to=${encodeURIComponent(returnTo)}` },
+          };
+        }
+
+        if (action === "callback") {
+          const code = query.code ?? "";
+          if (!code) return bad("Missing authorization code");
+          const cred = prov.exchangeToken
+            ? await prov.exchangeToken(code, query.redirect_uri ?? "")
+            : { provider, accessToken: `dev-${provider}-token` };
+          await connections.save(principal.id, cred);
+          const activities = await prov.fetchActivities(cred, lastNDays(28));
+          const inserted = await store.upsert(activities);
+          if (query.return_to) {
+            const sep = query.return_to.includes("?") ? "&" : "?";
+            return { status: 302, data: { redirect: `${query.return_to}${sep}connected=${provider}` } };
+          }
+          return ok({ connected: true, provider, imported: activities.length, inserted });
+        }
+        return notFound();
+      }
+
+      // --- Connections: list / disconnect ---
+      if (segs[0] === "api" && segs[1] === "connections") {
+        if (method === "GET" && segs.length === 2) return ok({ connections: await connections.list(principal.id) });
+        if (method === "DELETE" && segs[2] && isProvider(segs[2])) {
+          await connections.remove(principal.id, segs[2]);
+          return ok({ connections: await connections.list(principal.id) });
+        }
+      }
+
       switch (true) {
         case key === "GET /api/health":
           return ok({

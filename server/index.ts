@@ -91,6 +91,12 @@ const server = http.createServer(async (req, res) => {
       body,
       principal: principalFrom(req.headers),
     });
+    // OAuth steps return a redirect intent — honor it as a real 302.
+    const redirect = (result.data as { redirect?: string } | undefined)?.redirect;
+    if (result.status === 302 && redirect) {
+      res.writeHead(302, { Location: redirect });
+      return res.end();
+    }
     res.writeHead(result.status, { "content-type": "application/json" });
     return res.end(JSON.stringify(result.data));
   }

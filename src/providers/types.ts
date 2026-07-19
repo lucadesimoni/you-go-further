@@ -54,6 +54,8 @@ export interface ActivityProvider {
   readonly descriptor: ProviderDescriptor;
   /** Build the consent URL the user is redirected to. */
   authorizeUrl(redirectUri: string, state: string): string;
+  /** Exchange an OAuth authorization code for a credential (real adapters). */
+  exchangeToken?(code: string, redirectUri: string): Promise<ProviderCredential>;
   /** Pull and normalize activities in the given window. */
   fetchActivities(credential: ProviderCredential, range: FetchRange): Promise<Activity[]>;
 }

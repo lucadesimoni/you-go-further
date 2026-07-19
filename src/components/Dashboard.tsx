@@ -7,6 +7,8 @@ import { analyze, derivePhysiology } from "../analysis";
 import { GOALS } from "../options";
 import { can, limit, PLANS, requiredTierFor, type Tier } from "../subscription";
 import type { AthleteInput } from "../engine";
+import { isApiConfigured } from "../api/client";
+import { getConfig } from "../config";
 import { Stat } from "./Stat";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -28,6 +30,11 @@ export function Dashboard({ tier }: { tier: Tier }) {
   const [bodyWeightKg, setBodyWeightKg] = useState(70);
   const [maxHr, setMaxHr] = useState(190);
   const [goal, setGoal] = useState<AthleteInput["goal"]>("endurance-performance");
+  const [banner, setBanner] = useState<string | null>(null);
+
+  // Real OAuth connect is available only when talking to the API server.
+  const apiBase = getConfig().apiBaseUrl;
+  const oauthMode = isApiConfigured();
 
   const maxProviders = limit(tier, "maxConnectedProviders");
   const historyDays = limit(tier, "historyDays");
@@ -57,7 +64,45 @@ export function Dashboard({ tier }: { tier: Tier }) {
     }
   }, [maxProviders, connected, sync]);
 
+  // In API mode, load real connections and handle the OAuth return (?connected=).
+  useEffect(() => {
+    if (!oauthMode) return;
+    const justConnected = new URLSearchParams(window.location.search).get("connected");
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/connections`, { headers: { "x-role": "athlete" } });
+        const data = (await res.json()) as { connections: { provider: ProviderId }[] };
+        const provs = new Set(data.connections.map((c) => c.provider));
+        setConnected(provs);
+        await sync(provs);
+        if (justConnected) {
+          setBanner(`${justConnected} connected via OAuth — your activities were imported to your account.`);
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+      } catch {
+        /* API unreachable — stay in mock mode */
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggle = async (id: ProviderId) => {
+    // Real OAuth: redirect to the provider's consent screen; disconnect via API.
+    if (oauthMode) {
+      if (connected.has(id)) {
+        setBusy(id);
+        await fetch(`${apiBase}/api/connections/${id}`, { method: "DELETE", headers: { "x-role": "athlete" } });
+        const next = new Set(connected);
+        next.delete(id);
+        setConnected(next);
+        await sync(next);
+        return;
+      }
+      if (connected.size >= maxProviders) return;
+      window.location.href = `${apiBase}/api/oauth/${id}/start?return_to=${encodeURIComponent(window.location.href)}`;
+      return;
+    }
+
     const next = new Set(connected);
     if (next.has(id)) next.delete(id);
     else {
@@ -100,13 +145,16 @@ export function Dashboard({ tier }: { tier: Tier }) {
       <section className="panel">
         <div className="section-head">
           <h2>Connections</h2>
-          <span className="pill">
+          <span className={`pill${oauthMode ? " pill-live" : ""}`}>
+            {oauthMode ? "OAuth · " : "demo · "}
             {connected.size}/{maxProviders} connected
           </span>
         </div>
+        {banner && <p className="upgrade-note" style={{ borderColor: "var(--post)", marginTop: 0 }}>{banner}</p>}
         <p className="detail">
-          Link your training services. Data is normalized into one model and fed to the analysis and
-          fueling engine.
+          {oauthMode
+            ? "Connect signs you in on the provider (Strava OAuth) and imports your activities to your account."
+            : "Link your training services. Data is normalized into one model and fed to the analysis and fueling engine."}
         </p>
         <div className="providers">
           {ALL_PROVIDER_IDS.map((id) => {
@@ -127,7 +175,7 @@ export function Dashboard({ tier }: { tier: Tier }) {
                     onClick={() => toggle(id)}
                     title={atCap ? `Upgrade to connect more than ${maxProviders}` : undefined}
                   >
-                    {busy === id ? "…" : isOn ? "Disconnect" : atCap ? "Locked" : "Connect"}
+                    {busy === id ? "…" : isOn ? "Disconnect" : atCap ? "Locked" : oauthMode ? "Connect →" : "Connect"}
                   </button>
                 </div>
                 <div className="tags">

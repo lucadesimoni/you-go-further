@@ -105,6 +105,48 @@ describe("API router", () => {
     expect((after.data as { feedback: unknown[] }).feedback).toHaveLength(0);
   });
 
+  it("returns a Strava authorize URL and completes the dev OAuth callback", async () => {
+    const auth = await route(req("GET", "/api/oauth/strava/authorize-url", { query: { return_to: "http://app" } }));
+    expect(auth.status).toBe(200);
+    const authData = auth.data as { authorizeUrl: string; configured: boolean };
+    expect(authData.configured).toBe(true); // StravaProvider has exchangeToken
+    expect(authData.authorizeUrl).toContain("/oauth/strava/"); // dev-consent (no creds)
+
+    // dev-consent redirects into the callback
+    const consent = await route(req("GET", "/api/oauth/strava/dev-consent", { query: { return_to: "http://app" } }));
+    expect(consent.status).toBe(302);
+    expect((consent.data as { redirect: string }).redirect).toContain("/api/oauth/strava/callback");
+
+    // callback exchanges the code, ingests activities, and stores the connection
+    const cb = await route(req("GET", "/api/oauth/strava/callback", { query: { code: "dev-code" } }));
+    expect(cb.status).toBe(200);
+    expect((cb.data as { connected: boolean; imported: number }).connected).toBe(true);
+    expect((cb.data as { imported: number }).imported).toBeGreaterThan(0);
+
+    const conns = await route(req("GET", "/api/connections"));
+    const list = (conns.data as { connections: { provider: string }[] }).connections;
+    expect(list.some((c) => c.provider === "strava")).toBe(true);
+  });
+
+  it("callback redirects back to the app when return_to is set", async () => {
+    const cb = await route(req("GET", "/api/oauth/strava/callback", { query: { code: "dev-code", return_to: "http://app" } }));
+    expect(cb.status).toBe(302);
+    expect((cb.data as { redirect: string }).redirect).toBe("http://app?connected=strava");
+  });
+
+  it("disconnects a provider", async () => {
+    await route(req("GET", "/api/oauth/garmin/callback", { query: { code: "dev-code" } }));
+    let list = ((await route(req("GET", "/api/connections"))).data as { connections: unknown[] }).connections;
+    expect(list.length).toBeGreaterThan(0);
+    await route(req("DELETE", "/api/connections/garmin"));
+    list = ((await route(req("GET", "/api/connections"))).data as { connections: unknown[] }).connections;
+    expect(list.length).toBe(0);
+  });
+
+  it("rejects an unknown provider in the OAuth flow", async () => {
+    expect((await route(req("GET", "/api/oauth/fitbit/authorize-url"))).status).toBe(400);
+  });
+
   it("404s unknown routes", async () => {
     expect((await route(req("GET", "/api/nope"))).status).toBe(404);
   });

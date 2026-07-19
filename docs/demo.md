@@ -27,6 +27,10 @@ POST /api/adaptation     → learned carb ceiling/bias from logged session feedb
 GET  /api/feedback       → this user's stored session feedback + derived adaptation
 POST /api/feedback       → persist a session outcome (per-user, survives reload)
 DELETE /api/feedback     → clear this user's feedback
+GET  /api/oauth/:p/start → 302 to the provider's consent screen (real) / dev stub
+GET  /api/oauth/:p/callback → token exchange → import → store connection → 302 back
+GET  /api/connections    → list the user's connected providers (no tokens)
+DELETE /api/connections/:p → disconnect a provider
 POST /api/ingest         → pull sample activities into the store (stateful)
 GET  /api/activities     → query the store
 GET  /api/analysis       → training load, ACWR, weekly buckets, nutrition demand

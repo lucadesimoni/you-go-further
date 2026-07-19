@@ -6,8 +6,8 @@
  */
 
 import { getConfig, type AppConfig } from "./config";
-import { DESCRIPTORS, BaseActivityProvider, ProviderRegistry } from "./providers";
-import type { ActivityProvider } from "./providers/types";
+import { DESCRIPTORS, BaseActivityProvider, ProviderRegistry, StravaProvider, InMemoryConnectionStore } from "./providers";
+import type { ActivityProvider, ConnectionStore } from "./providers";
 import { InMemoryActivityStore, IngestionPipeline } from "./data";
 import type { ActivityStore, ExportSink } from "./data";
 import { BufferSink } from "./data";
@@ -18,6 +18,7 @@ export interface Runtime {
   registry: ProviderRegistry;
   store: ActivityStore;
   feedback: FeedbackStore;
+  connections: ConnectionStore;
   sinks: ExportSink[];
   pipeline: IngestionPipeline;
 }
@@ -37,10 +38,10 @@ function createStore(config: AppConfig): ActivityStore {
   }
 }
 
-/** Register only the providers enabled by config. */
+/** Register only the providers enabled by config (real adapter for Strava). */
 function createRegistry(config: AppConfig): ProviderRegistry {
-  const providers: ActivityProvider[] = config.enabledProviders.map(
-    (id) => new BaseActivityProvider(DESCRIPTORS[id]),
+  const providers: ActivityProvider[] = config.enabledProviders.map((id) =>
+    id === "strava" ? new StravaProvider() : new BaseActivityProvider(DESCRIPTORS[id]),
   );
   return new ProviderRegistry(providers);
 }
@@ -52,5 +53,6 @@ export function createRuntime(config: AppConfig = getConfig()): Runtime {
   const sinks: ExportSink[] = config.exportEnabled ? [new BufferSink()] : [];
   const pipeline = new IngestionPipeline(registry, store, sinks);
   const feedback = new InMemoryFeedbackStore();
-  return { config, registry, store, feedback, sinks, pipeline };
+  const connections = new InMemoryConnectionStore();
+  return { config, registry, store, feedback, connections, sinks, pipeline };
 }

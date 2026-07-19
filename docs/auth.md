@@ -34,20 +34,35 @@ Swap the bodies of `signInWithProvider` / `signInWithEmail` in
 (JWT). RBAC (`src/auth/roles.ts`) and per-user data (feedback, connections)
 already key off the account.
 
-## 2. Provider connect (Strava, Garmin, Polar, Suunto)
+## 2. Provider connect (Strava implemented; others follow the pattern)
 
-Each provider has its **real** OAuth authorize/token endpoints and scopes
-(`src/providers/descriptors.ts`), and `authorizeUrl()` builds a genuine consent
-URL. What's still needed to make "Connect" real:
+The OAuth flow is built end-to-end on the server:
 
-1. `GET /api/oauth/:provider/start` → redirect the user to the provider's consent
-   page (they log in **with their own profile** there).
-2. `GET /api/oauth/:provider/callback` → exchange the `code` for tokens.
-3. Store per-user tokens (with refresh) and implement `fetchActivities` against
-   the provider REST API instead of the sample generator.
-4. Register the app on each provider portal and set `*_CLIENT_ID` / `*_SECRET`.
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/oauth/:provider/start` | 302 → the provider's consent screen (real) or a dev stub. |
+| `GET /api/oauth/:provider/dev-consent` | Local stand-in for the consent screen (dev only). |
+| `GET /api/oauth/:provider/callback` | Exchange the `code` for tokens, import activities, store the connection, 302 back to the app. |
+| `GET /api/oauth/:provider/authorize-url` | The real consent URL (for a custom client redirect). |
+| `GET /api/connections` · `DELETE /api/connections/:provider` | List / disconnect. |
 
-Until then, connecting ingests sample data attributed to the signed-in account.
+**Strava** has a real adapter (`src/providers/strava.ts`): real token exchange
+against Strava's token endpoint and a real `GET /athlete/activities` fetch mapped
+into our model (unit-tested with a mocked fetch). Per-user tokens live in a
+`ConnectionStore` (`src/providers/connections.ts`).
+
+To go **live** for Strava: register the app on Strava, set `STRAVA_CLIENT_ID` /
+`STRAVA_CLIENT_SECRET`, and "Connect" will send the user to Strava's real consent
+page and import their real rides/runs. Without credentials the same flow runs in
+**dev mode** (a mock consent + sample activities), so it's fully demoable.
+
+**Garmin / Polar / Suunto** currently use the dev flow; add a real adapter per
+provider (subclass `BaseActivityProvider` with `exchangeToken` + `fetchActivities`
+like `StravaProvider`) and register it in `src/runtime.ts`.
+
+In the UI, when the app is pointed at the API (`apiBaseUrl` set), the **Connect**
+button initiates this OAuth flow; the client-side-only build keeps the sample
+connect.
 
 > Note: **Apple Health / Google Fit / Health Connect** are device-local health
 > stores, not web OAuth — they're exposed through the **native mobile app**
