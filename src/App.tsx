@@ -4,8 +4,9 @@ import { Dashboard } from "./components/Dashboard";
 import { TeamView } from "./components/TeamView";
 import { CatalogView } from "./components/CatalogView";
 import { AdminView } from "./components/AdminView";
+import { LoginScreen } from "./components/LoginScreen";
 import { PLANS, TIER_ORDER, type Tier } from "./subscription";
-import { hasPermission, ROLE_LABELS, type Permission, type Principal } from "./auth";
+import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, type Permission } from "./auth";
 import { PERSONAS, isSolo } from "./personas";
 import { getConfig } from "./config";
 
@@ -25,25 +26,68 @@ const TABS: TabDef[] = [
 
 export function App() {
   const config = useMemo(() => getConfig(), []);
-  const [principal, setPrincipal] = useState<Principal>(PERSONAS[0]);
-  const [tier, setTier] = useState<Tier>(principal.tier);
+  const [account, setAccount] = useState<Account | null>(() => currentAccount());
+  const [tier, setTier] = useState<Tier>(account?.tier ?? "free");
   const [tab, setTab] = useState<string>("plan");
 
-  const visibleTabs = useMemo(() => TABS.filter((t) => hasPermission(principal, t.perm)), [principal]);
-  const canBilling = hasPermission(principal, "billing:manage") || isSolo(principal);
+  const visibleTabs = useMemo(() => (account ? TABS.filter((t) => hasPermission(account, t.perm)) : []), [account]);
+  const canBilling = account ? hasPermission(account, "billing:manage") || isSolo(account) : false;
 
-  // When the persona changes, adopt their plan and keep the active tab valid.
   useEffect(() => {
-    setTier(principal.tier);
-  }, [principal]);
+    if (account) setTier(account.tier);
+  }, [account]);
   useEffect(() => {
     if (!visibleTabs.some((t) => t.id === tab)) setTab(visibleTabs[0]?.id ?? "plan");
   }, [visibleTabs, tab]);
 
-  const selectPersona = (p: Principal) => setPrincipal(p);
+  // Gate: no session → login / register.
+  if (!account) {
+    return <LoginScreen onSignedIn={setAccount} allowDemo={config.allowRoleSwitching} />;
+  }
+
+  const initials = account.name
+    .split(" ")
+    .map((s) => s[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div className="page">
+      {/* Account bar */}
+      <div className="accountbar">
+        <div className="account-id">
+          <span className="avatar">{initials}</span>
+          <span className="account-meta">
+            <span className="account-name">{account.name}</span>
+            <span className="account-email">{account.email}</span>
+          </span>
+        </div>
+        <div className="account-actions">
+          {config.allowRoleSwitching && (
+            <select
+              className="demo-switch"
+              aria-label="Demo account"
+              value={account.authProvider === "demo" ? account.id : ""}
+              onChange={(e) => {
+                const p = PERSONAS.find((x) => x.id === e.target.value);
+                if (p) setAccount(signInAsDemo(p));
+              }}
+            >
+              <option value="">Demo account…</option>
+              {PERSONAS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <button type="button" className="btn btn-ghost" onClick={() => setAccount(signOut())}>
+            Sign out
+          </button>
+        </div>
+      </div>
+
       <header className="hero">
         <p className="kicker">You Go Further</p>
         <h1>Swiss endurance fueling, tuned to your training</h1>
@@ -52,23 +96,6 @@ export function App() {
           after fueling with Swiss products from Sponser and Winforce.
         </p>
       </header>
-
-      {config.allowRoleSwitching && (
-        <div className="personabar" role="group" aria-label="View as">
-          <span className="persona-label">View as</span>
-          {PERSONAS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={`persona${principal.id === p.id ? " active" : ""}`}
-              onClick={() => selectPersona(p)}
-            >
-              {p.name}
-              <span className="persona-role">{ROLE_LABELS[p.role]}</span>
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Subscription — interactive for account owners, read-only for org seats */}
       {canBilling ? (
@@ -98,11 +125,11 @@ export function App() {
         ))}
       </nav>
 
-      {tab === "plan" && <Planner role={principal.role} />}
+      {tab === "plan" && <Planner role={account.role} />}
       {tab === "connect" && <Dashboard tier={tier} />}
-      {tab === "team" && <TeamView canExport={hasPermission(principal, "data:export")} />}
-      {tab === "catalog" && <CatalogView canEdit={hasPermission(principal, "catalog:edit")} />}
-      {tab === "admin" && <AdminView config={config} tier={tier} orgId={principal.orgId} role={principal.role} />}
+      {tab === "team" && <TeamView canExport={hasPermission(account, "data:export")} />}
+      {tab === "catalog" && <CatalogView canEdit={hasPermission(account, "catalog:edit")} />}
+      {tab === "admin" && <AdminView config={config} tier={tier} orgId={account.orgId} role={account.role} />}
 
       <footer className="foot">
         {config.environment} · v{config.version} · General guidance for healthy adults — not medical
