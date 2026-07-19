@@ -5,5 +5,7 @@ export { generateSampleActivities } from "./sampleData";
 export { generateSampleWellness } from "./wellness";
 export { StravaProvider, mapStravaActivity, mapStravaSport } from "./strava";
 export { GarminProvider, mapGarminActivity, mapGarminSport } from "./garmin";
+export { PolarProvider, mapPolarActivity, mapPolarSport, parseIsoDuration } from "./polar";
+export { SuuntoProvider, mapSuuntoActivity, mapSuuntoSport } from "./suunto";
 export { InMemoryConnectionStore } from "./connections";
 export type { ConnectionStore, ProviderConnection } from "./connections";

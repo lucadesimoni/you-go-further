@@ -93,6 +93,22 @@ AUTH_SECRET=$(openssl rand -hex 32) docker compose --profile full up --build
 server accepts `Authorization: Bearer <token>` and falls back to the `x-role`
 demo header otherwise. Set `AUTH_SECRET` in production.
 
+## Big-data export (Databricks)
+
+Set `EXPORT_ENABLED=true` and the Databricks env vars to stream every ingested
+activity into a Databricks table via the SQL Statement Execution API
+(`src/data/databricksSink.ts`):
+
+| Env | Example |
+| --- | --- |
+| `DATABRICKS_HOST` | `https://dbc-xxxx.cloud.databricks.com` |
+| `DATABRICKS_TOKEN` | (PAT / service-principal token) |
+| `DATABRICKS_WAREHOUSE_ID` | `abc123…` |
+| `DATABRICKS_TABLE` | `main.default.activities` |
+
+Unconfigured, the sink no-ops (dev). The `ExportSink` interface also has
+NDJSON / columnar helpers for S3/Parquet, Kafka, or another lakehouse.
+
 ## Going further to production
 - **Providers:** Strava & Garmin have real adapters; add the others by
   subclassing `BaseActivityProvider` with `exchangeToken` + `fetchActivities`.

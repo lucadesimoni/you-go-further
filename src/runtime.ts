@@ -12,12 +12,14 @@ import {
   ProviderRegistry,
   StravaProvider,
   GarminProvider,
+  PolarProvider,
+  SuuntoProvider,
   InMemoryConnectionStore,
 } from "./providers";
 import type { ActivityProvider, ConnectionStore } from "./providers";
 import { InMemoryActivityStore, IngestionPipeline } from "./data";
 import type { ActivityStore, ExportSink } from "./data";
-import { BufferSink } from "./data";
+import { BufferSink, databricksSinkFromEnv } from "./data";
 import { InMemoryFeedbackStore, type FeedbackStore } from "./feedback";
 import { FileActivityStore, FileFeedbackStore, FileConnectionStore, createPgStores } from "./persistence";
 
@@ -74,9 +76,18 @@ function createStores(config: AppConfig): StoreSet {
 /** Register only the providers enabled by config (real adapters where available). */
 function createRegistry(config: AppConfig): ProviderRegistry {
   const providers: ActivityProvider[] = config.enabledProviders.map((id) => {
-    if (id === "strava") return new StravaProvider();
-    if (id === "garmin") return new GarminProvider();
-    return new BaseActivityProvider(DESCRIPTORS[id]);
+    switch (id) {
+      case "strava":
+        return new StravaProvider();
+      case "garmin":
+        return new GarminProvider();
+      case "polar":
+        return new PolarProvider();
+      case "suunto":
+        return new SuuntoProvider();
+      default:
+        return new BaseActivityProvider(DESCRIPTORS[id]);
+    }
   });
   return new ProviderRegistry(providers);
 }
@@ -86,6 +97,9 @@ export function createRuntime(config: AppConfig = getConfig()): Runtime {
   const registry = createRegistry(config);
   const { store, feedback, connections, init } = createStores(config);
   const sinks: ExportSink[] = config.exportEnabled ? [new BufferSink()] : [];
+  // Stream to Databricks when configured (big-data egress).
+  const dbx = databricksSinkFromEnv();
+  if (dbx) sinks.push(dbx);
   const pipeline = new IngestionPipeline(registry, store, sinks);
   return { config, registry, store, feedback, connections, sinks, pipeline, init };
 }

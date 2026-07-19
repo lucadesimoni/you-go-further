@@ -49,19 +49,25 @@ The OAuth flow is built end-to-end on the server:
 | `GET /api/oauth/:provider/authorize-url` | The real consent URL (for a custom client redirect). |
 | `GET /api/connections` · `DELETE /api/connections/:provider` | List / disconnect. |
 
-**Strava** has a real adapter (`src/providers/strava.ts`): real token exchange
-against Strava's token endpoint and a real `GET /athlete/activities` fetch mapped
-into our model (unit-tested with a mocked fetch). Per-user tokens live in a
-`ConnectionStore` (`src/providers/connections.ts`).
+**All four providers have real adapters** (`src/providers/{strava,garmin,polar,
+suunto}.ts`): OAuth token exchange + a real activities fetch mapped into our model
+(each unit-tested with a mocked fetch). Per-user tokens live in a `ConnectionStore`
+(`src/providers/connections.ts`).
 
-To go **live** for Strava: register the app on Strava, set `STRAVA_CLIENT_ID` /
-`STRAVA_CLIENT_SECRET`, and "Connect" will send the user to Strava's real consent
-page and import their real rides/runs. Without credentials the same flow runs in
-**dev mode** (a mock consent + sample activities), so it's fully demoable.
+To go **live**, register the app on each provider's portal and set the
+credentials:
 
-**Garmin / Polar / Suunto** currently use the dev flow; add a real adapter per
-provider (subclass `BaseActivityProvider` with `exchangeToken` + `fetchActivities`
-like `StravaProvider`) and register it in `src/runtime.ts`.
+| Provider | Env | Notes |
+| --- | --- | --- |
+| Strava | `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET` | OAuth2, `GET /athlete/activities`. |
+| Garmin | `GARMIN_CONSUMER_KEY` / `GARMIN_CONSUMER_SECRET` | Real API is OAuth 1.0a + push; adapter keeps the normalized shape. |
+| Polar | `POLAR_CLIENT_ID` / `POLAR_CLIENT_SECRET` | AccessLink `GET /v3/exercises`. |
+| Suunto | `SUUNTO_CLIENT_ID` / `SUUNTO_CLIENT_SECRET` (+ `SUUNTO_SUBSCRIPTION_KEY`) | Cloud API `GET /v2/workouts`. |
+
+With credentials set, "Connect" sends the user to that provider's real consent
+page and imports their real activities. Without credentials the same flow runs in
+**dev mode** (mock consent + sample data), so it's fully demoable. Validate the
+field mappings against live responses before shipping.
 
 In the UI, when the app is pointed at the API (`apiBaseUrl` set), the **Connect**
 button initiates this OAuth flow; the client-side-only build keeps the sample
