@@ -4,19 +4,19 @@
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
-  "forwardPorts": [5173, 8080],
+  "forwardPorts": [8787, 5173],
   "portsAttributes": {
-    "5173": { "label": "Vite dev server", "onAutoForward": "openBrowser" },
-    "8080": { "label": "Docker (nginx)" }
+    "8787": { "label": "You Go Further (app + API)", "onAutoForward": "openPreview", "visibility": "public" },
+    "5173": { "label": "Vite dev server", "onAutoForward": "silent" }
   },
   "postCreateCommand": "npm install",
-  "postAttachCommand": "echo 'Run: npm run dev  (app)  |  npm test  (tests)  |  npm run build'",
+  "postAttachCommand": {
+    "serve": "nohup npm run codespace > /tmp/ygf.log 2>&1 & echo 'You Go Further starting on port 8787 — see /tmp/ygf.log'"
+  },
   "customizations": {
     "vscode": {
       "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "vitest.explorer"],
-      "settings": {
-        "editor.formatOnSave": true
-      }
+      "settings": { "editor.formatOnSave": true }
     }
   },
   "remoteEnv": {

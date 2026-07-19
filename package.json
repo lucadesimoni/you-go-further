@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "server": "tsx server/index.ts",
+    "codespace": "npm run build && node scripts/codespace-config.mjs && STORE_BACKEND=file ALLOW_ROLE_SWITCHING=true PORT=8787 npm run server",
     "icons": "node scripts/gen-icons.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

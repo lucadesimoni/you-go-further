@@ -36,14 +36,23 @@ window.__APP_CONFIG__ = {
 
 ## Targets
 
-### GitHub Codespaces
-`.devcontainer/devcontainer.json` provisions Node 22 + Docker-in-Docker and runs
-`npm install` on create. Open the repo in a Codespace, then:
+### GitHub Codespaces (one-click live deploy)
+`.devcontainer/devcontainer.json` provisions Node 22, runs `npm install`, and on
+attach **auto-starts the app** (`npm run codespace`) — build + a file-backed API
+server on port **8787**, forwarded **public** with a preview. Because
+`npm run codespace` writes a `dist/config.js` that points `apiBaseUrl` at
+`window.location.origin`, the SPA runs in full API mode behind the Codespace's
+dynamic URL: login, OAuth connect, signed sessions, and durable (file) storage
+all work. Share the forwarded 8787 URL to give someone a live instance.
 
 ```bash
-npm run dev     # Vite dev server on 5173 (auto-forwarded)
-npm test        # watch/CI tests
+npm run codespace   # build + serve (app + API) on :8787  — runs automatically on attach
+npm run dev         # Vite dev server on 5173 (hot reload)
+npm test            # tests
 ```
+
+> Set provider credentials (`STRAVA_*`, …) and `AUTH_SECRET` as Codespace secrets
+> for real OAuth + non-dev sessions; without them the flow runs in dev mode.
 
 ### Docker (any host / on-prem)
 ```bash
