@@ -14,7 +14,10 @@ Resolution order (highest wins): `window.__APP_CONFIG__` (from `public/config.js
 | environment | `VITE_APP_ENV` | `development` | Label shown in UI/footer. |
 | basePath | `BASE_PATH` | `/` | Sub-path hosting (build-time for asset URLs). |
 | apiBaseUrl | `VITE_API_BASE_URL` | `""` | REST API base; empty = client-side mock mode. |
-| storeBackend | `VITE_STORE_BACKEND` | `memory` | `memory` or `warehouse`. |
+| storeBackend | `VITE_STORE_BACKEND` | `memory` | `memory` · `file` · `postgres` · `warehouse`. |
+| dataDir | `VITE_DATA_DIR` | `./.data` | Directory for the `file` backend. |
+| databaseUrl | `DATABASE_URL` | — | Postgres connection string (server-only; implies `postgres`). |
+| authSecret | `AUTH_SECRET` | dev secret | HMAC secret for signed sessions — **set in prod**. |
 | enabledProviders | `VITE_ENABLED_PROVIDERS` | all four | CSV of `strava,garmin,polar,suunto`. |
 | exportEnabled | `VITE_EXPORT_ENABLED` | `false` | Attach an export sink. |
 | defaultTier | `VITE_DEFAULT_TIER` | `free` | Starting subscription tier. |
@@ -68,10 +71,33 @@ npm run build && npm run preview   # http://localhost:4173
 `.github/workflows/ci.yml` runs typecheck → test → build (uploads `dist/`) and a
 Docker image build on every push/PR.
 
-## Going to a real backend
-- **Providers:** implement a real `ActivityProvider` per service (token exchange +
-  API calls) and register it in `src/runtime.ts`; set `*_CLIENT_ID/SECRET` env.
-- **Storage:** implement `ActivityStore` against your warehouse and return it from
-  `createStore()` when `storeBackend === "warehouse"`.
-- **Auth:** replace `src/personas.ts` with principals from your IdP (OIDC/SSO);
-  the RBAC in `src/auth` already enforces per-role permissions.
+## Persistence backends
+
+| Backend | Durable? | Use |
+| --- | --- | --- |
+| `memory` | no | dev / demo (default) |
+| `file` | yes (JSON files in `dataDir`) | single-node, small deployments, no DB |
+| `postgres` | yes | production — set `DATABASE_URL` |
+| `warehouse` | — | analytics offload (stub) |
+
+The composition root (`src/runtime.ts`) picks the store set; the API server runs
+`runtime.init()` (Postgres migrations) at startup. Full stack locally:
+
+```bash
+AUTH_SECRET=$(openssl rand -hex 32) docker compose --profile full up --build
+# → Postgres + API (migrations run automatically) + SPA on :8787
+```
+
+## Sessions
+`POST /api/auth/session` issues an HMAC-signed token (see `src/auth/jwt.ts`); the
+server accepts `Authorization: Bearer <token>` and falls back to the `x-role`
+demo header otherwise. Set `AUTH_SECRET` in production.
+
+## Going further to production
+- **Providers:** Strava & Garmin have real adapters; add the others by
+  subclassing `BaseActivityProvider` with `exchangeToken` + `fetchActivities`.
+  Set `*_CLIENT_ID/SECRET`.
+- **App sign-in:** back `POST /api/auth/session` with real Google/Apple/email
+  verification before signing the token (see `docs/auth.md`).
+- **Warehouse:** implement `ActivityStore` for your warehouse and return it from
+  `createStores()`.

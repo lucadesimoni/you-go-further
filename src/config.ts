@@ -14,7 +14,7 @@ import { ALL_PROVIDER_IDS } from "./providers";
 import type { ProviderId } from "./model";
 import type { Tier } from "./subscription";
 
-export type StoreBackend = "memory" | "warehouse";
+export type StoreBackend = "memory" | "file" | "postgres" | "warehouse";
 
 export interface AppConfig {
   /** Environment label, surfaced in the UI/health checks. */
@@ -26,6 +26,10 @@ export interface AppConfig {
   storeBackend: StoreBackend;
   /** Connection string for the warehouse backend (never a secret in the client). */
   warehouseUrl?: string;
+  /** Directory for the file store backend. */
+  dataDir: string;
+  /** Postgres connection string (server-only; never sent to the client). */
+  databaseUrl?: string;
   enabledProviders: ProviderId[];
   /** Stream normalized activities to an export sink. */
   exportEnabled: boolean;
@@ -41,6 +45,8 @@ interface RawConfig {
   apiBaseUrl?: string;
   storeBackend?: string;
   warehouseUrl?: string;
+  dataDir?: string;
+  databaseUrl?: string;
   enabledProviders?: string;
   exportEnabled?: string | boolean;
   defaultTier?: string;
@@ -53,6 +59,7 @@ const DEFAULTS: AppConfig = {
   basePath: "/",
   apiBaseUrl: "",
   storeBackend: "memory",
+  dataDir: "./.data",
   enabledProviders: [...ALL_PROVIDER_IDS],
   exportEnabled: false,
   defaultTier: "free",
@@ -71,6 +78,8 @@ function readEnv(): RawConfig {
     apiBaseUrl: get("API_BASE_URL"),
     storeBackend: get("STORE_BACKEND"),
     warehouseUrl: get("WAREHOUSE_URL"),
+    dataDir: get("DATA_DIR"),
+    databaseUrl: proc["DATABASE_URL"], // server-only secret; never via VITE_
     enabledProviders: get("ENABLED_PROVIDERS"),
     exportEnabled: get("EXPORT_ENABLED"),
     defaultTier: get("DEFAULT_TIER"),
@@ -100,13 +109,18 @@ function resolve(): AppConfig {
   // window overrides env overrides defaults.
   const raw: RawConfig = { ...readEnv(), ...pruneUndefined(readWindow()) };
   const tier = (["free", "pro", "elite"] as const).find((t) => t === raw.defaultTier) ?? DEFAULTS.defaultTier;
-  const store: StoreBackend = raw.storeBackend === "warehouse" ? "warehouse" : "memory";
+  const backends: StoreBackend[] = ["memory", "file", "postgres", "warehouse"];
+  // A DATABASE_URL implies Postgres unless explicitly overridden.
+  const requested = (raw.storeBackend as StoreBackend) || (raw.databaseUrl ? "postgres" : undefined);
+  const store: StoreBackend = requested && backends.includes(requested) ? requested : "memory";
   return {
     environment: raw.environment || DEFAULTS.environment,
     basePath: raw.basePath || DEFAULTS.basePath,
     apiBaseUrl: raw.apiBaseUrl || DEFAULTS.apiBaseUrl,
     storeBackend: store,
     warehouseUrl: raw.warehouseUrl,
+    dataDir: raw.dataDir || DEFAULTS.dataDir,
+    databaseUrl: raw.databaseUrl,
     enabledProviders: parseProviders(raw.enabledProviders) ?? DEFAULTS.enabledProviders,
     exportEnabled: asBool(raw.exportEnabled, DEFAULTS.exportEnabled),
     defaultTier: tier,

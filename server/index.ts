@@ -12,12 +12,16 @@ import http from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { createApiRouter } from "../src/api/handlers.ts";
+import { createRuntime } from "../src/runtime.ts";
+import { getConfig } from "../src/config.ts";
 import { PERSONAS } from "../src/personas.ts";
 import type { Principal } from "../src/auth/roles.ts";
+import { verifySession, DEV_AUTH_SECRET } from "../src/auth/jwt.ts";
 
 const PORT = Number(process.env.PORT) || 8787;
 const DIST = join(process.cwd(), "dist");
-const route = createApiRouter();
+const runtime = createRuntime();
+const route = createApiRouter(runtime);
 
 const MIME: Record<string, string> = {
   ".html": "text/html",
@@ -28,8 +32,18 @@ const MIME: Record<string, string> = {
   ".ico": "image/x-icon",
 };
 
-/** Resolve a Principal from the x-role header (a real deployment uses SSO/JWT). */
+/**
+ * Resolve a Principal, preferring a signed session (Authorization: Bearer …) and
+ * falling back to the `x-role` demo header when no valid token is present.
+ */
 function principalFrom(headers: http.IncomingHttpHeaders): Principal {
+  const auth = String(headers["authorization"] ?? "");
+  if (auth.startsWith("Bearer ")) {
+    const claims = verifySession(auth.slice(7), process.env.AUTH_SECRET ?? DEV_AUTH_SECRET);
+    if (claims) {
+      return { id: claims.sub, name: claims.name, role: claims.role, tier: claims.tier, orgId: claims.orgId };
+    }
+  }
   const role = String(headers["x-role"] ?? "athlete");
   const match = PERSONAS.find((p) => p.role === role);
   return match ?? { id: "anon", name: "Anonymous", role: "athlete", tier: "free" };
@@ -38,7 +52,7 @@ function principalFrom(headers: http.IncomingHttpHeaders): Principal {
 function cors(res: http.ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "content-type,x-role");
+  res.setHeader("Access-Control-Allow-Headers", "content-type,x-role,authorization");
 }
 
 async function serveStatic(pathname: string, res: http.ServerResponse): Promise<boolean> {
@@ -107,7 +121,20 @@ const server = http.createServer(async (req, res) => {
   res.end(JSON.stringify({ error: "Not found" }));
 });
 
-server.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`You Go Further API listening on http://localhost:${PORT}`);
-});
+async function start() {
+  if (runtime.init) {
+    try {
+      await runtime.init();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("Backend init failed:", e instanceof Error ? e.message : e);
+    }
+  }
+  server.listen(PORT, () => {
+    const cfg = getConfig();
+    // eslint-disable-next-line no-console
+    console.log(`You Go Further API on http://localhost:${PORT} · store=${cfg.storeBackend}`);
+  });
+}
+
+void start();

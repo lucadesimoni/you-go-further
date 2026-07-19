@@ -30,9 +30,12 @@ acquisition changes:
 | Email | Real sign-up + magic-link / password backed by the API and a user table. |
 
 Swap the bodies of `signInWithProvider` / `signInWithEmail` in
-`src/auth/session.ts` for the real flow and issue a server-signed session
-(JWT). RBAC (`src/auth/roles.ts`) and per-user data (feedback, connections)
-already key off the account.
+`src/auth/session.ts` for the real provider verification. The **server-signed
+session already exists**: `POST /api/auth/session` issues an HMAC token
+(`src/auth/jwt.ts`) and the API authenticates `Authorization: Bearer <token>`
+(falling back to the `x-role` demo header). RBAC (`src/auth/roles.ts`) and
+per-user data (feedback, connections) key off the resulting principal. Set
+`AUTH_SECRET` in production.
 
 ## 2. Provider connect (Strava implemented; others follow the pattern)
 

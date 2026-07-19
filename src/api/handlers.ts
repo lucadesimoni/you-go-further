@@ -17,8 +17,10 @@ import { lastNDays } from "../data";
 import type { ProviderId } from "../model";
 import { createRuntime, type Runtime } from "../runtime";
 import { PLANS, TIER_ORDER } from "../subscription";
-import { authorize, ForbiddenError, ROLE_LABELS, type Principal } from "../auth";
+import { authorize, ForbiddenError, ROLE_LABELS, type Principal, type Role } from "../auth";
+import { signSession, DEV_AUTH_SECRET } from "../auth/jwt";
 import { PERSONAS } from "../personas";
+import type { Tier } from "../subscription";
 import { DESCRIPTORS, ALL_PROVIDER_IDS } from "../providers";
 
 export interface ApiRequest {
@@ -143,6 +145,30 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
             storeBackend: config.storeBackend,
             activitiesStored: await store.count(),
           });
+
+        case key === "POST /api/auth/session": {
+          // Issue a signed session. In production the caller first verifies the
+          // Google/Apple token or email login; here we sign the provided identity.
+          const b = (body ?? {}) as Partial<Principal> & { email?: string };
+          if (!b.email || !b.name) return bad("name and email required");
+          const roles: Role[] = ["athlete", "coach", "nutritionist", "admin", "owner"];
+          const tiers: Tier[] = ["free", "pro", "elite"];
+          const token = signSession(
+            {
+              sub: b.id ?? `email:${b.email}`,
+              name: b.name,
+              email: b.email,
+              role: roles.includes(b.role as Role) ? (b.role as Role) : "athlete",
+              tier: tiers.includes(b.tier as Tier) ? (b.tier as Tier) : "free",
+              orgId: b.orgId,
+            },
+            getEnv("AUTH_SECRET") ?? DEV_AUTH_SECRET,
+          );
+          return ok({ token });
+        }
+
+        case key === "GET /api/me":
+          return ok({ principal });
 
         case key === "GET /api/providers":
           return ok(

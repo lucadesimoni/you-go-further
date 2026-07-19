@@ -1,5 +1,9 @@
-# Local / on-prem deployment. `docker compose up` builds and serves on :8080.
+# Local / on-prem deployment.
+#
+#   docker compose up --build web          → static SPA only (nginx, :8080)
+#   docker compose --profile full up --build → API + Postgres (:8787) + SPA
 services:
+  # Static SPA (client-side only; no server needed).
   web:
     build:
       context: .
@@ -8,6 +12,43 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
-    # Reconfigure per environment without rebuilding by mounting a config.js:
-    # volumes:
-    #   - ./deploy/config.production.js:/usr/share/nginx/html/config.js:ro
+
+  # Full stack: API server backed by Postgres, also serving the SPA.
+  api:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8787:8787"
+    environment:
+      PORT: "8787"
+      VITE_APP_ENV: production
+      STORE_BACKEND: postgres
+      DATABASE_URL: postgres://ygf:ygf@db:5432/ygf
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-in-prod}
+      ALLOW_ROLE_SWITCHING: "false"
+      # STRAVA_CLIENT_ID / STRAVA_CLIENT_SECRET, GARMIN_* … set for live OAuth
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    profiles: ["full"]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ygf
+      POSTGRES_PASSWORD: ygf
+      POSTGRES_DB: ygf
+    volumes:
+      - ygf-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ygf"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  ygf-db:

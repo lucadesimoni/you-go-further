@@ -1,0 +1,10 @@
+# API server image (Node) — serves the JSON API and the built SPA.
+FROM node:22-alpine
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+EXPOSE 8787
+# storeBackend/DATABASE_URL/AUTH_SECRET/provider creds come from the environment.
+CMD ["npm", "run", "server"]
