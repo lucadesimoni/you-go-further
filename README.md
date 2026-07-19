@@ -40,6 +40,12 @@ The app runs fully client-side by default; set `apiBaseUrl` to route through the
 HTTP API (`server/index.ts`, sharing `src/api/handlers.ts` with the browser). See
 **`docs/demo.md`** for the end-to-end backend + frontend + analysis + admin proof.
 
+It's also an **installable PWA** — manifest, brand icons (`npm run icons`), and a
+service worker (`public/sw.js`) give it an offline app shell and an "Add to Home
+Screen" install on mobile/desktop. API traffic always hits the network so data
+stays live. A native **Expo / React Native app** that shares this platform's API
+lives in **`mobile/`** (see `mobile/README.md`).
+
 See **`docs/deployment.md`** for the full config matrix and backend-swap guide,
 and **`docs/user-flows.md`** for the per-role journeys (athlete, coach,
 nutritionist, org admin/owner). A `.devcontainer` is included for GitHub

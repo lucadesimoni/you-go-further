@@ -11,3 +11,12 @@ createRoot(container).render(
     <App />
   </React.StrictMode>,
 );
+
+// Register the service worker for installability + offline app shell.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
+      /* SW registration is a progressive enhancement; ignore failures. */
+    });
+  });
+}
