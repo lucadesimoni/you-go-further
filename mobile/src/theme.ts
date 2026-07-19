@@ -1,0 +1,50 @@
+import { StyleSheet } from "react-native";
+
+/** Shared palette — matches the web app so the brand is consistent. */
+export const C = {
+  bg: "#0f1417",
+  panel: "#171d21",
+  panel2: "#1e262b",
+  border: "#2a343a",
+  text: "#e8eef1",
+  muted: "#9fb0b8",
+  accent: "#e4002b",
+  accentSoft: "rgba(228,0,43,0.16)",
+  pre: "#4aa3df",
+  during: "#e4a11b",
+  post: "#34c98a",
+};
+
+export const S = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: C.bg },
+  content: { padding: 16, gap: 14 },
+  panel: { backgroundColor: C.panel, borderColor: C.border, borderWidth: 1, borderRadius: 14, padding: 16, gap: 10 },
+  h1: { color: C.text, fontSize: 22, fontWeight: "800" },
+  h2: { color: C.text, fontSize: 17, fontWeight: "700" },
+  label: { color: C.muted, fontSize: 13, fontWeight: "600" },
+  text: { color: C.text, fontSize: 14 },
+  muted: { color: C.muted, fontSize: 13 },
+  row: { flexDirection: "row", alignItems: "center", gap: 8 },
+  segRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  seg: {
+    borderColor: C.border,
+    borderWidth: 1,
+    backgroundColor: C.panel2,
+    borderRadius: 9,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+  },
+  segActive: { borderColor: C.accent, backgroundColor: C.accentSoft },
+  segText: { color: C.muted, fontSize: 13, fontWeight: "600" },
+  segTextActive: { color: C.text },
+  btn: { backgroundColor: C.accent, borderRadius: 10, paddingVertical: 13, alignItems: "center" },
+  btnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  btnGhost: { backgroundColor: "transparent", borderColor: C.border, borderWidth: 1, borderRadius: 10, paddingVertical: 11, alignItems: "center" },
+  statValue: { color: C.text, fontSize: 22, fontWeight: "800" },
+  statLabel: { color: C.muted, fontSize: 12 },
+  stepper: { flexDirection: "row", alignItems: "center", gap: 12 },
+  stepBtn: { width: 38, height: 38, borderRadius: 9, borderColor: C.border, borderWidth: 1, backgroundColor: C.panel2, alignItems: "center", justifyContent: "center" },
+  stepBtnText: { color: C.text, fontSize: 20, fontWeight: "700" },
+  pill: { borderColor: C.border, borderWidth: 1, backgroundColor: C.panel2, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
+  pillText: { color: C.muted, fontSize: 12, fontWeight: "600" },
+});

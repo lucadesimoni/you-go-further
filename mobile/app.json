@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "You Go Further",
+    "slug": "you-go-further",
+    "scheme": "yougofurther",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0f1417",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "backgroundColor": "#0f1417",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ch.yougofurther.app"
+    },
+    "android": {
+      "package": "ch.yougofurther.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#e4002b"
+      }
+    },
+    "extra": {
+      "apiBaseUrl": "http://localhost:8787"
+    }
+  }
+}

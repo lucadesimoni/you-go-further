@@ -106,3 +106,9 @@ for (const [name, size] of [
   writeFileSync(join(OUT, name), png(size));
   console.log("wrote", name, size + "x" + size);
 }
+
+// Also emit the Expo mobile app icon (1024×1024).
+const MOBILE = join(dirname(fileURLToPath(import.meta.url)), "..", "mobile", "assets");
+mkdirSync(MOBILE, { recursive: true });
+writeFileSync(join(MOBILE, "icon.png"), png(1024));
+console.log("wrote mobile/assets/icon.png 1024x1024");
