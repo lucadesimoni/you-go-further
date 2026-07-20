@@ -179,7 +179,9 @@ export function App() {
       {tab === "progress" && gamification && <ProgressView profile={gamification} />}
       {tab === "connect" && <Dashboard tier={tier} />}
       {tab === "team" && <TeamView canExport={hasPermission(account, "data:export")} />}
-      {tab === "catalog" && <CatalogView canEdit={hasPermission(account, "catalog:edit")} />}
+      {tab === "catalog" && (
+        <CatalogView canEdit={hasPermission(account, "catalog:edit")} role={account.role} />
+      )}
       {tab === "admin" && <AdminView config={config} tier={tier} orgId={account.orgId} role={account.role} />}
 
       <footer className="foot">

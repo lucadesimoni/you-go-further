@@ -4,6 +4,7 @@ import type { ActivityQuery, ActivityStore } from "../data";
 import type { FeedbackStore, SessionFeedback } from "../feedback";
 import type { ConnectionStore, ProviderConnection } from "../providers";
 import type { ProviderCredential } from "../providers/types";
+import type { Product, ProductStore } from "../engine";
 
 /**
  * PostgreSQL-backed stores — the production persistence backend. Selected by
@@ -39,6 +40,12 @@ export async function migrate(pool: Pool): Promise<void> {
       cred         jsonb NOT NULL,
       connected_at timestamptz NOT NULL,
       PRIMARY KEY (user_id, provider)
+    );
+
+    CREATE TABLE IF NOT EXISTS products (
+      id          text PRIMARY KEY,
+      data        jsonb NOT NULL,
+      updated_at  timestamptz NOT NULL DEFAULT now()
     );
   `);
 }
@@ -146,11 +153,34 @@ export class PgConnectionStore implements ConnectionStore {
   }
 }
 
+export class PgProductStore implements ProductStore {
+  constructor(private readonly pool: Pool) {}
+
+  async list(): Promise<Product[]> {
+    const res = await this.pool.query<{ data: Product }>("SELECT data FROM products ORDER BY updated_at DESC");
+    return res.rows.map((r) => r.data);
+  }
+
+  async upsert(product: Product): Promise<Product> {
+    await this.pool.query(
+      `INSERT INTO products (id, data, updated_at) VALUES ($1, $2, now())
+       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
+      [product.id, product],
+    );
+    return product;
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.pool.query("DELETE FROM products WHERE id = $1", [id]);
+  }
+}
+
 export interface PgStores {
   pool: Pool;
   store: PgActivityStore;
   feedback: PgFeedbackStore;
   connections: PgConnectionStore;
+  products: PgProductStore;
   init(): Promise<void>;
 }
 
@@ -162,6 +192,7 @@ export function createPgStores(databaseUrl: string): PgStores {
     store: new PgActivityStore(pool),
     feedback: new PgFeedbackStore(pool),
     connections: new PgConnectionStore(pool),
+    products: new PgProductStore(pool),
     init: () => migrate(pool),
   };
 }

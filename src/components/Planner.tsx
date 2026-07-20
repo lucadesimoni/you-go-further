@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { buildSchedule, recommend } from "../engine";
-import type { AthleteInput } from "../engine";
+import { buildSchedule, recommend, CATALOG } from "../engine";
+import type { AthleteInput, Product } from "../engine";
 import { estimateSweatRateMlPerH } from "../analysis";
 import { deriveAdaptation, toAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
 import type { Role } from "../auth";
 import { addFeedback, clearFeedback, feedbackPersistence, loadFeedback } from "../api/feedbackStore";
+import { loadCatalog } from "../api/productLibrary";
 import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_LABELS, SWEAT_LEVELS } from "../options";
 import { Stat } from "./Stat";
 import { SessionTimeline } from "./SessionTimeline";
@@ -36,11 +37,19 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
   const [feedbacks, setFeedbacks] = useState<SessionFeedback[]>([]);
   const insight = useMemo(() => deriveAdaptation(feedbacks), [feedbacks]);
 
+  // Product library — built-in Swiss catalog plus any admin/house products.
+  const [catalog, setCatalog] = useState<Product[]>(CATALOG);
+
   useEffect(() => {
     let cancelled = false;
     loadFeedback(role)
       .then((list) => !cancelled && setFeedbacks(list))
       .catch(() => !cancelled && setFeedbacks([]));
+    loadCatalog()
+      .then((list) => !cancelled && list.length && setCatalog(list))
+      .catch(() => {
+        /* keep built-in catalog on failure */
+      });
     return () => {
       cancelled = true;
     };
@@ -56,7 +65,7 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
     }),
     [input, useSignals, sweatRate, sweatSodium, readiness, insight],
   );
-  const rec = useMemo(() => recommend(effectiveInput), [effectiveInput]);
+  const rec = useMemo(() => recommend(effectiveInput, catalog), [effectiveInput, catalog]);
   const schedule = useMemo(() => buildSchedule(effectiveInput), [effectiveInput]);
 
   const logFeedback = (gi: GiRating, energy: EnergyRating) => {
@@ -265,6 +274,7 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
                     <div className="product-top">
                       <span className="product-name">
                         <strong>{p.brand}</strong> {p.name}
+                        {p.custom && <span className="tag tag-house">house</span>}
                       </span>
                       <span className="serving">{p.servingLabel}</span>
                     </div>
@@ -276,9 +286,24 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
                       {p.multiTransportable && <span className="tag">2:1 carbs</span>}
                     </div>
                     {p.notes && <p className="product-note">{p.notes}</p>}
+                    {p.shopUrl && (
+                      <a className="product-shop" href={p.shopUrl} target="_blank" rel="noreferrer noopener">
+                        Buy at {p.brand} ↗
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
+            )}
+            {phase.rationale.length > 0 && (
+              <details className="why">
+                <summary>Why these — ingredients &amp; combo</summary>
+                <ul className="why-list">
+                  {phase.rationale.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </details>
             )}
           </div>
         ))}

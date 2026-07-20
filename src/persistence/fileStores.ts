@@ -4,6 +4,7 @@ import type { ActivityQuery, ActivityStore } from "../data";
 import type { FeedbackStore, SessionFeedback } from "../feedback";
 import type { ConnectionStore, ProviderConnection } from "../providers";
 import type { ProviderCredential } from "../providers/types";
+import type { Product, ProductStore } from "../engine";
 import { JsonFile } from "./jsonFile";
 
 /**
@@ -125,5 +126,30 @@ export class FileConnectionStore implements ConnectionStore {
       delete this.data[userId][provider];
       this.file.write(this.data);
     }
+  }
+}
+
+export class FileProductStore implements ProductStore {
+  private readonly file: JsonFile<Record<string, Product>>;
+  private data: Record<string, Product>;
+
+  constructor(dir: string) {
+    this.file = new JsonFile(join(dir, "products.json"), {});
+    this.data = this.file.read();
+  }
+
+  async list(): Promise<Product[]> {
+    return Object.values(this.data);
+  }
+
+  async upsert(product: Product): Promise<Product> {
+    this.data[product.id] = product;
+    this.file.write(this.data);
+    return product;
+  }
+
+  async remove(id: string): Promise<void> {
+    delete this.data[id];
+    this.file.write(this.data);
   }
 }

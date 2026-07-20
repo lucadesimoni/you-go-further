@@ -117,12 +117,26 @@ multi-transportable.
 - **Pre / Post:** filtered to phase-appropriate products (≥20 g carb pre;
   recovery or ≥10 g protein post).
 
-## 8. Product catalog (Swiss brands)
+Every phase also returns a `rationale[]` — a short, plain-language explanation of
+which ingredients and combo were chosen (e.g. "one drink covers carbs, fluid and
+sodium together, and it's a 2:1 glucose+fructose mix so you can absorb 60 g/h+").
+The planner shows this in a collapsible "Why these" so the insight is there
+without cluttering the plan.
 
-All products are from established Swiss sports-nutrition brands: **Sponser Sport
-Food** (Wollerau, ZH) and **Winforce** (Winterthur, ZH). Values are approximate
-per-serving figures for driving recommendations — always confirm against the
-current label before a race.
+## 8. Product catalog (Swiss brands + admin library)
+
+Built-in products are from established Swiss sports-nutrition brands — **Sponser
+Sport Food**, **Winforce**, **MOOV**, and **KAEX** — each with a shop link. Values
+are approximate per-serving figures; always confirm against the current label
+before a race.
+
+On top of the built-ins, an admin/nutritionist (permission `catalog:edit`) runs a
+**product library**: add own/house products, override a built-in's values, and set
+shop URLs. The library is **Swiss-only** by curation (`normalizeProduct` rejects
+non-Swiss) and merges over the built-in catalog by id (`mergeCatalog`), so custom
+products flow straight into recommendations. It is served at `/api/products` and
+persists via the same memory/file/Postgres backends as the rest of the platform;
+the pure client-side build falls back to `localStorage`.
 
 ## 9. Testing
 

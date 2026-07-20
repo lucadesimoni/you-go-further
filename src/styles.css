@@ -1768,3 +1768,92 @@ code {
 .achv.on .achv-xp {
   color: var(--post);
 }
+
+/* --- Product library: house badge, shop link, explainability, editor --- */
+.tag-house {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  margin-left: 6px;
+}
+
+.product-shop {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+.product-shop:hover {
+  text-decoration: underline;
+}
+
+/* "Why these" — explainability, collapsed by default to stay highly usable */
+.why {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.why > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  list-style: none;
+}
+.why > summary::-webkit-details-marker {
+  display: none;
+}
+.why > summary::before {
+  content: "▸ ";
+  color: var(--accent);
+}
+.why[open] > summary::before {
+  content: "▾ ";
+}
+.why-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.catalog-actions {
+  margin-bottom: 14px;
+}
+.catalog-row-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.btn-danger {
+  color: var(--accent);
+  border-color: rgba(228, 0, 43, 0.4);
+}
+
+/* Product editor modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px;
+  overflow-y: auto;
+  z-index: 50;
+}
+.modal {
+  width: 100%;
+  max-width: 560px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}

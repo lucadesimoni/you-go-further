@@ -61,7 +61,15 @@ Set the `*_CLIENT_ID` / `*_CLIENT_SECRET` env vars.
 - `analyze` — one-shot report.
 
 ### `src/engine/` — nutrition recommendations
-Unchanged core from the initial foundation; see `nutrition-spec.md`.
+Core recommendation engine; see `nutrition-spec.md`. `recommend(input, catalog)`
+takes an injectable product catalog so admin/house products flow into plans, and
+every `PhasePlan` carries a plain-language `rationale[]` explaining which
+ingredients and combo were picked and why (surfaced in a collapsible "Why these"
+in the planner). `productStore.ts` adds the **admin product library**:
+`normalizeProduct` (Swiss-only validation), `mergeCatalog` (custom overrides/adds
+on top of the built-in Swiss brands), and an `InMemoryProductStore`; File/Pg
+implementations live in `src/persistence`. The library is served at
+`/api/products` (browse merged catalog; `catalog:edit` gates add/override/delete).
 
 ### `src/subscription/` — Abo tiers & gating
 - `PLANS` (Base / Pro / Elite) as data; every gated capability is a field on

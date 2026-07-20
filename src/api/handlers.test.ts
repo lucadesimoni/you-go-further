@@ -195,4 +195,56 @@ describe("API router", () => {
   it("404s unknown routes", async () => {
     expect((await route(req("GET", "/api/nope"))).status).toBe(404);
   });
+
+  it("lists the merged product catalog", async () => {
+    const res = await route(req("GET", "/api/products"));
+    expect(res.status).toBe(200);
+    const data = res.data as { products: unknown[]; builtIn: number; custom: number };
+    expect(data.products.length).toBe(data.builtIn);
+    expect(data.custom).toBe(0);
+  });
+
+  it("lets an admin add a custom Swiss product and recommends it", async () => {
+    const body = { name: "Club Mix", brand: "Club", category: "drink-mix", phases: ["during"], carbsG: 80, sodiumMg: 400, multiTransportable: true };
+    const created = await route(req("POST", "/api/products", { body, principal: admin }));
+    expect(created.status).toBe(200);
+    const list = await route(req("GET", "/api/products"));
+    expect((list.data as { custom: number }).custom).toBe(1);
+
+    // A high-carb race session should now be able to draw on the custom product.
+    const rec = await route(
+      req("POST", "/api/recommend", {
+        body: { ...input, durationMin: 180, intensity: "race", goal: "race-preparation" },
+      }),
+    );
+    const during = (rec.data as { phases: { phase: string; products: { brand: string }[] }[] }).phases.find(
+      (p) => p.phase === "during",
+    );
+    expect(during?.products.some((p) => p.brand === "Club")).toBe(true);
+  });
+
+  it("forbids non-editors from adding products", async () => {
+    const res = await route(req("POST", "/api/products", { body: { name: "X", brand: "Y", phases: ["during"] }, principal: athlete }));
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects invalid products with a 400 and a message", async () => {
+    const res = await route(req("POST", "/api/products", { body: { brand: "Y", phases: ["during"] }, principal: admin }));
+    expect(res.status).toBe(400);
+    expect((res.data as { error: string }).error).toMatch(/name/i);
+  });
+
+  it("refuses to delete a built-in product", async () => {
+    const res = await route(req("DELETE", "/api/products/sponser-competition", { principal: admin }));
+    expect(res.status).toBe(400);
+  });
+
+  it("deletes a custom product", async () => {
+    const body = { id: "custom-club-mix", name: "Club Mix", brand: "Club", category: "drink-mix", phases: ["during"], carbsG: 40, sodiumMg: 200 };
+    await route(req("POST", "/api/products", { body, principal: admin }));
+    const del = await route(req("DELETE", "/api/products/custom-club-mix", { principal: admin }));
+    expect(del.status).toBe(200);
+    const list = await route(req("GET", "/api/products"));
+    expect((list.data as { custom: number }).custom).toBe(0);
+  });
 });

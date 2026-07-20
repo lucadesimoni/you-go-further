@@ -143,10 +143,18 @@ const needsExtraSodium = (input: AthleteInput) =>
   input.conditions === "hot" ||
   (input.physiology?.sweatSodiumMgPerL ?? 0) >= 900;
 
-/** Rank the during-session products for this athlete and return the top matches. */
-function duringProducts(input: AthleteInput, target: FuelingTarget): Product[] {
-  const pool = CATALOG.filter((p) => p.phases.includes("during"));
+/**
+ * Rank the during-session products and explain *why* each is in the combo.
+ * Returns the picks plus a short, plain-language rationale for usability.
+ */
+function duringProducts(
+  input: AthleteInput,
+  target: FuelingTarget,
+  catalog: Product[],
+): { products: Product[]; rationale: string[] } {
+  const pool = catalog.filter((p) => p.phases.includes("during"));
   const picks: Product[] = [];
+  const rationale: string[] = [];
 
   const carbSources = pool.filter((p) => p.carbsG > 5);
   const eligibleCarbs = target.requiresMultiTransportable
@@ -158,7 +166,14 @@ function duringProducts(input: AthleteInput, target: FuelingTarget): Product[] {
     const drink = eligibleCarbs
       .filter((p) => p.category === "drink-mix")
       .sort((a, b) => b.carbsG - a.carbsG)[0];
-    if (drink) picks.push(drink);
+    if (drink) {
+      picks.push(drink);
+      rationale.push(
+        `${drink.brand} ${drink.name} is your base — one drink covers carbs, fluid and sodium together${
+          target.requiresMultiTransportable ? ", and it's a 2:1 glucose+fructose mix so you can absorb 60 g/h+" : ""
+        }.`,
+      );
+    }
 
     // A gel for topping up carbs on the move; caffeinated only if the athlete
     // opted in. The plain fallback still respects the multi-transportable rule.
@@ -171,11 +186,21 @@ function duringProducts(input: AthleteInput, target: FuelingTarget): Product[] {
         : allGels.filter((p) => !p.caffeineMg);
       gel = plain[0];
     }
-    if (gel) picks.push(gel);
+    if (gel) {
+      picks.push(gel);
+      rationale.push(
+        gel.caffeineMg
+          ? `${gel.brand} ${gel.name} tops up carbs on the move and adds ${gel.caffeineMg} mg caffeine for the back half.`
+          : `${gel.brand} ${gel.name} tops up carbs between drink bottles without more fluid.`,
+      );
+    }
   } else {
     // No carbs needed — offer a calorie-free hydration option.
     const tab = pool.find((p) => p.category === "electrolyte" && p.carbsG <= 1);
-    if (tab) picks.push(tab);
+    if (tab) {
+      picks.push(tab);
+      rationale.push(`${tab.brand} ${tab.name} keeps you hydrated with electrolytes but no unnecessary sugar.`);
+    }
   }
 
   // Extra standalone sodium for heavy sweaters / heat.
@@ -183,17 +208,24 @@ function duringProducts(input: AthleteInput, target: FuelingTarget): Product[] {
     const salt = pool
       .filter((p) => p.category === "electrolyte")
       .sort((a, b) => b.sodiumMg - a.sodiumMg)[0];
-    if (salt && !picks.includes(salt)) picks.push(salt);
+    if (salt && !picks.includes(salt)) {
+      picks.push(salt);
+      rationale.push(
+        `${salt.brand} ${salt.name} adds standalone sodium — ${
+          input.conditions === "hot" ? "it's hot" : "you sweat heavily/salty"
+        }, so the drink alone isn't enough.`,
+      );
+    }
   }
 
-  return picks.slice(0, 3);
+  return { products: picks.slice(0, 3), rationale: rationale.slice(0, 3) };
 }
 
-function bestFor(phase: "pre" | "post", predicate: (p: Product) => boolean): Product[] {
-  return CATALOG.filter((p) => p.phases.includes(phase) && predicate(p));
+function bestFor(catalog: Product[], phase: "pre" | "post", predicate: (p: Product) => boolean): Product[] {
+  return catalog.filter((p) => p.phases.includes(phase) && predicate(p));
 }
 
-function buildPhases(input: AthleteInput, target: FuelingTarget): PhasePlan[] {
+function buildPhases(input: AthleteInput, target: FuelingTarget, catalog: Product[]): PhasePlan[] {
   const phases: PhasePlan[] = [];
   const pre = preCarbGrams(input);
   const { carbG: postCarb, proteinG: postProtein } = postGrams(input);
@@ -206,7 +238,8 @@ function buildPhases(input: AthleteInput, target: FuelingTarget): PhasePlan[] {
       input.goal === "weight-loss"
         ? "Keep it light and mostly carbohydrate; enough to work hard without a big pre-load."
         : "A carbohydrate-focused meal or snack, low in fat and fibre, timed 1–3 h out. Sip 5–7 ml/kg fluid beforehand.",
-    products: bestFor("pre", (p) => p.carbsG >= 20).slice(0, 2),
+    products: bestFor(catalog, "pre", (p) => p.carbsG >= 20).slice(0, 2),
+    rationale: ["Tops up liver glycogen before you start — these are low-fibre, easy-on-the-gut carbs."],
   });
 
   // --- During ---
@@ -219,6 +252,7 @@ function buildPhases(input: AthleteInput, target: FuelingTarget): PhasePlan[] {
         (target.requiresMultiTransportable
           ? " At this rate you need glucose+fructose (multiple transportable carbs) to absorb it."
           : "");
+  const during = duringProducts(input, target, catalog);
   phases.push({
     phase: "during",
     headline:
@@ -226,7 +260,8 @@ function buildPhases(input: AthleteInput, target: FuelingTarget): PhasePlan[] {
         ? `Hydration only · ~${target.fluidPerHourMl} ml/h`
         : `${target.carbPerHourG} g carb/h · ${target.fluidPerHourMl} ml/h`,
     detail: duringDetail,
-    products: duringProducts(input, target),
+    products: during.products,
+    rationale: during.rationale,
   });
 
   // --- Post ---
@@ -237,7 +272,12 @@ function buildPhases(input: AthleteInput, target: FuelingTarget): PhasePlan[] {
       input.goal === "weight-loss"
         ? "Prioritise protein for recovery and keep post-session carbs modest to preserve the energy deficit."
         : "Refuel within ~60 min, especially before another session inside 24 h. Combine carbohydrate and protein, and replace fluids at ~1.5× losses.",
-    products: bestFor("post", (p) => p.category === "recovery" || (p.proteinG ?? 0) >= 10).slice(0, 2),
+    products: bestFor(catalog, "post", (p) => p.category === "recovery" || (p.proteinG ?? 0) >= 10).slice(0, 2),
+    rationale: [
+      input.goal === "weight-loss"
+        ? "Protein-forward picks rebuild muscle while keeping the calorie deficit intact."
+        : "Carbohydrate refills glycogen and protein repairs muscle — the pair recovers you faster than either alone.",
+    ],
   });
 
   return phases;
@@ -315,12 +355,12 @@ function buildNotes(input: AthleteInput, target: FuelingTarget): string[] {
  * Produce a full, personalized endurance-nutrition recommendation from an
  * athlete's goal and planned session.
  */
-export function recommend(input: AthleteInput): Recommendation {
+export function recommend(input: AthleteInput, catalog: Product[] = CATALOG): Recommendation {
   const target = computeTarget(input);
   return {
     input,
     target,
-    phases: buildPhases(input, target),
+    phases: buildPhases(input, target, catalog),
     notes: buildNotes(input, target),
   };
 }

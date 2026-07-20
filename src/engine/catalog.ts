@@ -9,7 +9,15 @@ import type { Product } from "./types";
  * the current label and price before a race. This list is intentionally editable
  * data, not hard-coded logic.
  */
-export const CATALOG: Product[] = [
+/** Brand → shop URL, applied to every built-in product for the buy links. */
+const BRAND_SHOP: Record<string, string> = {
+  Sponser: "https://www.sponser.ch",
+  Winforce: "https://www.winforce.ch",
+  MOOV: "https://moov-sports.com",
+  KAEX: "https://kaex.ch",
+};
+
+const BUILT_IN: Product[] = [
   // ---- Sponser ----
   {
     id: "sponser-competition",
@@ -192,7 +200,81 @@ export const CATALOG: Product[] = [
     priceChf: 0.6,
     notes: "Calorie-free hydration — good for easy sessions and weight-loss goals.",
   },
+
+  // ---- MOOV (hydration & performance, Swiss) ----
+  {
+    id: "moov-hydration",
+    name: "Hydration",
+    brand: "MOOV",
+    category: "drink-mix",
+    phases: ["during"],
+    carbsG: 16,
+    sodiumMg: 500,
+    servingLabel: "one scoop in 500 ml",
+    priceChf: 1.6,
+    notes: "Swiss electrolyte-forward hydration for running, cycling and HYROX.",
+  },
+  {
+    id: "moov-salt",
+    name: "Electrolyte Caps",
+    brand: "MOOV",
+    category: "electrolyte",
+    phases: ["during"],
+    carbsG: 0,
+    sodiumMg: 350,
+    servingLabel: "1 capsule",
+    priceChf: 0.55,
+    notes: "Standalone sodium for heat and heavy sweaters.",
+  },
+
+  // ---- KAEX (plant-based endurance nutrition, Swiss) ----
+  {
+    id: "kaex-energy-drink",
+    name: "Energy Drink",
+    brand: "KAEX",
+    category: "drink-mix",
+    phases: ["during"],
+    carbsG: 30,
+    sodiumMg: 200,
+    multiTransportable: true,
+    servingLabel: "40 g in 500 ml",
+    priceChf: 2.4,
+    notes: "Plant-based multi-carb endurance drink.",
+  },
+  {
+    id: "kaex-energy-bar",
+    name: "Energy Bar",
+    brand: "KAEX",
+    category: "bar",
+    phases: ["pre", "during"],
+    carbsG: 25,
+    sodiumMg: 45,
+    proteinG: 5,
+    servingLabel: "45 g bar",
+    priceChf: 3.2,
+    notes: "Plant-based bar for pre-session or long steady efforts.",
+  },
+  {
+    id: "kaex-restart",
+    name: "Restart Recovery",
+    brand: "KAEX",
+    category: "recovery",
+    phases: ["post"],
+    carbsG: 28,
+    sodiumMg: 160,
+    proteinG: 15,
+    servingLabel: "50 g in 300 ml",
+    priceChf: 3.6,
+    notes: "Plant-based carbohydrate + protein recovery blend.",
+  },
 ];
+
+/** The built-in library — Swiss brands, each with a shop link. */
+export const CATALOG: Product[] = BUILT_IN.map((p) => ({
+  swiss: true,
+  shopUrl: BRAND_SHOP[p.brand],
+  ...p,
+}));
 
 /** Look up a product by id. */
 export function productById(id: string): Product | undefined {

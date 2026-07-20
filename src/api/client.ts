@@ -75,9 +75,16 @@ export interface AdminOverview {
 }
 
 import type { SessionFeedback } from "../feedback";
+import type { Product } from "../engine";
 
 interface FeedbackResponse {
   feedback: SessionFeedback[];
+}
+
+export interface ProductsResponse {
+  products: Product[];
+  builtIn?: number;
+  custom?: number;
 }
 
 export interface NewFeedback {
@@ -98,4 +105,9 @@ export const api = {
   googleSignIn: (idToken: string) => call<{ token: string }>("POST", "/api/auth/google", { body: { idToken } }),
   appleSignIn: (idToken: string, name?: string) =>
     call<{ token: string }>("POST", "/api/auth/apple", { body: { idToken, name } }),
+  productsList: () => call<ProductsResponse>("GET", "/api/products"),
+  productSave: (role: Role, product: Partial<Product>) =>
+    call<{ product: Product; products: Product[] }>("POST", "/api/products", { body: product, role }),
+  productDelete: (role: Role, id: string) =>
+    call<ProductsResponse>("DELETE", `/api/products/${encodeURIComponent(id)}`, { role }),
 };

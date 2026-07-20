@@ -21,7 +21,14 @@ import { InMemoryActivityStore, IngestionPipeline } from "./data";
 import type { ActivityStore, ExportSink } from "./data";
 import { BufferSink, databricksSinkFromEnv } from "./data";
 import { InMemoryFeedbackStore, type FeedbackStore } from "./feedback";
-import { FileActivityStore, FileFeedbackStore, FileConnectionStore, createPgStores } from "./persistence";
+import { InMemoryProductStore, type ProductStore } from "./engine";
+import {
+  FileActivityStore,
+  FileFeedbackStore,
+  FileConnectionStore,
+  FileProductStore,
+  createPgStores,
+} from "./persistence";
 
 export interface Runtime {
   config: AppConfig;
@@ -29,6 +36,7 @@ export interface Runtime {
   store: ActivityStore;
   feedback: FeedbackStore;
   connections: ConnectionStore;
+  products: ProductStore;
   sinks: ExportSink[];
   pipeline: IngestionPipeline;
   /** Run backend initialization (e.g. DB migrations). Called once at startup. */
@@ -39,6 +47,7 @@ interface StoreSet {
   store: ActivityStore;
   feedback: FeedbackStore;
   connections: ConnectionStore;
+  products: ProductStore;
   init?: () => Promise<void>;
 }
 
@@ -51,12 +60,19 @@ function createStores(config: AppConfig): StoreSet {
         store: new FileActivityStore(dir),
         feedback: new FileFeedbackStore(dir),
         connections: new FileConnectionStore(dir),
+        products: new FileProductStore(dir),
       };
     }
     case "postgres": {
       if (config.databaseUrl) {
         const pg = createPgStores(config.databaseUrl);
-        return { store: pg.store, feedback: pg.feedback, connections: pg.connections, init: pg.init };
+        return {
+          store: pg.store,
+          feedback: pg.feedback,
+          connections: pg.connections,
+          products: pg.products,
+          init: pg.init,
+        };
       }
       // No connection string yet — boot on in-memory rather than crash.
       break;
@@ -70,6 +86,7 @@ function createStores(config: AppConfig): StoreSet {
     store: new InMemoryActivityStore(),
     feedback: new InMemoryFeedbackStore(),
     connections: new InMemoryConnectionStore(),
+    products: new InMemoryProductStore(),
   };
 }
 
@@ -95,11 +112,11 @@ function createRegistry(config: AppConfig): ProviderRegistry {
 /** Assemble the runtime from a config (defaults to the resolved app config). */
 export function createRuntime(config: AppConfig = getConfig()): Runtime {
   const registry = createRegistry(config);
-  const { store, feedback, connections, init } = createStores(config);
+  const { store, feedback, connections, products, init } = createStores(config);
   const sinks: ExportSink[] = config.exportEnabled ? [new BufferSink()] : [];
   // Stream to Databricks when configured (big-data egress).
   const dbx = databricksSinkFromEnv();
   if (dbx) sinks.push(dbx);
   const pipeline = new IngestionPipeline(registry, store, sinks);
-  return { config, registry, store, feedback, connections, sinks, pipeline, init };
+  return { config, registry, store, feedback, connections, products, sinks, pipeline, init };
 }

@@ -108,6 +108,12 @@ export interface Product {
   servingLabel: string;
   /** Retail price per serving/unit in CHF (approximate). */
   priceChf?: number;
+  /** Where to buy — brand shop or product page (shop integration). */
+  shopUrl?: string;
+  /** Swiss-origin product. The platform curates a Swiss-only library. */
+  swiss?: boolean;
+  /** True for admin/user-added products (vs. the built-in catalog). */
+  custom?: boolean;
   notes?: string;
 }
 
@@ -134,6 +140,8 @@ export interface PhasePlan {
   detail: string;
   /** Recommended products for this phase, best match first. */
   products: Product[];
+  /** Plain-language reasons this phase's products/combo were selected. */
+  rationale: string[];
 }
 
 export interface Recommendation {

@@ -7,8 +7,8 @@
  * `http`; tests exercise it directly with no sockets.
  */
 
-import { recommend, buildSchedule, computeTarget } from "../engine";
-import type { AthleteInput } from "../engine";
+import { recommend, buildSchedule, computeTarget, normalizeProduct, mergeCatalog, CATALOG } from "../engine";
+import type { AthleteInput, Product } from "../engine";
 import { buildCart } from "../commerce";
 import { deriveAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
 import { analyze, derivePhysiology } from "../analysis";
@@ -58,7 +58,7 @@ const GI_RATINGS: GiRating[] = ["none", "mild", "severe"];
 const ENERGY_RATINGS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
 
 export function createApiRouter(runtime: Runtime = createRuntime()) {
-  const { config, store, pipeline, feedback, registry, connections } = runtime;
+  const { config, store, pipeline, feedback, registry, connections, products } = runtime;
 
   const isProvider = (v: string): v is ProviderId => (ALL_PROVIDER_IDS as string[]).includes(v);
 
@@ -126,6 +126,38 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           return ok({ connected: true, provider, imported: activities.length, inserted });
         }
         return notFound();
+      }
+
+      // --- Product library: browse (merged) + admin CRUD of custom products ---
+      if (segs[0] === "api" && segs[1] === "products") {
+        const custom = await products.list();
+        // GET /api/products → the full merged catalog every athlete browses,
+        // flagged so the UI can show built-in vs. house products.
+        if (method === "GET" && segs.length === 2) {
+          return ok({ products: mergeCatalog(custom), builtIn: CATALOG.length, custom: custom.length });
+        }
+        // POST /api/products → add or edit a custom product (admin / nutritionist).
+        if (method === "POST" && segs.length === 2) {
+          authorize(principal, "catalog:edit");
+          let product: Product;
+          try {
+            product = normalizeProduct((body ?? {}) as Partial<Product>);
+          } catch (e) {
+            return bad(e instanceof Error ? e.message : "Invalid product");
+          }
+          const saved = await products.upsert(product);
+          return ok({ product: saved, products: mergeCatalog(await products.list()) });
+        }
+        // DELETE /api/products/:id → remove a custom product (built-ins are fixed).
+        if (method === "DELETE" && segs.length === 3) {
+          authorize(principal, "catalog:edit");
+          const id = segs[2];
+          if (CATALOG.some((p) => p.id === id) && !custom.some((p) => p.id === id)) {
+            return bad("Built-in products can't be deleted — override its values instead.");
+          }
+          await products.remove(id);
+          return ok({ products: mergeCatalog(await products.list()) });
+        }
       }
 
       // --- Connections: list / disconnect ---
@@ -213,7 +245,7 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         case key === "POST /api/recommend": {
           const input = asAthleteInput(body);
           if (!input) return bad("Invalid AthleteInput");
-          return ok(recommend(input));
+          return ok(recommend(input, mergeCatalog(await products.list())));
         }
 
         case key === "POST /api/schedule": {
@@ -226,7 +258,8 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           const b = (body ?? {}) as { input?: unknown; sessions?: number };
           const input = asAthleteInput(b.input);
           if (!input) return bad("Invalid AthleteInput");
-          return ok(buildCart(recommend(input), Math.max(1, Math.min(20, b.sessions ?? 1))));
+          const catalog = mergeCatalog(await products.list());
+          return ok(buildCart(recommend(input, catalog), Math.max(1, Math.min(20, b.sessions ?? 1))));
         }
 
         case key === "POST /api/adaptation": {
