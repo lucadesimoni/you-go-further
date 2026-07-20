@@ -64,12 +64,43 @@ docker run -p 8080:80 you-go-further
 The image is a multi-stage build → nginx with SPA fallback, asset caching, a
 `no-store` rule for `config.js`, and a healthcheck.
 
-### Static hosts (Vercel / Netlify / S3+CloudFront / GitHub Pages)
+### Vercel (full stack — SPA + serverless API)
+The repo is deploy-ready for Vercel: `vercel.json` builds the Vite SPA to `dist/`
+and routes `/api/*` to a single serverless function (`api/[...path].ts`), which
+wraps the exact same `createApiRouter()` the Node server uses. Import the repo in
+Vercel (or `vercel --prod`) and it builds with no extra setup.
+
+Two things matter for a *functional* deploy:
+
+1. **Use Postgres, not the file backend.** Serverless invocations are ephemeral
+   and don't share a disk, so `file` won't persist. Add a database (Vercel
+   Postgres / Neon / Supabase) and set `DATABASE_URL` — config auto-selects the
+   `postgres` backend and migrations run lazily on the first request.
+2. **Set the secrets** as Vercel environment variables:
+
+   | Env | Why |
+   | --- | --- |
+   | `DATABASE_URL` | durable store (required) |
+   | `AUTH_SECRET` | signs sessions — `openssl rand -hex 32` |
+   | `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET` | real Strava OAuth (optional) |
+   | `GARMIN_CLIENT_ID` / `GARMIN_CLIENT_SECRET` | real Garmin OAuth (optional) |
+   | `VITE_GOOGLE_CLIENT_ID` / `VITE_APPLE_CLIENT_ID` | real Google/Apple sign-in (optional) |
+   | `VITE_ENABLED_PROVIDERS` | e.g. `strava,garmin,polar,suunto` |
+
+   The SPA calls the API on its own origin (relative `/api/*`), so no
+   `VITE_API_BASE_URL` is needed. Provider/social vars are optional — without them
+   the flows fall back to the built-in dev stubs.
+
+Databricks is **not** required for a first functional app — see below; it's an
+analytics egress you enable later with a single set of env vars.
+
+### Other static hosts (Netlify / S3+CloudFront / GitHub Pages)
 ```bash
 npm run build   # outputs dist/
 ```
-Serve `dist/` with an SPA fallback to `index.html`. For a sub-path (e.g. GitHub
-Pages project site), build with `BASE_PATH=/<repo>/`.
+Serve `dist/` with an SPA fallback to `index.html`. These host the SPA only; pair
+with the Node/Docker API (or Vercel functions) for the backend. For a sub-path
+(e.g. GitHub Pages project site), build with `BASE_PATH=/<repo>/`.
 
 ### Node preview
 ```bash
@@ -104,9 +135,12 @@ demo header otherwise. Set `AUTH_SECRET` in production.
 
 ## Big-data export (Databricks)
 
-Set `EXPORT_ENABLED=true` and the Databricks env vars to stream every ingested
-activity into a Databricks table via the SQL Statement Execution API
-(`src/data/databricksSink.ts`):
+This is an **analytics egress, not the app's database** — the app serves entirely
+from the transactional store (Postgres). It's an add-on you enable once data is
+flowing, not a launch dependency, so a first functional deploy can ship without
+it. When you're ready, set `EXPORT_ENABLED=true` and the Databricks env vars to
+stream every ingested activity into a Databricks table via the SQL Statement
+Execution API (`src/data/databricksSink.ts`):
 
 | Env | Example |
 | --- | --- |
