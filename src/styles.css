@@ -1611,3 +1611,160 @@ code {
     display: none;
   }
 }
+
+/* ---- Gamification: level chip (account bar) ---- */
+.level-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px 4px 4px;
+  cursor: pointer;
+}
+
+.level-chip:hover {
+  border-color: var(--accent);
+}
+
+.level-chip-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--during), var(--accent));
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.level-chip-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.level-chip-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.level-chip-streak {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .level-chip-meta {
+    display: none;
+  }
+  .level-chip {
+    padding: 4px;
+  }
+}
+
+/* ---- Gamification: progress screen ---- */
+.level-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.level-badge-lg {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--during), var(--accent));
+  color: #fff;
+  font-size: 30px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 4px rgba(228, 0, 43, 0.12);
+}
+
+.level-hero-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.level-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.xp-track {
+  height: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--during), var(--accent));
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.achievements {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.achv {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-2);
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
+.achv.on {
+  opacity: 1;
+  filter: none;
+  border-color: var(--post);
+}
+
+.achv-emoji {
+  font-size: 26px;
+}
+
+.achv-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.achv-desc {
+  font-size: 12px;
+  color: var(--muted);
+  flex: 1;
+}
+
+.achv-xp {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--during);
+}
+
+.achv.on .achv-xp {
+  color: var(--post);
+}
