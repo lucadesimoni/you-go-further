@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createApiRouter, type ApiRequest } from "./handlers";
 import { createRuntime } from "../runtime";
 import { getConfig } from "../config";
@@ -145,6 +145,51 @@ describe("API router", () => {
 
   it("rejects an unknown provider in the OAuth flow", async () => {
     expect((await route(req("GET", "/api/oauth/fitbit/authorize-url"))).status).toBe(400);
+  });
+
+  it("google sign-in is 400 when not configured, 400 without an idToken", async () => {
+    const notConfigured = await route(req("POST", "/api/auth/google", { body: { idToken: "x" } }));
+    expect(notConfigured.status).toBe(400);
+    expect((notConfigured.data as { error: string }).error).toMatch(/not configured/i);
+
+    vi.stubEnv("GOOGLE_CLIENT_ID", "client-123");
+    const missing = await route(req("POST", "/api/auth/google", { body: {} }));
+    expect(missing.status).toBe(400); // configured, but no idToken (no network)
+    vi.unstubAllEnvs();
+  });
+
+  it("verifies a real-shape Google ID token and issues a session", async () => {
+    const { generateKeyPairSync, sign } = await import("node:crypto");
+    const { publicKey, privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+    const jwk = publicKey.export({ format: "jwk" }) as { n: string; e: string };
+    const jwks = { keys: [{ kty: "RSA", kid: "k1", alg: "RS256", n: jwk.n, e: jwk.e }] };
+    const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64url");
+    const claims = {
+      iss: "https://accounts.google.com",
+      aud: "client-xyz",
+      sub: "g-1",
+      email: "runner@gmail.com",
+      name: "Runner",
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    };
+    const head = b64({ alg: "RS256", kid: "k1", typ: "JWT" });
+    const pay = b64(claims);
+    const sig = sign("RSA-SHA256", Buffer.from(`${head}.${pay}`), privateKey).toString("base64url");
+    const idToken = `${head}.${pay}.${sig}`;
+
+    vi.stubEnv("GOOGLE_CLIENT_ID", "client-xyz");
+    vi.stubGlobal("fetch", async () => new Response(JSON.stringify(jwks), { status: 200 }));
+    const res = await route(req("POST", "/api/auth/google", { body: { idToken } }));
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+
+    expect(res.status).toBe(200);
+    const token = (res.data as { token: string }).token;
+    expect(token).toBeTruthy();
+    // The issued session decodes to the verified identity.
+    const payload = JSON.parse(Buffer.from(token.split(".")[0], "base64url").toString()) as { sub: string; email: string };
+    expect(payload.sub).toBe("google:g-1");
+    expect(payload.email).toBe("runner@gmail.com");
   });
 
   it("404s unknown routes", async () => {

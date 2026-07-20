@@ -19,6 +19,7 @@ import { createRuntime, type Runtime } from "../runtime";
 import { PLANS, TIER_ORDER } from "../subscription";
 import { authorize, ForbiddenError, ROLE_LABELS, type Principal, type Role } from "../auth";
 import { signSession, DEV_AUTH_SECRET } from "../auth/jwt";
+import { verifyGoogleIdToken, verifyAppleIdToken } from "../auth/oidcVerify";
 import { PERSONAS } from "../personas";
 import type { Tier } from "../subscription";
 import { DESCRIPTORS, ALL_PROVIDER_IDS } from "../providers";
@@ -165,6 +166,35 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
             getEnv("AUTH_SECRET") ?? DEV_AUTH_SECRET,
           );
           return ok({ token });
+        }
+
+        case key === "POST /api/auth/google":
+        case key === "POST /api/auth/apple": {
+          const provider = key.endsWith("google") ? "google" : "apple";
+          const clientId =
+            getEnv(`${provider.toUpperCase()}_CLIENT_ID`) ?? getEnv(`VITE_${provider.toUpperCase()}_CLIENT_ID`);
+          if (!clientId) return bad(`${provider} sign-in not configured (set ${provider.toUpperCase()}_CLIENT_ID)`);
+          const b = (body ?? {}) as { idToken?: string; name?: string };
+          if (!b.idToken) return bad("idToken required");
+          try {
+            const claims =
+              provider === "google"
+                ? await verifyGoogleIdToken(b.idToken, clientId)
+                : await verifyAppleIdToken(b.idToken, clientId);
+            const token = signSession(
+              {
+                sub: `${provider}:${claims.sub}`,
+                name: claims.name ?? b.name ?? claims.email ?? "Athlete",
+                email: claims.email ?? "",
+                role: "athlete",
+                tier: "free",
+              },
+              getEnv("AUTH_SECRET") ?? DEV_AUTH_SECRET,
+            );
+            return ok({ token });
+          } catch {
+            return { status: 401, data: { error: `Invalid ${provider} token` } };
+          }
         }
 
         case key === "GET /api/me":

@@ -1,6 +1,16 @@
 import { useState } from "react";
-import { signInAsDemo, signInWithEmail, signInWithProvider, type Account } from "../auth";
-import { ROLE_LABELS } from "../auth";
+import {
+  appleConfigured,
+  googleConfigured,
+  ROLE_LABELS,
+  saveAccount,
+  signInAsDemo,
+  signInWithAppleReal,
+  signInWithEmail,
+  signInWithGoogleReal,
+  signInWithProvider,
+  type Account,
+} from "../auth";
 import { PERSONAS } from "../personas";
 
 /** Sign-in / register gate. Choose Apple, Google, or email — or a demo account. */
@@ -9,11 +19,39 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"google" | "apple" | null>(null);
 
   const submitEmail = () => {
     const a = signInWithEmail(email, name);
     if (!a) return setError("Please enter a valid email address.");
     onSignedIn(a);
+  };
+
+  // Use the provider's real sign-in when a client id is configured; otherwise a
+  // simulated identity so the demo works without credentials.
+  const signInGoogle = async () => {
+    if (!googleConfigured()) return onSignedIn(signInWithProvider("google"));
+    setBusy("google");
+    try {
+      onSignedIn(saveAccount(await signInWithGoogleReal()));
+    } catch {
+      setError("Google sign-in failed. Using a demo account instead.");
+      onSignedIn(signInWithProvider("google"));
+    } finally {
+      setBusy(null);
+    }
+  };
+  const signInApple = async () => {
+    if (!appleConfigured()) return onSignedIn(signInWithProvider("apple"));
+    setBusy("apple");
+    try {
+      onSignedIn(saveAccount(await signInWithAppleReal()));
+    } catch {
+      setError("Apple sign-in failed. Using a demo account instead.");
+      onSignedIn(signInWithProvider("apple"));
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
@@ -25,11 +63,11 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
 
         {mode === "choose" ? (
           <div className="auth-actions">
-            <button type="button" className="auth-btn auth-apple" onClick={() => onSignedIn(signInWithProvider("apple"))}>
-              <span className="auth-glyph"></span> Continue with Apple
+            <button type="button" className="auth-btn auth-apple" onClick={signInApple} disabled={busy !== null}>
+              <span className="auth-glyph"></span> {busy === "apple" ? "Signing in…" : "Continue with Apple"}
             </button>
-            <button type="button" className="auth-btn auth-google" onClick={() => onSignedIn(signInWithProvider("google"))}>
-              <span className="auth-glyph">G</span> Continue with Google
+            <button type="button" className="auth-btn auth-google" onClick={signInGoogle} disabled={busy !== null}>
+              <span className="auth-glyph">G</span> {busy === "google" ? "Signing in…" : "Continue with Google"}
             </button>
             <button type="button" className="auth-btn auth-email-btn" onClick={() => setMode("email")}>
               <span className="auth-glyph">✉</span> Continue with email
@@ -67,8 +105,10 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
         )}
 
         <p className="auth-legal">
-          By continuing you agree to our terms. This is a demo — social sign-in is simulated; wire real
-          Google / Apple / email auth for production.
+          By continuing you agree to our terms.{" "}
+          {googleConfigured() || appleConfigured()
+            ? "Sign-in is verified server-side against the provider."
+            : "Social sign-in is simulated in this demo; set the provider client ids to enable real Google / Apple auth."}
         </p>
 
         {allowDemo && mode === "choose" && (

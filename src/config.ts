@@ -36,6 +36,9 @@ export interface AppConfig {
   defaultTier: Tier;
   /** Allow the in-app role/tier switcher (demo & staging; off in prod). */
   allowRoleSwitching: boolean;
+  /** Public OAuth client ids for real social sign-in (empty = simulated). */
+  googleClientId: string;
+  appleClientId: string;
   version: string;
 }
 
@@ -51,6 +54,8 @@ interface RawConfig {
   exportEnabled?: string | boolean;
   defaultTier?: string;
   allowRoleSwitching?: string | boolean;
+  googleClientId?: string;
+  appleClientId?: string;
   version?: string;
 }
 
@@ -64,6 +69,8 @@ const DEFAULTS: AppConfig = {
   exportEnabled: false,
   defaultTier: "free",
   allowRoleSwitching: true,
+  googleClientId: "",
+  appleClientId: "",
   version: "0.2.0",
 };
 
@@ -84,6 +91,8 @@ function readEnv(): RawConfig {
     exportEnabled: get("EXPORT_ENABLED"),
     defaultTier: get("DEFAULT_TIER"),
     allowRoleSwitching: get("ALLOW_ROLE_SWITCHING"),
+    googleClientId: get("GOOGLE_CLIENT_ID"),
+    appleClientId: get("APPLE_CLIENT_ID"),
     version: get("APP_VERSION"),
   };
 }
@@ -125,6 +134,8 @@ function resolve(): AppConfig {
     exportEnabled: asBool(raw.exportEnabled, DEFAULTS.exportEnabled),
     defaultTier: tier,
     allowRoleSwitching: asBool(raw.allowRoleSwitching, DEFAULTS.allowRoleSwitching),
+    googleClientId: raw.googleClientId || DEFAULTS.googleClientId,
+    appleClientId: raw.appleClientId || DEFAULTS.appleClientId,
     version: raw.version || DEFAULTS.version,
   };
 }

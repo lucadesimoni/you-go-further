@@ -11,14 +11,40 @@ export function isApiConfigured(): boolean {
   return Boolean(getConfig().apiBaseUrl);
 }
 
+// --- Session token (real signed session from the server) ---
+const TOKEN_KEY = "ygf.token.v1";
+export function getSessionToken(): string | null {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+  } catch {
+    return null;
+  }
+}
+export function setSessionToken(token: string): void {
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+  } catch {
+    /* ignore */
+  }
+}
+export function clearSessionToken(): void {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 async function call<T>(method: string, path: string, opts: { body?: unknown; role?: Role } = {}): Promise<T> {
   const base = getConfig().apiBaseUrl;
   if (!base) throw new Error("No API configured (running client-side)");
+  const token = getSessionToken();
   const res = await fetch(`${base}${path}`, {
     method,
     headers: {
       "content-type": "application/json",
-      ...(opts.role ? { "x-role": opts.role } : {}),
+      // A real signed session takes precedence; x-role is the demo fallback.
+      ...(token ? { authorization: `Bearer ${token}` } : opts.role ? { "x-role": opts.role } : {}),
     },
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
@@ -69,4 +95,7 @@ export const api = {
   feedbackList: (role: Role) => call<FeedbackResponse>("GET", "/api/feedback", { role }),
   feedbackAdd: (role: Role, body: NewFeedback) => call<FeedbackResponse>("POST", "/api/feedback", { body, role }),
   feedbackClear: (role: Role) => call<FeedbackResponse>("DELETE", "/api/feedback", { role }),
+  googleSignIn: (idToken: string) => call<{ token: string }>("POST", "/api/auth/google", { body: { idToken } }),
+  appleSignIn: (idToken: string, name?: string) =>
+    call<{ token: string }>("POST", "/api/auth/apple", { body: { idToken, name } }),
 };

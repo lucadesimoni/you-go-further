@@ -18,24 +18,34 @@ Session state lives in `src/auth/session.ts` (`Account` = a `Principal` + email 
 auth provider), persisted client-side and cleared on **Sign out**. A demo-account
 picker lets you explore the coach / nutritionist / admin views.
 
-### Dev vs. production
-Today social sign-in is a **simulated round-trip** so the app runs with no
-credentials. The session shape and gating are production-final; only token
-acquisition changes:
+### Real Google / Apple sign-in (implemented)
+The secure flow is built end to end:
 
-| Provider | Production wiring |
-| --- | --- |
-| Google | Google Identity Services (client id, ID-token in the browser) **or** a server OAuth callback that verifies the token. |
-| Apple | Sign in with Apple — the server verifies the identity token and issues the session. |
-| Email | Real sign-up + magic-link / password backed by the API and a user table. |
+1. **Client** runs the provider's real flow when a client id is configured
+   (`googleClientId` / `appleClientId`) and an API is reachable
+   (`src/auth/oidcClient.ts`): Google Identity Services / Sign in with Apple JS
+   return an **ID token**.
+2. **Server** verifies that ID token against the provider's published public keys
+   (JWKS, RS256) and checks issuer + audience + expiry
+   (`src/auth/oidcVerify.ts`), then issues our HMAC session
+   (`POST /api/auth/google`, `POST /api/auth/apple` → `{ token }`).
+3. The client stores the token; the API client sends `Authorization: Bearer
+   <token>` (preferred over the `x-role` demo header). `GET /api/me` returns the
+   verified principal.
 
-Swap the bodies of `signInWithProvider` / `signInWithEmail` in
-`src/auth/session.ts` for the real provider verification. The **server-signed
-session already exists**: `POST /api/auth/session` issues an HMAC token
-(`src/auth/jwt.ts`) and the API authenticates `Authorization: Bearer <token>`
-(falling back to the `x-role` demo header). RBAC (`src/auth/roles.ts`) and
-per-user data (feedback, connections) key off the resulting principal. Set
-`AUTH_SECRET` in production.
+**To enable it:** register the app and set the client ids
+(`VITE_GOOGLE_CLIENT_ID`, `VITE_APPLE_CLIENT_ID` for the browser; matching
+`GOOGLE_CLIENT_ID` / `APPLE_CLIENT_ID` on the server for the audience check) and
+`AUTH_SECRET`. Without client ids the buttons fall back to the **simulated**
+identity so the demo runs with no credentials.
+
+The verification is unit-tested with a self-signed keypair (valid token accepted;
+tampered / expired / wrong-audience / wrong-issuer / unknown-key rejected) and an
+end-to-end endpoint test (real-shape token → verified → session).
+
+> Apple omits the user's name from the token after the first sign-in; the client
+> passes it alongside the token when present. **Email** login is still a demo
+> stub — back it with a real sign-up / magic-link for production.
 
 ## 2. Provider connect (Strava implemented; others follow the pattern)
 

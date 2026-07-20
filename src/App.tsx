@@ -14,6 +14,7 @@ import { generateSampleActivities } from "./providers";
 import { lastNDays } from "./data";
 import { computeGamification } from "./gamification";
 import { loadFeedback } from "./api/feedbackStore";
+import { clearSessionToken } from "./api/client";
 
 interface TabDef {
   id: string;
@@ -124,7 +125,14 @@ export function App() {
               ))}
             </select>
           )}
-          <button type="button" className="btn btn-ghost" onClick={() => setAccount(signOut())}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => {
+              clearSessionToken();
+              setAccount(signOut());
+            }}
+          >
             Sign out
           </button>
         </div>

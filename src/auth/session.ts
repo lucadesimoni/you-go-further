@@ -85,6 +85,11 @@ export function signInWithEmail(email: string, name?: string): Account | null {
   });
 }
 
+/** Persist an account authenticated elsewhere (e.g. real Google/Apple sign-in). */
+export function saveAccount(account: Account): Account {
+  return persist(account)!;
+}
+
 /** Sign in as a built-in demo persona (to explore coach/admin views). */
 export function signInAsDemo(persona: Principal): Account {
   return persist({
