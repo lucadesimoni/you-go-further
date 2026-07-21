@@ -1,0 +1,64 @@
+# Render Blueprint — one managed deploy: web service + managed Postgres together.
+# Import this repo in Render (New → Blueprint) and it provisions both, wiring
+# DATABASE_URL automatically and generating AUTH_SECRET. The Node server serves
+# the built SPA and the API on one origin; Postgres migrations run on startup.
+#
+# Databricks stays a separate managed platform (analytics egress, not the app's
+# database). Leave EXPORT_ENABLED=false to launch without it; set it to true and
+# fill the DATABRICKS_* vars in the dashboard when you want the lakehouse feed.
+# See docs/deployment.md for the Azure and Databricks-native alternatives.
+services:
+  - type: web
+    name: you-go-further
+    runtime: node
+    plan: starter
+    # host-config.mjs points the SPA at its own origin (relative /api) post-build.
+    buildCommand: npm ci && npm run build && node scripts/host-config.mjs
+    startCommand: npm run server
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: STORE_BACKEND
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: you-go-further-db
+          property: connectionString
+      - key: AUTH_SECRET
+        generateValue: true # signs sessions; Render generates a strong value
+      - key: ENABLED_PROVIDERS
+        value: strava,garmin,polar,suunto
+      - key: ALLOW_ROLE_SWITCHING
+        value: "false"
+      # --- Optional real provider OAuth (dev stubs are used if unset) ---
+      - key: STRAVA_CLIENT_ID
+        sync: false
+      - key: STRAVA_CLIENT_SECRET
+        sync: false
+      - key: GARMIN_CLIENT_ID
+        sync: false
+      - key: GARMIN_CLIENT_SECRET
+        sync: false
+      # --- Optional real Google / Apple sign-in (public client ids) ---
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: APPLE_CLIENT_ID
+        sync: false
+      # --- Big-data egress: off by default; flip on when ready (see docs) ---
+      - key: EXPORT_ENABLED
+        value: "false"
+      - key: DATABRICKS_HOST
+        sync: false
+      - key: DATABRICKS_TOKEN
+        sync: false
+      - key: DATABRICKS_WAREHOUSE_ID
+        sync: false
+      - key: DATABRICKS_TABLE
+        sync: false
+
+databases:
+  - name: you-go-further-db
+    plan: basic-256mb
+    postgresMajorVersion: "16"

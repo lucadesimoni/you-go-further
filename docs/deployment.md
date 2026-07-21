@@ -36,6 +36,24 @@ window.__APP_CONFIG__ = {
 
 ## Targets
 
+### Render (one managed deploy — app + Postgres together) ⭐
+`render.yaml` is a Blueprint that provisions **both** the web service and a
+**managed Postgres** in one shot. Import the repo in Render (New → Blueprint) and
+it: builds the SPA + API, creates the database, wires `DATABASE_URL` into the
+service automatically, and generates `AUTH_SECRET`. The Node server serves the
+built SPA and the API on **one origin** (`scripts/host-config.mjs` points the SPA
+at `window.location.origin`), and Postgres migrations run on startup. Nothing to
+patch or babysit — this is the fastest "fully managed, all in one place" path.
+
+Optional secrets to set in the dashboard (all `sync: false`, dev stubs used if
+unset): `STRAVA_*` / `GARMIN_*` for real OAuth, `GOOGLE_CLIENT_ID` /
+`APPLE_CLIENT_ID` for real social sign-in.
+
+**Databricks** stays a separate managed platform (it's analytics egress, not the
+app's database — see below); launch with `EXPORT_ENABLED=false` and flip it on
+later. If you want *all three under a single vendor*, see the two alternatives at
+the end of this doc.
+
 ### GitHub Codespaces (one-click live deploy)
 `.devcontainer/devcontainer.json` provisions Node 22, runs `npm install`, and on
 attach **auto-starts the app** (`npm run codespace`) — build + a file-backed API
@@ -160,3 +178,31 @@ NDJSON / columnar helpers for S3/Parquet, Kafka, or another lakehouse.
   verification before signing the token (see `docs/auth.md`).
 - **Warehouse:** implement `ActivityStore` for your warehouse and return it from
   `createStores()`.
+
+## All three under one vendor (app + Postgres + Databricks)
+
+Render (above) is fully managed but keeps Databricks separate. If the goal is a
+single managed platform for **all three**, two options — no code changes, the app
+is already portable (`DATABASE_URL` selects Postgres, Databricks is env-gated):
+
+**Option A — one cloud (best for a public consumer app).** Pick a cloud and use
+its managed services; Databricks is first-party on all three:
+
+| Tier | Azure | AWS | GCP |
+| --- | --- | --- | --- |
+| App (SPA + API) | Container Apps / App Service | App Runner | Cloud Run |
+| Postgres | Azure DB for PostgreSQL | Aurora Serverless v2 | Cloud SQL |
+| Lakehouse | Azure Databricks | Databricks on AWS | Databricks on GCP |
+
+The repo's `Dockerfile` + `docker-compose.yml` deploy the container tier; point
+`DATABASE_URL` at the managed Postgres and set the `DATABRICKS_*` vars. Azure is
+the tightest fit — Azure Databricks is a native first-party service (one portal,
+SSO, VNet).
+
+**Option B — Databricks-native, single vendor.** Databricks can host all three
+itself: **Lakebase** (managed Postgres, Neon-based) as `DATABASE_URL`,
+**Databricks Apps** to serve the container, and the **lakehouse** as the analytics
+tier. One bill, one governance layer (Unity Catalog). Caveat: Databricks Apps is
+tuned for *internal* data/BI apps behind workspace identity, not public B2C
+signups + external OAuth at scale — great for a coach/enterprise-facing build,
+weaker for a public consumer app. Confirm current GA status of Lakebase / Apps.
