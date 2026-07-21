@@ -17,5 +17,6 @@ export {
   type ScoredProduct,
   type UsageGuide,
 } from "./offering";
+export { energyProfile, type EnergyProfile, type EnergySample } from "./energy";
 export { buildSchedule, formatClock } from "./schedule";
 export type { FuelingCue, FuelingSchedule, CueKind, ScheduleOptions } from "./schedule";

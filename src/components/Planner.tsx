@@ -12,6 +12,7 @@ import { SessionTimeline } from "./SessionTimeline";
 import { CartPanel } from "./CartPanel";
 import { FeedbackPanel } from "./FeedbackPanel";
 import { OfferingPanel } from "./OfferingPanel";
+import { EnergyProfile } from "./EnergyProfile";
 
 const DEFAULT_INPUT: AthleteInput = {
   goal: "endurance-performance",
@@ -260,6 +261,8 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
         </div>
 
         <SessionTimeline schedule={schedule} />
+
+        <EnergyProfile input={effectiveInput} target={rec.target} schedule={schedule} />
 
         {rec.phases.map((phase) => (
           <div className="panel phase" key={phase.phase}>

@@ -2014,3 +2014,63 @@ code {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
+
+/* --- Energy profile (Tesla-style carbohydrate-availability strip) --- */
+.energy-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.energy-legend .lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+}
+.energy-legend .lg::before {
+  content: "";
+  width: 12px;
+  height: 0;
+  border-top-width: 2px;
+  border-top-style: solid;
+}
+.lg-fueled::before { border-top-color: var(--post); }
+.lg-unfueled::before { border-top-color: var(--muted); border-top-style: dashed; }
+.lg-fade::before { border-top-color: var(--accent); border-top-style: dashed; }
+
+.energy-headline {
+  margin: 4px 0 12px;
+}
+.energy-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.energy-grid { stroke: var(--border); stroke-width: 1; opacity: 0.5; }
+.energy-axis { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.energy-fadezone { fill: var(--accent); opacity: 0.06; }
+.energy-fadeline { stroke: var(--accent); stroke-width: 1; opacity: 0.6; }
+.energy-fill { }
+.energy-fueled { stroke: var(--post); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.energy-unfueled { stroke: var(--muted); stroke-width: 2; opacity: 0.7; }
+.energy-cue { stroke: var(--border); stroke-width: 1; opacity: 0.7; }
+.energy-fademark { stroke: var(--accent); stroke-width: 1; opacity: 0.45; }
+.energy-fadetext { fill: var(--accent); font-size: 10px; font-weight: 700; }
+
+.energy-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.energy-reserve { color: var(--post); font-weight: 600; }
+.energy-note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.8;
+}
