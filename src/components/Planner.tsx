@@ -11,6 +11,7 @@ import { Stat } from "./Stat";
 import { SessionTimeline } from "./SessionTimeline";
 import { CartPanel } from "./CartPanel";
 import { FeedbackPanel } from "./FeedbackPanel";
+import { OfferingPanel } from "./OfferingPanel";
 
 const DEFAULT_INPUT: AthleteInput = {
   goal: "endurance-performance",
@@ -307,6 +308,8 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
             )}
           </div>
         ))}
+
+        <OfferingPanel input={effectiveInput} target={rec.target} catalog={catalog} />
 
         <div className="panel notes">
           <h4>Notes</h4>

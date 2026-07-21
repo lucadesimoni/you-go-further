@@ -1898,3 +1898,119 @@ code {
   color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* --- Offering panel: slot-by-slot "show your working" --- */
+.offering {
+  margin-top: 4px;
+}
+.offering-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+.offering-summary::-webkit-details-marker {
+  display: none;
+}
+.offering-summary::before {
+  content: "▸";
+  color: var(--accent);
+  margin-right: 8px;
+}
+.offering[open] .offering-summary::before {
+  content: "▾";
+}
+.offering-hint {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.offering-headline {
+  margin: 12px 0 4px;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.offering-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.offering-slot {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--panel-2);
+}
+.offering-slot-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.offering-slot-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.score-badge {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--post);
+  background: rgba(52, 201, 138, 0.12);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.offering-guidance {
+  margin: 6px 0 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.offering-pick .product-top {
+  margin-top: 2px;
+}
+.offering-reasons {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.offering-alts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.offering-alts-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.offering-alt {
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.offering-alt-score {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
