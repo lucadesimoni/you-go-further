@@ -2074,3 +2074,42 @@ code {
   color: var(--muted);
   opacity: 0.8;
 }
+
+/* --- Route map (Leaflet) --- */
+.route-wrap { margin-top: 4px; }
+.route-map {
+  width: 100%;
+  height: 340px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  z-index: 0;
+}
+.route-map .leaflet-container { background: var(--panel-2); font: inherit; }
+.route-map .leaflet-control-attribution {
+  background: rgba(15, 20, 23, 0.7);
+  color: var(--muted);
+}
+.route-map .leaflet-control-attribution a { color: var(--pre); }
+.route-map .leaflet-bar a {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--border);
+}
+/* Map pins (divIcon HTML) */
+.map-pin {
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+.map-pin.start { background: var(--post); }
+.map-pin.finish { background: #10161a; border-color: var(--border); }
+.map-pin.fuel { background: var(--during); color: #10161a; }

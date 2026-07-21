@@ -1,4 +1,4 @@
-import type { Activity, ProviderId, SportType } from "../model";
+import type { Activity, LatLng, ProviderId, SportType } from "../model";
 
 /**
  * Deterministic sample-activity generator. Stands in for a live provider API so
@@ -23,6 +23,44 @@ const SPORTS_BY_PROVIDER: Record<ProviderId, SportType[]> = {
   polar: ["run", "ride"],
   suunto: ["trail-run", "run"],
 };
+
+/** Real Swiss trailheads the sample routes loop out from. */
+const SWISS_STARTS: LatLng[] = [
+  [47.3769, 8.5417], // Zürich
+  [47.0502, 8.3093], // Lucerne
+  [46.5197, 6.6323], // Lausanne
+  [46.6863, 7.8632], // Interlaken
+  [46.0037, 7.7491], // Zermatt
+];
+
+/**
+ * Synthesize a plausible outdoor GPS loop (a smooth closed path) of roughly the
+ * given distance, starting from a real Swiss trailhead. Deterministic given the
+ * PRNG. Stands in for a provider's recorded track until a real account is linked.
+ */
+function generateRoute(rand: () => number, distanceM: number, points = 72): LatLng[] {
+  const [lat0, lng0] = SWISS_STARTS[Math.floor(rand() * SWISS_STARTS.length)];
+  const radiusM = Math.max(300, distanceM / (2 * Math.PI));
+  const mPerDegLat = 111_320;
+  const mPerDegLng = 111_320 * Math.cos((lat0 * Math.PI) / 180);
+  // Loop shape held constant across the sweep so the path is smooth and closes.
+  const harmonics = 2 + Math.floor(rand() * 3); // 2–4 lobes
+  const wobble = 0.2 + rand() * 0.35;
+  const phase = rand() * Math.PI * 2;
+  const rotate = rand() * Math.PI * 2;
+  const drift = 0.12 * (rand() - 0.5);
+
+  const route: LatLng[] = [];
+  for (let i = 0; i <= points; i++) {
+    const f = i / points;
+    const a = rotate + f * Math.PI * 2;
+    const r = radiusM * (1 + wobble * Math.sin(harmonics * a + phase) + drift * Math.sin(a));
+    const dLat = (r * Math.sin(a)) / mPerDegLat;
+    const dLng = (r * Math.cos(a)) / mPerDegLng;
+    route.push([Number((lat0 + dLat).toFixed(5)), Number((lng0 + dLng).toFixed(5))]);
+  }
+  return route;
+}
 
 function hashSeed(s: string): number {
   let h = 2166136261;
@@ -71,6 +109,8 @@ export function generateSampleActivities(
       avgPowerW: sport === "ride" ? Math.round(160 + rand() * 140) : undefined,
       calories: Math.round((durationSec / 60) * (7 + rand() * 6)),
       trainingLoad: provider === "strava" ? undefined : Math.round((durationSec / 60) * hrFrac * 2.2),
+      // Outdoor sessions carry a GPS track; pool swims don't.
+      route: sport === "swim" ? undefined : generateRoute(rand, Math.round(durationSec * speedMs)),
       name: `${sport} session`,
     });
   }

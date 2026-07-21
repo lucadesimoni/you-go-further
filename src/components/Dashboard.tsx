@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Activity, ProviderId } from "../model";
 import { ALL_PROVIDER_IDS, DESCRIPTORS, generateSampleWellness, ProviderRegistry } from "../providers";
 import type { ProviderCredential } from "../providers/types";
@@ -10,6 +10,8 @@ import type { AthleteInput } from "../engine";
 import { isApiConfigured } from "../api/client";
 import { getConfig } from "../config";
 import { Stat } from "./Stat";
+// Code-split: Leaflet (~150 KB) loads only when a route map is actually shown.
+const RouteMap = lazy(() => import("./RouteMap").then((m) => ({ default: m.RouteMap })));
 
 const STATUS_LABEL: Record<string, string> = {
   detraining: "Detraining",
@@ -118,6 +120,14 @@ export function Dashboard({ tier }: { tier: Tier }) {
   const report = useMemo(
     () => (activities.length ? analyze(activities, profile, goal) : null),
     [activities, profile, goal],
+  );
+  // Most recent session with a GPS track, for the route map.
+  const routedActivity = useMemo(
+    () =>
+      [...activities]
+        .filter((a) => a.route && a.route.length > 1)
+        .sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime))[0] ?? null,
+    [activities],
   );
   const physiology = useMemo(() => {
     const wellness = [...connected].flatMap((p) => generateSampleWellness(p, 21));
@@ -252,6 +262,22 @@ export function Dashboard({ tier }: { tier: Tier }) {
       )}
 
       {/* Analysis */}
+      {routedActivity && (
+        <section className="panel">
+          <div className="section-head">
+            <h2>Route &amp; fuel stops</h2>
+            <span className="pill">latest with GPS</span>
+          </div>
+          <p className="detail">
+            Your most recent recorded route, with fuelling stops pinned along it — where to take carbs so
+            you never run the tank down. Open-source map (OpenStreetMap data).
+          </p>
+          <Suspense fallback={<p className="detail">Loading map…</p>}>
+            <RouteMap activity={routedActivity} />
+          </Suspense>
+        </section>
+      )}
+
       <section className="panel">
         <div className="section-head">
           <h2>Training analysis</h2>

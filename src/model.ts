@@ -35,8 +35,13 @@ export interface Activity {
   calories?: number;
   /** Provider-computed training load, if available (e.g. Garmin/Polar/Suunto). */
   trainingLoad?: number;
+  /** GPS track as [lat, lng] points, if the activity was recorded outdoors. */
+  route?: LatLng[];
   name?: string;
 }
+
+/** A geographic point, [latitude, longitude] in decimal degrees. */
+export type LatLng = [number, number];
 
 /** What we know about the athlete, independent of any single session. */
 export interface AthleteProfile {

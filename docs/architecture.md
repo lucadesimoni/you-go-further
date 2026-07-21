@@ -76,6 +76,16 @@ on top of the built-in Swiss brands), and an `InMemoryProductStore`; File/Pg
 implementations live in `src/persistence`. The library is served at
 `/api/products` (browse merged catalog; `catalog:edit` gates add/override/delete).
 
+### Route map (`src/components/RouteMap.tsx`)
+A real slippy map (Leaflet + OpenStreetMap data) of an activity's GPS track with
+fuelling stops pinned along it. Open-source stack, **no API key**; the dark
+basemap uses CARTO's OSM-based tiles (`TILE_URL`, swappable for standard OSM or a
+self-hosted server). It is **code-split** — Leaflet (~44 KB gz) loads only when a
+route map is shown, keeping the main bundle lean — and is the one feature that
+fetches from an external host at runtime (map tiles); everything else is
+self-contained. Sample GPS tracks are synthesized around real Swiss trailheads in
+`providers/sampleData.ts` until a provider account is linked.
+
 ### `src/subscription/` — Abo tiers & gating
 - `PLANS` (Base / Pro / Elite) as data; every gated capability is a field on
   `PlanFeatures`.

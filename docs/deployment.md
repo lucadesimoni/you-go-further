@@ -170,6 +170,17 @@ Execution API (`src/data/databricksSink.ts`):
 Unconfigured, the sink no-ops (dev). The `ExportSink` interface also has
 NDJSON / columnar helpers for S3/Parquet, Kafka, or another lakehouse.
 
+## Route map & network policy
+The route map (`RouteMap`) is the **one feature that fetches from an external
+host at runtime** — OpenStreetMap-based map tiles (CARTO dark by default). It is
+open-source and needs no API key, but:
+- On a restrictive **network policy** the tile host must be reachable, or the map
+  shows the route/pins on a blank basemap (everything else still works).
+- For **air-gapped / fully self-contained** deploys, self-host a tile server and
+  point `TILE_URL` at it, or swap in your own basemap.
+
+It is code-split, so it only loads when a route map is actually shown.
+
 ## Going further to production
 - **Providers:** Strava & Garmin have real adapters; add the others by
   subclassing `BaseActivityProvider` with `exchangeToken` + `fetchActivities`.
