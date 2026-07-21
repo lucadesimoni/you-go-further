@@ -107,6 +107,12 @@ dashboard) — with a subscription tier bar. The dashboard drives the real
 `IngestionPipeline` + `InMemoryActivityStore`, and gates provider slots,
 analytics and export through the `subscription` module.
 
+All styling flows from a single **design system** — one token set (colour,
+spacing, radius, type, elevation, motion) defined in `src/styles.css` and consumed
+by shared primitives (`.panel`, `.btn`, `.badge`, `.tag`, `.pill`, `.stat`,
+disclosures, form controls). No component hard-codes a colour or radius. See
+`docs/design-system.md`.
+
 ## Testing
 `npm test` — 35 Vitest cases across engine, analysis, data pipeline (registry,
 dedup, concurrent ingest, export), and subscription gating.
