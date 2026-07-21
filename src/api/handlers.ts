@@ -7,7 +7,15 @@
  * `http`; tests exercise it directly with no sockets.
  */
 
-import { recommend, buildSchedule, computeTarget, normalizeProduct, mergeCatalog, CATALOG } from "../engine";
+import {
+  recommend,
+  buildSchedule,
+  computeTarget,
+  idealOffering,
+  normalizeProduct,
+  mergeCatalog,
+  CATALOG,
+} from "../engine";
 import type { AthleteInput, Product } from "../engine";
 import { buildCart } from "../commerce";
 import { deriveAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
@@ -246,6 +254,13 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           const input = asAthleteInput(body);
           if (!input) return bad("Invalid AthleteInput");
           return ok(recommend(input, mergeCatalog(await products.list())));
+        }
+
+        case key === "POST /api/offering": {
+          // The "ideal offering" algorithm: which product for each slot, and why.
+          const input = asAthleteInput(body);
+          if (!input) return bad("Invalid AthleteInput");
+          return ok(idealOffering(input, computeTarget(input), mergeCatalog(await products.list())));
         }
 
         case key === "POST /api/schedule": {

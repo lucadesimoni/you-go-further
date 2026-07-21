@@ -103,19 +103,31 @@ A carbohydrate-focused meal/snack 1–3 h out, low in fat and fibre:
   sessions (< 60 min and not hard/race).
 - Refuel within ~60 min, replace fluids at ~1.5× losses.
 
-## 7. Product selection
+## 7. Product selection — the "ideal offering" algorithm
 
-Products live in `src/engine/catalog.ts` as editable data. Each is tagged with
-the phases it fits, macros, sodium, optional caffeine/protein, and whether it is
-multi-transportable.
+Product choice is a transparent **scoring** engine (`src/engine/offering.ts`),
+the single source of truth that `recommend()` delegates to. It fills the
+functional **slots** a plan needs and, for each, scores every catalogue product
+0–100 with plain-language reasons, so the UI can always answer "why this, why
+now". Slots:
 
-- **During:** a drink mix is the primary carrier (carbs + fluid + sodium); a gel
-  tops up carbs on the move. When `requiresMultiTransportable`, only 2:1 sources
-  are eligible. A caffeinated gel is offered **only** if `caffeineOk` and the
-  effort is long/hard/race. Heavy sweaters or hot conditions add a standalone
-  electrolyte. If carb/h is 0, a calorie-free hydration tab is offered instead.
-- **Pre / Post:** filtered to phase-appropriate products (≥20 g carb pre;
-  recovery or ≥10 g protein post).
+| Slot | Needed when | Ideal product |
+| --- | --- | --- |
+| `carb-carrier` | carb/h > 0 | drink mix; carb density near the per-hour target, 2:1 preferred |
+| `carb-topup` | carb/h > 0 | gel/bar on the move; caffeine only if opted in |
+| `electrolyte` | heat / heavy or salty sweater | standalone high-sodium |
+| `hydration` | carb/h = 0 | calorie-free electrolyte |
+| `pre-fuel` | always | ≥20 g carb, low fat/fibre |
+| `recovery` | always | carb + protein (protein-forward on weight-loss) |
+
+Scoring blends **carb-density fit** to the target, a **multi-transportable**
+bonus (hard-required above 60 g/h), **sodium fit**, **caffeine** (excluded unless
+`caffeineOk` on a long/hard effort), and **goal** shaping (e.g. weight-loss
+rewards protein density and calorie-free hydration). Custom/house products score
+in the same pass, so an admin's product wins a slot the moment it fits best.
+`POST /api/offering` returns the full offering; `productUsage(product)` gives a
+session-independent "best when / avoid when" guide that powers the catalogue's
+when-to-use view.
 
 Every phase also returns a `rationale[]` — a short, plain-language explanation of
 which ingredients and combo were chosen (e.g. "one drink covers carbs, fluid and

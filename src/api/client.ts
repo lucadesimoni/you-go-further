@@ -105,6 +105,7 @@ export const api = {
   googleSignIn: (idToken: string) => call<{ token: string }>("POST", "/api/auth/google", { body: { idToken } }),
   appleSignIn: (idToken: string, name?: string) =>
     call<{ token: string }>("POST", "/api/auth/apple", { body: { idToken, name } }),
+  offering: (input: unknown) => call("POST", "/api/offering", { body: input }),
   productsList: () => call<ProductsResponse>("GET", "/api/products"),
   productSave: (role: Role, product: Partial<Product>) =>
     call<{ product: Product; products: Product[] }>("POST", "/api/products", { body: product, role }),

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CATALOG, type Phase, type Product, type ProductCategory } from "../engine";
+import { CATALOG, productUsage, type Phase, type Product, type ProductCategory } from "../engine";
 import type { Role } from "../auth";
 import { catalogPersistence, deleteProduct, loadCatalog, saveProduct } from "../api/productLibrary";
 
@@ -87,7 +87,8 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
           <span className="pill">{catalog.length} products</span>
         </div>
         <p className="detail">
-          {brands.join(" · ")} — the Swiss-only library that drives every recommendation.{" "}
+          {brands.join(" · ")} — the Swiss-only library that drives every recommendation. Each product
+          has a <strong>when-to-use</strong> guide (tap a card).{" "}
           {canEdit ? (
             <>
               You can add your own products, override a built-in's values, and set shop links.{" "}
@@ -148,6 +149,26 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                 {p.servingLabel}
                 {p.priceChf != null ? ` · CHF ${p.priceChf.toFixed(2)}` : ""}
               </p>
+              {(() => {
+                const use = productUsage(p);
+                return (
+                  <details className="why usage">
+                    <summary>When to use · {use.summary}</summary>
+                    <div className="usage-body">
+                      <p className="usage-line">
+                        <span className="usage-label good">Best when</span>
+                        {use.bestWhen.join(" · ")}
+                      </p>
+                      {use.avoidWhen.length > 0 && (
+                        <p className="usage-line">
+                          <span className="usage-label avoid">Avoid</span>
+                          {use.avoidWhen.join(" · ")}
+                        </p>
+                      )}
+                    </div>
+                  </details>
+                );
+              })()}
               {p.shopUrl && (
                 <a className="product-shop" href={p.shopUrl} target="_blank" rel="noreferrer noopener">
                   Buy at {p.brand} ↗

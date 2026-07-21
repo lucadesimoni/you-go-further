@@ -61,7 +61,12 @@ Set the `*_CLIENT_ID` / `*_CLIENT_SECRET` env vars.
 - `analyze` — one-shot report.
 
 ### `src/engine/` — nutrition recommendations
-Core recommendation engine; see `nutrition-spec.md`. `recommend(input, catalog)`
+Core recommendation engine; see `nutrition-spec.md`. `offering.ts` is the
+transparent scoring algorithm that decides *which product, when* — it fills the
+plan's functional slots (carrier / top-up / electrolyte / hydration / pre /
+recovery), scoring every catalogue item 0–100 with reasons; `recommend()`
+delegates all product selection to it, and `POST /api/offering` exposes it
+directly. `recommend(input, catalog)`
 takes an injectable product catalog so admin/house products flow into plans, and
 every `PhasePlan` carries a plain-language `rationale[]` explaining which
 ingredients and combo were picked and why (surfaced in a collapsible "Why these"

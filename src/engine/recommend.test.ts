@@ -148,10 +148,11 @@ describe("recommend – product selection", () => {
     expect(carbProducts.every((p) => p.multiTransportable)).toBe(true);
   });
 
-  it("recommends only Swiss brands", () => {
+  it("recommends only Swiss products", () => {
     const r = recommend(base);
-    const brands = new Set(r.phases.flatMap((p) => p.products.map((pr) => pr.brand)));
-    for (const b of brands) expect(["Sponser", "Winforce"]).toContain(b);
+    const picks = r.phases.flatMap((p) => p.products);
+    expect(picks.length).toBeGreaterThan(0);
+    for (const p of picks) expect(p.swiss).toBe(true);
   });
 
   it("always includes a safety/disclaimer note", () => {
