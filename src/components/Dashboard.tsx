@@ -10,6 +10,7 @@ import type { AthleteInput } from "../engine";
 import { isApiConfigured } from "../api/client";
 import { getConfig } from "../config";
 import { Stat } from "./Stat";
+import { RouteInsights } from "./RouteInsights";
 // Code-split: Leaflet (~150 KB) loads only when a route map is actually shown.
 const RouteMap = lazy(() => import("./RouteMap").then((m) => ({ default: m.RouteMap })));
 
@@ -275,6 +276,9 @@ export function Dashboard({ tier }: { tier: Tier }) {
           <Suspense fallback={<p className="detail">Loading map…</p>}>
             <RouteMap activity={routedActivity} />
           </Suspense>
+          {routedActivity.route && (
+            <RouteInsights route={routedActivity.route} hintGainM={routedActivity.elevationGainM} />
+          )}
         </section>
       )}
 

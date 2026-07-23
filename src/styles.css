@@ -2302,3 +2302,58 @@ code {
   .topnav { order: 3; width: 100%; } /* nav drops to its own scrollable row */
   .account-btn-name { display: none; }
 }
+
+/* --- Route insights: swisstopo terrain + weather --- */
+.geo { margin-top: var(--space-5); }
+.geo-loading { margin-top: var(--space-5); }
+.geo-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+@media (max-width: 560px) {
+  .geo-cols { grid-template-columns: 1fr; }
+}
+.geo-block {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
+.geo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+.geo-title {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.geo-src {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+}
+.geo-src-swisstopo { color: var(--post); background: rgba(52, 201, 138, 0.12); }
+.geo-src-estimated { color: var(--muted); background: var(--surface-inset); }
+.geo-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+.geo-stats .stat-value { font-size: var(--text-lg); }
+.geo-stats .stat-label { text-transform: capitalize; }
+.geo-implications {
+  margin: var(--space-5) 0 0;
+  padding-left: var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+  color: var(--muted);
+}
