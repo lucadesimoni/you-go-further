@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { buildSchedule, recommend, CATALOG } from "../engine";
 import type { AthleteInput, Product } from "../engine";
-import { estimateSweatRateMlPerH } from "../analysis";
 import { deriveAdaptation, toAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
 import type { Role } from "../auth";
 import { addFeedback, clearFeedback, feedbackPersistence, loadFeedback } from "../api/feedbackStore";
 import { loadCatalog } from "../api/productLibrary";
-import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_LABELS, SWEAT_LEVELS } from "../options";
+import { loadProfile } from "../api/profileStore";
+import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_LABELS } from "../options";
 import { Stat } from "./Stat";
 import { SessionTimeline } from "./SessionTimeline";
 import { CartPanel } from "./CartPanel";
@@ -14,32 +14,34 @@ import { FeedbackPanel } from "./FeedbackPanel";
 import { OfferingPanel } from "./OfferingPanel";
 import { EnergyProfile } from "./EnergyProfile";
 
-const DEFAULT_INPUT: AthleteInput = {
+/** Only session-specific fields live in the planner now; body data comes from the profile. */
+type SessionInput = Pick<AthleteInput, "goal" | "activity" | "durationMin" | "intensity" | "conditions">;
+
+const DEFAULT_SESSION: SessionInput = {
   goal: "endurance-performance",
   activity: "running",
   durationMin: 90,
   intensity: "moderate",
-  bodyWeightKg: 70,
   conditions: "temperate",
-  sweatLevel: "average",
-  caffeineOk: false,
 };
 
-/** Standalone session fuel planner (the Base-tier feature). */
-export function Planner({ initial, role = "athlete" }: { initial?: Partial<AthleteInput>; role?: Role }) {
-  const [input, setInput] = useState<AthleteInput>({ ...DEFAULT_INPUT, ...initial });
+const SWEAT_TEXT: Record<string, string> = { light: "light sweat", average: "average sweat", heavy: "heavy sweat" };
 
-  // Optional measured body signals — the "optimized for your body" layer.
-  const [useSignals, setUseSignals] = useState(false);
-  const [sweatRate, setSweatRate] = useState(1000);
-  const [sweatSodium, setSweatSodium] = useState(800);
-  const [readiness, setReadiness] = useState(65);
+/** Standalone session fuel planner. Body/health data is read from Profile settings. */
+export function Planner({
+  initial,
+  role = "athlete",
+  onEditProfile,
+}: {
+  initial?: Partial<SessionInput>;
+  role?: Role;
+  onEditProfile?: () => void;
+}) {
+  const [input, setInput] = useState<SessionInput>({ ...DEFAULT_SESSION, ...initial });
+  const profile = useMemo(() => loadProfile(), []);
 
-  // Feedback loop — learned adaptation, persisted server-side (or localStorage).
   const [feedbacks, setFeedbacks] = useState<SessionFeedback[]>([]);
   const insight = useMemo(() => deriveAdaptation(feedbacks), [feedbacks]);
-
-  // Product library — built-in Swiss catalog plus any admin/house products.
   const [catalog, setCatalog] = useState<Product[]>(CATALOG);
 
   useEffect(() => {
@@ -49,23 +51,29 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
       .catch(() => !cancelled && setFeedbacks([]));
     loadCatalog()
       .then((list) => !cancelled && list.length && setCatalog(list))
-      .catch(() => {
-        /* keep built-in catalog on failure */
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [role]);
 
+  // Merge session inputs with the athlete's stored body/health profile.
   const effectiveInput = useMemo<AthleteInput>(
     () => ({
       ...input,
-      physiology: useSignals
-        ? { sweatRateMlPerH: sweatRate, sweatSodiumMgPerL: sweatSodium, readiness }
+      bodyWeightKg: profile.bodyWeightKg,
+      sweatLevel: profile.sweatLevel,
+      caffeineOk: profile.caffeineOk,
+      physiology: profile.useSignals
+        ? {
+            sweatRateMlPerH: profile.sweatRateMlPerH,
+            sweatSodiumMgPerL: profile.sweatSodiumMgPerL,
+            readiness: profile.readiness,
+          }
         : undefined,
       adaptation: insight.samples > 0 ? toAdaptation(insight) : undefined,
     }),
-    [input, useSignals, sweatRate, sweatSodium, readiness, insight],
+    [input, profile, insight],
   );
   const rec = useMemo(() => recommend(effectiveInput, catalog), [effectiveInput, catalog]);
   const schedule = useMemo(() => buildSchedule(effectiveInput), [effectiveInput]);
@@ -80,10 +88,8 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
   };
   const resetFeedback = () => void clearFeedback(role).then(setFeedbacks);
 
-  const set = <K extends keyof AthleteInput>(key: K, value: AthleteInput[K]) =>
+  const set = <K extends keyof SessionInput>(key: K, value: SessionInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
-
-  const seedSweat = () => setSweatRate(estimateSweatRateMlPerH(input.bodyWeightKg, input.intensity, input.conditions));
 
   const hours = Math.floor(input.durationMin / 60);
   const mins = input.durationMin % 60;
@@ -94,7 +100,7 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
       <section className="panel form" aria-label="Session details">
         <div className="field">
           <label htmlFor="goal">Goal</label>
-          <select id="goal" value={input.goal} onChange={(e) => set("goal", e.target.value as AthleteInput["goal"])}>
+          <select id="goal" value={input.goal} onChange={(e) => set("goal", e.target.value as SessionInput["goal"])}>
             {GOALS.map((g) => (
               <option key={g.value} value={g.value}>
                 {g.label} — {g.blurb}
@@ -108,7 +114,7 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
           <select
             id="activity"
             value={input.activity}
-            onChange={(e) => set("activity", e.target.value as AthleteInput["activity"])}
+            onChange={(e) => set("activity", e.target.value as SessionInput["activity"])}
           >
             {ACTIVITIES.map((a) => (
               <option key={a.value} value={a.value}>
@@ -150,96 +156,30 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
         </div>
 
         <div className="field">
-          <label htmlFor="weight">
-            Body weight <span className="value">{input.bodyWeightKg} kg</span>
-          </label>
-          <input
-            id="weight"
-            type="range"
-            min={40}
-            max={120}
-            step={1}
-            value={input.bodyWeightKg}
-            onChange={(e) => set("bodyWeightKg", Number(e.target.value))}
-          />
+          <label htmlFor="conditions">Conditions</label>
+          <select
+            id="conditions"
+            value={input.conditions}
+            onChange={(e) => set("conditions", e.target.value as SessionInput["conditions"])}
+          >
+            {CONDITIONS.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="field-row">
-          <div className="field">
-            <label htmlFor="conditions">Conditions</label>
-            <select
-              id="conditions"
-              value={input.conditions}
-              onChange={(e) => set("conditions", e.target.value as AthleteInput["conditions"])}
-            >
-              {CONDITIONS.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="sweat">Sweat level</label>
-            <select
-              id="sweat"
-              value={input.sweatLevel}
-              onChange={(e) => set("sweatLevel", e.target.value as AthleteInput["sweatLevel"])}
-            >
-              {SWEAT_LEVELS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={Boolean(input.caffeineOk)}
-            onChange={(e) => set("caffeineOk", e.target.checked)}
-          />
-          <span>Suggest caffeine for long / hard efforts</span>
-        </label>
-
-        <div className="signals">
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={useSignals}
-              onChange={(e) => {
-                if (e.target.checked && sweatRate === 1000) seedSweat();
-                setUseSignals(e.target.checked);
-              }}
-            />
-            <span>Personalize with my body signals</span>
-          </label>
-          {useSignals && (
-            <div className="signals-body">
-              <div className="field">
-                <label htmlFor="sweat-rate">
-                  Sweat rate <span className="value">{sweatRate} ml/h</span>
-                </label>
-                <input id="sweat-rate" type="range" min={400} max={2200} step={50} value={sweatRate} onChange={(e) => setSweatRate(Number(e.target.value))} />
-              </div>
-              <div className="field">
-                <label htmlFor="sweat-na">
-                  Sweat sodium <span className="value">{sweatSodium} mg/L</span>
-                </label>
-                <input id="sweat-na" type="range" min={300} max={1500} step={50} value={sweatSodium} onChange={(e) => setSweatSodium(Number(e.target.value))} />
-              </div>
-              <div className="field">
-                <label htmlFor="readiness">
-                  Training readiness <span className="value">{readiness}/100</span>
-                </label>
-                <input id="readiness" type="range" min={10} max={100} step={1} value={readiness} onChange={(e) => setReadiness(Number(e.target.value))} />
-              </div>
-              <p className="detail" style={{ margin: 0 }}>
-                From a sweat test or your watch. Values here override the population estimates below.
-              </p>
-            </div>
+        <div className="from-profile">
+          <span>
+            Tuned to <strong>{profile.bodyWeightKg} kg</strong> · {SWEAT_TEXT[profile.sweatLevel]}
+            {profile.caffeineOk ? " · caffeine ok" : ""}
+            {profile.useSignals ? " · measured signals" : ""}
+          </span>
+          {onEditProfile && (
+            <button type="button" className="link-btn" onClick={onEditProfile}>
+              Edit profile
+            </button>
           )}
         </div>
       </section>
@@ -314,14 +254,14 @@ export function Planner({ initial, role = "athlete" }: { initial?: Partial<Athle
 
         <OfferingPanel input={effectiveInput} target={rec.target} catalog={catalog} />
 
-        <div className="panel notes">
-          <h4>Notes</h4>
-          <ul>
+        <details className="panel notes-details">
+          <summary>Notes &amp; caveats</summary>
+          <ul className="notes-list">
             {rec.notes.map((n, i) => (
               <li key={i}>{n}</li>
             ))}
           </ul>
-        </div>
+        </details>
 
         <CartPanel rec={rec} />
 

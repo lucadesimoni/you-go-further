@@ -6,6 +6,7 @@ import { CatalogView } from "./components/CatalogView";
 import { AdminView } from "./components/AdminView";
 import { LoginScreen } from "./components/LoginScreen";
 import { ProgressView } from "./components/ProgressView";
+import { ProfileView } from "./components/ProfileView";
 import { PLANS, TIER_ORDER, type Tier } from "./subscription";
 import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, type Permission } from "./auth";
 import { PERSONAS, isSolo } from "./personas";
@@ -29,6 +30,7 @@ const TABS: TabDef[] = [
   { id: "team", label: "Team", perm: "analysis:view_team" },
   { id: "catalog", label: "Catalog", perm: "catalog:read" },
   { id: "admin", label: "Admin", perm: "org:configure" },
+  { id: "profile", label: "Profile", perm: "plan:use" },
 ];
 
 export function App() {
@@ -175,8 +177,9 @@ export function App() {
         ))}
       </nav>
 
-      {tab === "plan" && <Planner role={account.role} />}
+      {tab === "plan" && <Planner role={account.role} onEditProfile={() => setTab("profile")} />}
       {tab === "progress" && gamification && <ProgressView profile={gamification} />}
+      {tab === "profile" && <ProfileView account={account} />}
       {tab === "connect" && <Dashboard tier={tier} />}
       {tab === "team" && <TeamView canExport={hasPermission(account, "data:export")} />}
       {tab === "catalog" && (

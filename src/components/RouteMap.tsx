@@ -79,10 +79,21 @@ export function RouteMap({ activity }: { activity: Activity }) {
         .bindTooltip(`Fuel stop ${i + 1} · ${formatClock(min)} · ~30 g carb`, { direction: "top" });
     });
 
-    // Leaflet needs a size recalculation once the container has laid out.
-    const t = setTimeout(() => map.invalidateSize(), 60);
+    // Leaflet mis-sizes tiles when its container isn't laid out yet (lazy mount,
+    // freshly-rendered panel). Recalculate size + refit once the box has real
+    // dimensions, and again on any later resize, so the map always fills in.
+    const refit = () => {
+      map.invalidateSize();
+      if (line.getBounds().isValid()) map.fitBounds(line.getBounds(), { padding: [26, 26] });
+    };
+    const t1 = setTimeout(refit, 60);
+    const t2 = setTimeout(refit, 350);
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    if (el.current) ro.observe(el.current);
     return () => {
-      clearTimeout(t);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      ro.disconnect();
       map.remove();
     };
   }, [route, cum, durationMin]);

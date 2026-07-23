@@ -2308,3 +2308,114 @@ code {
 .mt-5 { margin-top: var(--space-5); }
 .plain-grid { padding: 0; border: none; background: none; }
 .admin-group-label { display: block; margin-bottom: var(--space-3); }
+
+/* --- Planner: profile hint (body data now lives in Profile settings) --- */
+.from-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-base);
+  color: var(--muted);
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: var(--text-base);
+  cursor: pointer;
+  padding: 0;
+}
+.link-btn:hover { text-decoration: underline; }
+
+/* --- Planner: notes as a low-emphasis disclosure (less overloaded) --- */
+.notes-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--text-md);
+  list-style: none;
+}
+.notes-details > summary::-webkit-details-marker { display: none; }
+.notes-details > summary::before { content: "▸ "; color: var(--accent); }
+.notes-details[open] > summary::before { content: "▾ "; }
+.notes-list {
+  margin: var(--space-4) 0 0;
+  padding-left: var(--space-7);
+  color: var(--muted);
+  font-size: var(--text-base);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* --- Profile settings --- */
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+.avatar-lg {
+  width: 56px;
+  height: 56px;
+  font-size: var(--text-xl);
+}
+.profile-name {
+  font-weight: 700;
+  font-size: var(--text-lg);
+}
+.profile-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+@media (max-width: 560px) {
+  .profile-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* --- Health-platform sync --- */
+.health-sync {
+  margin: var(--space-6) 0;
+  padding: var(--space-6);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.health-sync-label { display: block; margin-bottom: var(--space-3); }
+.health-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.health-chip {
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--panel);
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+.health-chip:hover { border-color: var(--border-strong); }
+.health-chip.on {
+  border-color: var(--post);
+  background: rgba(52, 201, 138, 0.12);
+  color: var(--text);
+}
+.health-sync-note { margin: var(--space-4) 0 0; }
+
+/* --- Responsive: account bar wraps on small screens --- */
+@media (max-width: 560px) {
+  .accountbar {
+    flex-wrap: wrap;
+    row-gap: var(--space-3);
+  }
+  .account-actions { flex-wrap: wrap; }
+  .hero h1 { font-size: clamp(20px, 6vw, 30px); }
+}
