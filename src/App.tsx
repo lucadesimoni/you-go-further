@@ -7,9 +7,11 @@ import { AdminView } from "./components/AdminView";
 import { LoginScreen } from "./components/LoginScreen";
 import { ProgressView } from "./components/ProgressView";
 import { ProfileView } from "./components/ProfileView";
-import { PLANS, TIER_ORDER, type Tier } from "./subscription";
+import { SubscriptionView } from "./components/SubscriptionView";
+import { AccountMenu } from "./components/AccountMenu";
+import { type Tier } from "./subscription";
 import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, type Permission } from "./auth";
-import { PERSONAS, isSolo } from "./personas";
+import { isSolo } from "./personas";
 import { getConfig } from "./config";
 import { generateSampleActivities } from "./providers";
 import { lastNDays } from "./data";
@@ -23,14 +25,15 @@ interface TabDef {
   perm: Permission;
 }
 
+// Primary navigation — the core work surfaces. Personal screens (Profile,
+// Subscription) live in the account menu, not here, so each is in one place.
 const TABS: TabDef[] = [
-  { id: "plan", label: "Fuel planner", perm: "plan:use" },
+  { id: "plan", label: "Plan", perm: "plan:use" },
   { id: "progress", label: "Progress", perm: "plan:use" },
-  { id: "connect", label: "Connect & analyse", perm: "analysis:view_own" },
+  { id: "connect", label: "Connect", perm: "analysis:view_own" },
   { id: "team", label: "Team", perm: "analysis:view_team" },
   { id: "catalog", label: "Catalog", perm: "catalog:read" },
   { id: "admin", label: "Admin", perm: "org:configure" },
-  { id: "profile", label: "Profile", perm: "plan:use" },
 ];
 
 export function App() {
@@ -67,8 +70,14 @@ export function App() {
       alive = false;
     };
   }, [account]);
+  // Profile & Subscription are reached from the account menu, not the nav — allow
+  // them even though they aren't in visibleTabs; otherwise fall back to the first
+  // permitted tab (e.g. after a role switch removes access to the current one).
   useEffect(() => {
-    if (!visibleTabs.some((t) => t.id === tab)) setTab(visibleTabs[0]?.id ?? "plan");
+    const menuScreens = ["profile", "subscription"];
+    if (!visibleTabs.some((t) => t.id === tab) && !menuScreens.includes(tab)) {
+      setTab(visibleTabs[0]?.id ?? "plan");
+    }
   }, [visibleTabs, tab]);
 
   // Gate: no session → login / register.
@@ -76,121 +85,56 @@ export function App() {
     return <LoginScreen onSignedIn={setAccount} allowDemo={config.allowRoleSwitching} />;
   }
 
-  const initials = account.name
-    .split(" ")
-    .map((s) => s[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
     <div className="page">
-      {/* Account bar */}
-      <div className="accountbar">
-        <div className="account-id">
-          <span className="avatar">{initials}</span>
-          <span className="account-meta">
-            <span className="account-name">{account.name}</span>
-            <span className="account-email">{account.email}</span>
-          </span>
-        </div>
-        <div className="account-actions">
-          {gamification && (
-            <button
-              type="button"
-              className="level-chip"
-              onClick={() => setTab("progress")}
-              title={`${gamification.xp} XP · ${gamification.streakDays}-day streak`}
-            >
-              <span className="level-chip-num">{gamification.level}</span>
-              <span className="level-chip-meta">
-                <span className="level-chip-name">{gamification.levelName}</span>
-                <span className="level-chip-streak">🔥 {gamification.streakDays}</span>
-              </span>
-            </button>
-          )}
-          {config.allowRoleSwitching && (
-            <select
-              className="demo-switch"
-              aria-label="Demo account"
-              value={account.authProvider === "demo" ? account.id : ""}
-              onChange={(e) => {
-                const p = PERSONAS.find((x) => x.id === e.target.value);
-                if (p) setAccount(signInAsDemo(p));
-              }}
-            >
-              <option value="">Demo account…</option>
-              {PERSONAS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          )}
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => {
-              clearSessionToken();
-              setAccount(signOut());
-            }}
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
+      <header className="topbar">
+        <button type="button" className="brand" onClick={() => setTab("plan")}>
+          <span className="brand-mark">▲</span>
+          <span className="brand-name">You Go Further</span>
+        </button>
 
-      <header className="hero">
-        <p className="kicker">You Go Further</p>
-        <h1>Swiss endurance fueling, tuned to your training</h1>
-        <p className="sub">
-          Connect Strava, Garmin, Polar and Suunto, analyse training load, and get before / during /
-          after fueling with Swiss products from Sponser and Winforce.
-        </p>
+        <nav className="topnav" aria-label="Primary">
+          {visibleTabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={tab === t.id ? "topnav-tab active" : "topnav-tab"}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        <AccountMenu
+          account={account}
+          gamification={gamification}
+          allowRoleSwitching={config.allowRoleSwitching}
+          canBilling={canBilling}
+          onNavigate={setTab}
+          onSwitchDemo={(p) => setAccount(signInAsDemo(p))}
+          onSignOut={() => {
+            clearSessionToken();
+            setAccount(signOut());
+          }}
+        />
       </header>
 
-      {/* Subscription — interactive for account owners, read-only for org seats */}
-      {canBilling ? (
-        <div className="tierbar" role="group" aria-label="Subscription">
-          {TIER_ORDER.map((t) => {
-            const plan = PLANS[t];
-            return (
-              <button key={t} type="button" className={`tier${tier === t ? " active" : ""}`} onClick={() => setTier(t)}>
-                <span className="tier-name">{plan.name}</span>
-                <span className="tier-price">{plan.priceChfPerMonth === 0 ? "Free" : `CHF ${plan.priceChfPerMonth}/mo`}</span>
-                <span className="tier-tag">{plan.tagline}</span>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="tier-readonly">
-          Plan: <strong>{PLANS[tier].name}</strong> — managed by your organization.
-        </div>
-      )}
-
-      <nav className="tabs" aria-label="Views">
-        {visibleTabs.map((t) => (
-          <button key={t.id} type="button" className={tab === t.id ? "tab active" : "tab"} onClick={() => setTab(t.id)}>
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
-      {tab === "plan" && <Planner role={account.role} onEditProfile={() => setTab("profile")} />}
-      {tab === "progress" && gamification && <ProgressView profile={gamification} />}
-      {tab === "profile" && <ProfileView account={account} />}
-      {tab === "connect" && <Dashboard tier={tier} />}
-      {tab === "team" && <TeamView canExport={hasPermission(account, "data:export")} />}
-      {tab === "catalog" && (
-        <CatalogView canEdit={hasPermission(account, "catalog:edit")} role={account.role} />
-      )}
-      {tab === "admin" && <AdminView config={config} tier={tier} orgId={account.orgId} role={account.role} />}
+      <div className="app-body">
+        {tab === "plan" && <Planner role={account.role} onEditProfile={() => setTab("profile")} />}
+        {tab === "progress" && gamification && <ProgressView profile={gamification} />}
+        {tab === "profile" && <ProfileView account={account} />}
+        {tab === "subscription" && <SubscriptionView tier={tier} onChoose={setTier} canBilling={canBilling} />}
+        {tab === "connect" && <Dashboard tier={tier} />}
+        {tab === "team" && <TeamView canExport={hasPermission(account, "data:export")} />}
+        {tab === "catalog" && <CatalogView canEdit={hasPermission(account, "catalog:edit")} role={account.role} />}
+        {tab === "admin" && <AdminView config={config} tier={tier} orgId={account.orgId} role={account.role} />}
+      </div>
 
       <footer className="foot">
         {config.environment} · v{config.version} · General guidance for healthy adults — not medical
-        advice. Provider connectors use official OAuth scopes; sample data is shown until a real
-        account is linked.
+        advice. Provider connectors use official OAuth scopes; sample data is shown until a real account
+        is linked.
       </footer>
     </div>
   );
