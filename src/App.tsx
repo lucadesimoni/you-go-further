@@ -29,7 +29,7 @@ interface TabDef {
 // Subscription) live in the account menu, not here, so each is in one place.
 const TABS: TabDef[] = [
   { id: "plan", label: "Plan", perm: "plan:use" },
-  { id: "progress", label: "Progress", perm: "plan:use" },
+  { id: "progress", label: "Insights", perm: "plan:use" },
   { id: "connect", label: "Connect", perm: "analysis:view_own" },
   { id: "team", label: "Team", perm: "analysis:view_team" },
   { id: "catalog", label: "Catalog", perm: "catalog:read" },

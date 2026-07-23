@@ -62,7 +62,6 @@ export function AccountMenu({
       <button type="button" className="account-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu">
         <span className="avatar">{initials}</span>
         <span className="account-btn-name">{account.name}</span>
-        {gamification && <span className="account-btn-lvl">L{gamification.level}</span>}
         <span className="chev" aria-hidden>▾</span>
       </button>
 
@@ -77,12 +76,10 @@ export function AccountMenu({
             </div>
           </div>
 
-          {gamification && (
+          {gamification && gamification.streakDays > 0 && (
             <button type="button" className="dropdown-item dropdown-status" onClick={() => go("progress")} role="menuitem">
-              <span>
-                🔥 {gamification.streakDays}-day streak · {gamification.xp.toLocaleString()} XP
-              </span>
-              <span className="dropdown-lvl">Level {gamification.level} ›</span>
+              <span>{gamification.streakDays}-day training streak</span>
+              <span className="dropdown-lvl">Insights ›</span>
             </button>
           )}
 
