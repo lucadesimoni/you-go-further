@@ -9,6 +9,8 @@ import { ProgressView } from "./components/ProgressView";
 import { ProfileView } from "./components/ProfileView";
 import { SubscriptionView } from "./components/SubscriptionView";
 import { AccountMenu } from "./components/AccountMenu";
+import { ToastHost } from "./components/ToastHost";
+import { ConfirmHost } from "./components/ConfirmHost";
 import { type Tier } from "./subscription";
 import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, type Permission } from "./auth";
 import { isSolo } from "./personas";
@@ -136,6 +138,9 @@ export function App() {
         advice. Provider connectors use official OAuth scopes; sample data is shown until a real account
         is linked.
       </footer>
+
+      <ToastHost />
+      <ConfirmHost />
     </div>
   );
 }

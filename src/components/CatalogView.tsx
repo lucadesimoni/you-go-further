@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { CATALOG, productUsage, type Phase, type Product, type ProductCategory } from "../engine";
 import type { Role } from "../auth";
 import { catalogPersistence, deleteProduct, loadCatalog, saveProduct } from "../api/productLibrary";
+import { toast } from "../ui/toast";
+import { confirm } from "../ui/confirm";
 
 const CATEGORY_LABELS: Record<ProductCategory, string> = {
   "drink-mix": "Drink mix",
@@ -59,7 +61,9 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
     setError(null);
     try {
       setCatalog(await saveProduct(role, draft));
+      const name = draft.name?.trim();
       setDraft(null);
+      toast.success(`${name || "Product"} saved`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save product");
     } finally {
@@ -67,13 +71,23 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
     }
   };
 
-  const remove = async (id: string) => {
+  const remove = async (product: Product) => {
+    const ok = await confirm({
+      title: `Delete ${product.brand} ${product.name}?`,
+      message: "It will be removed from the product library and from recommendations.",
+      confirmLabel: "Delete product",
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {
-      setCatalog(await deleteProduct(role, id));
+      setCatalog(await deleteProduct(role, product.id));
+      toast.success("Product deleted");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not delete product");
+      const msg = e instanceof Error ? e.message : "Could not delete product";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
@@ -187,7 +201,7 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                   <button
                     type="button"
                     className="btn btn-ghost btn-danger"
-                    onClick={() => remove(p.id)}
+                    onClick={() => remove(p)}
                     disabled={busy || (!p.custom && CATALOG.some((b) => b.id === p.id))}
                     title={!p.custom ? "Built-ins can't be deleted — Edit to override values" : "Delete house product"}
                   >

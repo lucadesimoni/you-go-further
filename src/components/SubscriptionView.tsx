@@ -1,4 +1,5 @@
 import { PLANS, TIER_ORDER, type Tier } from "../subscription";
+import { toast } from "../ui/toast";
 
 const FEATURE_ROWS: { key: keyof (typeof PLANS)["free"]["features"]; label: string }[] = [
   { key: "maxConnectedProviders", label: "Connected services" },
@@ -62,7 +63,10 @@ export function SubscriptionView({
                     type="button"
                     className={`btn ${current ? "btn-ghost" : "btn-primary"} plan-card-btn`}
                     disabled={current}
-                    onClick={() => onChoose(t)}
+                    onClick={() => {
+                      onChoose(t);
+                      toast.success(`Switched to ${plan.name}`);
+                    }}
                   >
                     {current ? "Current plan" : plan.priceChfPerMonth === 0 ? "Downgrade" : `Choose ${plan.name}`}
                   </button>

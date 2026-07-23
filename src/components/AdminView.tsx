@@ -7,6 +7,8 @@ import type { ProviderId } from "../model";
 import type { User } from "../users";
 import type { PlatformSettings } from "../settings";
 import { adminPersistence, createUser, deleteUser, loadSettings, loadUsers, saveSettings, updateUser } from "../api/adminClient";
+import { toast } from "../ui/toast";
+import { confirm } from "../ui/confirm";
 import { ServerStatus } from "./ServerStatus";
 
 const FEATURE_ROWS: { key: keyof (typeof PLANS)["free"]["features"]; label: string }[] = [
@@ -23,6 +25,7 @@ const cell = (v: unknown) => (typeof v === "boolean" ? (v ? "✓" : "—") : Str
 /** Org admin: user management, platform settings, plans, and the deployment surface. */
 export function AdminView({ config, tier, orgId, role }: { config: AppConfig; tier: Tier; orgId?: string; role: Role }) {
   const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,9 +38,11 @@ export function AdminView({ config, tier, orgId, role }: { config: AppConfig; ti
 
   useEffect(() => {
     let live = true;
+    setLoadingUsers(true);
     loadUsers(role)
       .then((u) => live && setUsers(u))
-      .catch(() => live && setUsers([]));
+      .catch(() => live && setUsers([]))
+      .finally(() => live && setLoadingUsers(false));
     loadSettings(role)
       .then((s) => live && setSettings(s))
       .catch(() => {});
@@ -54,7 +59,9 @@ export function AdminView({ config, tier, orgId, role }: { config: AppConfig; ti
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+      const msg = e instanceof Error ? e.message : "Something went wrong";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
@@ -62,14 +69,30 @@ export function AdminView({ config, tier, orgId, role }: { config: AppConfig; ti
 
   const patchUser = (id: string, patch: Partial<Pick<User, "role" | "tier" | "status">>) =>
     run(async () => setUsers(await updateUser(role, id, patch)));
-  const removeUser = (id: string) => run(async () => setUsers(await deleteUser(role, id)));
+  const removeUser = (u: User) =>
+    run(async () => {
+      const ok = await confirm({
+        title: `Remove ${u.name}?`,
+        message: `${u.email} will lose access to the platform. This can't be undone.`,
+        confirmLabel: "Remove user",
+        danger: true,
+      });
+      if (!ok) return;
+      setUsers(await deleteUser(role, u.id));
+      toast.success(`${u.name} removed`);
+    });
   const addUser = () =>
     run(async () => {
+      const name = draft.name.trim();
       setUsers(await createUser(role, draft));
       setDraft({ name: "", email: "", role: "athlete", tier: "free" });
+      toast.success(`Invitation sent to ${name || "new user"}`);
     });
   const patchSettings = (patch: Partial<PlatformSettings>) =>
-    run(async () => setSettings(await saveSettings(role, patch)));
+    run(async () => {
+      setSettings(await saveSettings(role, patch));
+      toast.success("Settings saved");
+    });
   const toggleProvider = (p: ProviderId) => {
     if (!settings) return;
     const on = settings.enabledProviders.includes(p);
@@ -114,7 +137,16 @@ export function AdminView({ config, tier, orgId, role }: { config: AppConfig; ti
           <h2>Users &amp; roles</h2>
           <span className="pill">{adminPersistence.mode() === "server" ? "server" : "this browser"}</span>
         </div>
-        <div className="admin-users">
+        {loadingUsers ? (
+          <div className="admin-skeleton">
+            {[0, 1, 2, 3].map((i) => (
+              <div className="skeleton-row" key={i} />
+            ))}
+          </div>
+        ) : users.length === 0 ? (
+          <p className="empty-state">No users yet — invite your first teammate below.</p>
+        ) : (
+          <div className="admin-users">
           <div className="admin-user admin-user-head">
             <span>User</span>
             <span>Role</span>
@@ -162,13 +194,14 @@ export function AdminView({ config, tier, orgId, role }: { config: AppConfig; ti
                 type="button"
                 className="btn btn-ghost btn-danger"
                 disabled={busy || u.role === "owner"}
-                onClick={() => removeUser(u.id)}
+                onClick={() => removeUser(u)}
               >
                 Remove
               </button>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
         <div className="admin-add">
           <input
