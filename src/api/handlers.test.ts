@@ -247,4 +247,60 @@ describe("API router", () => {
     const list = await route(req("GET", "/api/products"));
     expect((list.data as { custom: number }).custom).toBe(0);
   });
+
+  it("forbids non-admins from the user roster", async () => {
+    expect((await route(req("GET", "/api/admin/users", { principal: athlete }))).status).toBe(403);
+  });
+
+  it("lists org users for an admin", async () => {
+    const res = await route(req("GET", "/api/admin/users", { principal: admin }));
+    expect(res.status).toBe(200);
+    const users = (res.data as { users: { orgId?: string }[] }).users;
+    expect(users.length).toBeGreaterThan(0);
+    expect(users.every((u) => u.orgId === "swiss-tri-club")).toBe(true);
+  });
+
+  it("invites, updates and removes a user", async () => {
+    const created = await route(
+      req("POST", "/api/admin/users", { body: { name: "New Athlete", email: "new@club.ch", role: "athlete", tier: "free" }, principal: admin }),
+    );
+    expect(created.status).toBe(200);
+    const id = (created.data as { user: { id: string } }).user.id;
+
+    const promoted = await route(req("POST", `/api/admin/users/${encodeURIComponent(id)}`, { body: { role: "coach", tier: "pro" }, principal: admin }));
+    expect((promoted.data as { user: { role: string; tier: string } }).user.role).toBe("coach");
+    expect((promoted.data as { user: { tier: string } }).user.tier).toBe("pro");
+
+    const suspended = await route(req("POST", `/api/admin/users/${encodeURIComponent(id)}`, { body: { status: "suspended" }, principal: admin }));
+    expect((suspended.data as { user: { status: string } }).user.status).toBe("suspended");
+
+    const del = await route(req("DELETE", `/api/admin/users/${encodeURIComponent(id)}`, { principal: admin }));
+    expect(del.status).toBe(200);
+    expect((del.data as { users: { id: string }[] }).users.some((u) => u.id === id)).toBe(false);
+  });
+
+  it("rejects a duplicate email and invalid input", async () => {
+    await route(req("POST", "/api/admin/users", { body: { name: "Dup", email: "dup@club.ch", role: "athlete", tier: "free" }, principal: admin }));
+    const dup = await route(req("POST", "/api/admin/users", { body: { name: "Dup2", email: "dup@club.ch", role: "athlete", tier: "free" }, principal: admin }));
+    expect(dup.status).toBe(400);
+    const bad = await route(req("POST", "/api/admin/users", { body: { name: "", email: "x", role: "athlete", tier: "free" }, principal: admin }));
+    expect(bad.status).toBe(400);
+  });
+
+  it("protects the owner account from demotion and removal", async () => {
+    await route(req("POST", "/api/admin/users", { body: { name: "Owner", email: "owner@club.ch", role: "owner", tier: "elite" }, principal: admin }));
+    const id = "user:owner@club.ch";
+    expect((await route(req("POST", `/api/admin/users/${encodeURIComponent(id)}`, { body: { role: "athlete" }, principal: admin }))).status).toBe(400);
+    expect((await route(req("DELETE", `/api/admin/users/${encodeURIComponent(id)}`, { principal: admin }))).status).toBe(400);
+  });
+
+  it("reads and updates platform settings (admin only)", async () => {
+    expect((await route(req("GET", "/api/admin/settings", { principal: athlete }))).status).toBe(403);
+    const get = await route(req("GET", "/api/admin/settings", { principal: admin }));
+    expect(get.status).toBe(200);
+    const updated = await route(req("POST", "/api/admin/settings", { body: { registrationOpen: false, defaultTier: "pro" }, principal: admin }));
+    const s = (updated.data as { settings: { registrationOpen: boolean; defaultTier: string } }).settings;
+    expect(s.registrationOpen).toBe(false);
+    expect(s.defaultTier).toBe("pro");
+  });
 });

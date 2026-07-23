@@ -247,13 +247,13 @@ export function Dashboard({ tier }: { tier: Tier }) {
             <h2>Body signals</h2>
             <span className="pill">from your devices</span>
           </div>
-          <div className="targets" style={{ padding: 0, border: "none", background: "none" }}>
+          <div className="targets plain-grid">
             <Stat label="Readiness" value={physiology.readiness !== undefined ? `${physiology.readiness}/100` : "—"} />
             <Stat label="Overnight HRV" value={physiology.hrvMs ? `${physiology.hrvMs} ms` : "—"} note={hrvStatus !== "—" ? hrvStatus : undefined} />
             <Stat label="Resting HR" value={physiology.restingHr ? `${physiology.restingHr} bpm` : "—"} />
             <Stat label="Sleep" value={physiology.sleepScore ? `${physiology.sleepScore}/100` : "—"} />
           </div>
-          <p className="detail" style={{ margin: "12px 0 0" }}>
+          <p className="detail note-top">
             These personalize your fueling — low readiness dials up recovery carbs, and a sweat test
             (add it in the Fuel planner) sets hydration and sodium to your own chemistry instead of
             population averages.
@@ -292,7 +292,7 @@ export function Dashboard({ tier }: { tier: Tier }) {
           <p className="detail">Connect a service to sync activities and see your analysis.</p>
         ) : (
           <>
-            <div className="targets" style={{ padding: 0, border: "none", background: "none" }}>
+            <div className="targets plain-grid">
               <Stat label="Activities" value={String(report.totalActivities)} />
               <Stat label="Hours" value={`${report.totalHours}`} />
               <Stat label="Distance" value={`${report.totalDistanceKm} km`} />

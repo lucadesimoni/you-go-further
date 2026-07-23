@@ -67,7 +67,7 @@ export function TeamView({ canExport }: { canExport: boolean }) {
                 </button>
                 {isOpen && (
                   <div className="roster-detail">
-                    <div className="targets" style={{ padding: 0, border: "none", background: "none" }}>
+                    <div className="targets plain-grid">
                       <div className="stat">
                         <span className="stat-value">{r.report.acwr.acuteLoad}</span>
                         <span className="stat-label">7-day load</span>
@@ -85,7 +85,7 @@ export function TeamView({ canExport }: { canExport: boolean }) {
                         <span className="stat-label">Avg fuel rate</span>
                       </div>
                     </div>
-                    <p className="detail" style={{ margin: "12px 0 0" }}>
+                    <p className="detail note-top">
                       {r.report.nutrition.fueledSessions} of {r.report.nutrition.totalSessions} sessions this week need
                       in-session fuel. Source: {r.provider}.
                     </p>

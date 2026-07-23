@@ -1,5 +1,12 @@
 export { JsonFile } from "./jsonFile";
-export { FileActivityStore, FileFeedbackStore, FileConnectionStore, FileProductStore } from "./fileStores";
+export {
+  FileActivityStore,
+  FileFeedbackStore,
+  FileConnectionStore,
+  FileProductStore,
+  FileUserStore,
+  FileSettingsStore,
+} from "./fileStores";
 export {
   createPgStores,
   migrate,
@@ -7,5 +14,8 @@ export {
   PgFeedbackStore,
   PgConnectionStore,
   PgProductStore,
+  PgUserStore,
+  PgSettingsStore,
   type PgStores,
+  type PgSeed,
 } from "./pgStores";

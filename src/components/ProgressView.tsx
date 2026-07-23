@@ -26,7 +26,7 @@ export function ProgressView({ profile }: { profile: GamificationProfile }) {
 
       {/* Streak + key stats */}
       <section className="panel">
-        <div className="targets" style={{ padding: 0, border: "none", background: "none" }}>
+        <div className="targets plain-grid">
           <div className="stat">
             <span className="stat-value">🔥 {profile.streakDays}</span>
             <span className="stat-label">Day streak</span>
@@ -35,7 +35,7 @@ export function ProgressView({ profile }: { profile: GamificationProfile }) {
           <Stat label="Activities" value={String(profile.stats.activities)} />
           <Stat label="Hours" value={`${profile.stats.hours}`} />
         </div>
-        <div className="targets" style={{ padding: "12px 0 0", border: "none", background: "none" }}>
+        <div className="targets plain-grid mt-5">
           <Stat label="Distance" value={`${profile.stats.distanceKm} km`} />
           <Stat label="Climbed" value={`${profile.stats.elevationM} m`} />
           <Stat label="Badges" value={`${profile.unlockedCount}/${profile.achievements.length}`} />

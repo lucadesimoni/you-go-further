@@ -52,7 +52,7 @@ export function CartPanel({ rec }: { rec: Recommendation }) {
       >
         {ordered ? "✓ Order placed (demo)" : "Add to cart · checkout"}
       </button>
-      <p className="detail" style={{ margin: "10px 0 0" }}>
+      <p className="detail note-top">
         Fulfilled by our Swiss partners (Sponser, Winforce). Checkout is a demo — wires to Shopify /
         the brand store in production.
       </p>

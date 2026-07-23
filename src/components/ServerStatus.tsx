@@ -68,7 +68,7 @@ export function ServerStatus({ role }: { role: Role }) {
 
       {state.kind === "ok" && (
         <>
-          <div className="targets" style={{ padding: 0, border: "none", background: "none" }}>
+          <div className="targets plain-grid">
             <div className="stat">
               <span className="stat-value">{state.health.status === "ok" ? "OK" : state.health.status}</span>
               <span className="stat-label">API health</span>
@@ -86,7 +86,7 @@ export function ServerStatus({ role }: { role: Role }) {
               <span className="stat-label">Server version</span>
             </div>
           </div>
-          <div className="tl-foot" style={{ marginTop: 12 }}>
+          <div className="tl-foot mt-5">
             <span>Served by the HTTP API — data below is fetched live over the network.</span>
             <button type="button" className="btn btn-primary" onClick={seed}>
               Seed sample data

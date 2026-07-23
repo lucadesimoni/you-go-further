@@ -5,6 +5,10 @@ import type { FeedbackStore, SessionFeedback } from "../feedback";
 import type { ConnectionStore, ProviderConnection } from "../providers";
 import type { ProviderCredential } from "../providers/types";
 import type { Product, ProductStore } from "../engine";
+import type { User, UserStore, UserPatch } from "../users";
+import { normalizeUserPatch } from "../users";
+import type { PlatformSettings, SettingsStore } from "../settings";
+import { normalizeSettingsPatch } from "../settings";
 import { JsonFile } from "./jsonFile";
 
 /**
@@ -151,5 +155,69 @@ export class FileProductStore implements ProductStore {
   async remove(id: string): Promise<void> {
     delete this.data[id];
     this.file.write(this.data);
+  }
+}
+
+export class FileUserStore implements UserStore {
+  private readonly file: JsonFile<Record<string, User>>;
+  private data: Record<string, User>;
+
+  constructor(dir: string, seed: User[] = []) {
+    this.file = new JsonFile(join(dir, "users.json"), {});
+    this.data = this.file.read();
+    // Seed the org on first run (empty file).
+    if (Object.keys(this.data).length === 0 && seed.length) {
+      for (const u of seed) this.data[u.id] = u;
+      this.file.write(this.data);
+    }
+  }
+
+  async list(orgId?: string): Promise<User[]> {
+    const all = Object.values(this.data).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return orgId === undefined ? all : all.filter((u) => u.orgId === orgId);
+  }
+
+  async get(id: string): Promise<User | undefined> {
+    return this.data[id];
+  }
+
+  async create(user: User): Promise<User> {
+    this.data[user.id] = user;
+    this.file.write(this.data);
+    return user;
+  }
+
+  async update(id: string, patch: UserPatch): Promise<User | undefined> {
+    const cur = this.data[id];
+    if (!cur) return undefined;
+    const next = { ...cur, ...normalizeUserPatch(patch) };
+    this.data[id] = next;
+    this.file.write(this.data);
+    return next;
+  }
+
+  async remove(id: string): Promise<void> {
+    delete this.data[id];
+    this.file.write(this.data);
+  }
+}
+
+export class FileSettingsStore implements SettingsStore {
+  private readonly file: JsonFile<PlatformSettings>;
+  private settings: PlatformSettings;
+
+  constructor(dir: string, defaults: PlatformSettings) {
+    this.file = new JsonFile(join(dir, "settings.json"), defaults);
+    this.settings = { ...defaults, ...this.file.read() };
+  }
+
+  async get(): Promise<PlatformSettings> {
+    return this.settings;
+  }
+
+  async update(patch: Partial<PlatformSettings>): Promise<PlatformSettings> {
+    this.settings = { ...this.settings, ...normalizeSettingsPatch(patch) };
+    this.file.write(this.settings);
+    return this.settings;
   }
 }

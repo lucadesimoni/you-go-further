@@ -5,6 +5,10 @@ import type { FeedbackStore, SessionFeedback } from "../feedback";
 import type { ConnectionStore, ProviderConnection } from "../providers";
 import type { ProviderCredential } from "../providers/types";
 import type { Product, ProductStore } from "../engine";
+import type { User, UserStore, UserPatch } from "../users";
+import { normalizeUserPatch } from "../users";
+import type { PlatformSettings, SettingsStore } from "../settings";
+import { normalizeSettingsPatch } from "../settings";
 
 /**
  * PostgreSQL-backed stores — the production persistence backend. Selected by
@@ -46,6 +50,19 @@ export async function migrate(pool: Pool): Promise<void> {
       id          text PRIMARY KEY,
       data        jsonb NOT NULL,
       updated_at  timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id          text PRIMARY KEY,
+      org_id      text,
+      data        jsonb NOT NULL,
+      created_at  timestamptz NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS users_org_idx ON users (org_id);
+
+    CREATE TABLE IF NOT EXISTS settings (
+      id    text PRIMARY KEY,
+      data  jsonb NOT NULL
     );
   `);
 }
@@ -175,17 +192,93 @@ export class PgProductStore implements ProductStore {
   }
 }
 
+export class PgUserStore implements UserStore {
+  constructor(
+    private readonly pool: Pool,
+    private readonly seed: User[] = [],
+  ) {}
+
+  private async ensureSeeded(): Promise<void> {
+    if (!this.seed.length) return;
+    const res = await this.pool.query<{ n: string }>("SELECT count(*)::int AS n FROM users");
+    if (Number(res.rows[0]?.n ?? 0) > 0) return;
+    for (const u of this.seed) await this.create(u);
+  }
+
+  async list(orgId?: string): Promise<User[]> {
+    await this.ensureSeeded();
+    const res =
+      orgId === undefined
+        ? await this.pool.query<{ data: User }>("SELECT data FROM users ORDER BY created_at")
+        : await this.pool.query<{ data: User }>(
+            "SELECT data FROM users WHERE org_id = $1 ORDER BY created_at",
+            [orgId],
+          );
+    return res.rows.map((r) => r.data);
+  }
+
+  async get(id: string): Promise<User | undefined> {
+    const res = await this.pool.query<{ data: User }>("SELECT data FROM users WHERE id = $1", [id]);
+    return res.rows[0]?.data;
+  }
+
+  async create(user: User): Promise<User> {
+    await this.pool.query(
+      `INSERT INTO users (id, org_id, data, created_at) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO UPDATE SET org_id = EXCLUDED.org_id, data = EXCLUDED.data`,
+      [user.id, user.orgId ?? null, user, user.createdAt],
+    );
+    return user;
+  }
+
+  async update(id: string, patch: UserPatch): Promise<User | undefined> {
+    const cur = await this.get(id);
+    if (!cur) return undefined;
+    const next = { ...cur, ...normalizeUserPatch(patch) };
+    await this.pool.query("UPDATE users SET data = $2 WHERE id = $1", [id, next]);
+    return next;
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.pool.query("DELETE FROM users WHERE id = $1", [id]);
+  }
+}
+
+export class PgSettingsStore implements SettingsStore {
+  constructor(
+    private readonly pool: Pool,
+    private readonly defaults: PlatformSettings,
+  ) {}
+
+  async get(): Promise<PlatformSettings> {
+    const res = await this.pool.query<{ data: PlatformSettings }>("SELECT data FROM settings WHERE id = 'platform'");
+    return { ...this.defaults, ...(res.rows[0]?.data ?? {}) };
+  }
+
+  async update(patch: Partial<PlatformSettings>): Promise<PlatformSettings> {
+    const next = { ...(await this.get()), ...normalizeSettingsPatch(patch) };
+    await this.pool.query(
+      `INSERT INTO settings (id, data) VALUES ('platform', $1)
+       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data`,
+      [next],
+    );
+    return next;
+  }
+}
+
 export interface PgStores {
   pool: Pool;
   store: PgActivityStore;
   feedback: PgFeedbackStore;
   connections: PgConnectionStore;
   products: PgProductStore;
+  users: PgUserStore;
+  settings: PgSettingsStore;
   init(): Promise<void>;
 }
 
 /** Construct Postgres-backed stores from a connection string. */
-export function createPgStores(databaseUrl: string): PgStores {
+export function createPgStores(databaseUrl: string, seed: PgSeed = {}): PgStores {
   const pool = new Pool({ connectionString: databaseUrl });
   return {
     pool,
@@ -193,6 +286,24 @@ export function createPgStores(databaseUrl: string): PgStores {
     feedback: new PgFeedbackStore(pool),
     connections: new PgConnectionStore(pool),
     products: new PgProductStore(pool),
+    users: new PgUserStore(pool, seed.users),
+    settings: new PgSettingsStore(pool, seed.settings ?? DEFAULT_SETTINGS_FALLBACK),
     init: () => migrate(pool),
   };
 }
+
+/** Seed data + settings defaults the composition root passes in. */
+export interface PgSeed {
+  users?: User[];
+  settings?: PlatformSettings;
+}
+
+// Minimal fallback if a caller doesn't pass settings defaults (all providers on).
+const DEFAULT_SETTINGS_FALLBACK: PlatformSettings = {
+  enabledProviders: ["strava", "garmin", "polar", "suunto"],
+  defaultTier: "free",
+  allowRoleSwitching: false,
+  exportEnabled: false,
+  registrationOpen: true,
+  maintenanceMode: false,
+};

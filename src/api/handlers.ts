@@ -28,9 +28,10 @@ import { PLANS, TIER_ORDER } from "../subscription";
 import { authorize, ForbiddenError, ROLE_LABELS, type Principal, type Role } from "../auth";
 import { signSession, DEV_AUTH_SECRET } from "../auth/jwt";
 import { verifyGoogleIdToken, verifyAppleIdToken } from "../auth/oidcVerify";
-import { PERSONAS } from "../personas";
 import type { Tier } from "../subscription";
 import { DESCRIPTORS, ALL_PROVIDER_IDS } from "../providers";
+import { normalizeNewUser, normalizeUserPatch, type NewUser, type UserPatch } from "../users";
+import type { PlatformSettings } from "../settings";
 
 export interface ApiRequest {
   method: string;
@@ -66,7 +67,7 @@ const GI_RATINGS: GiRating[] = ["none", "mild", "severe"];
 const ENERGY_RATINGS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
 
 export function createApiRouter(runtime: Runtime = createRuntime()) {
-  const { config, store, pipeline, feedback, registry, connections, products } = runtime;
+  const { config, store, pipeline, feedback, registry, connections, products, users, settings } = runtime;
 
   const isProvider = (v: string): v is ProviderId => (ALL_PROVIDER_IDS as string[]).includes(v);
 
@@ -166,6 +167,49 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           await products.remove(id);
           return ok({ products: mergeCatalog(await products.list()) });
         }
+      }
+
+      // --- Admin: user management (all gated by org:configure) ---
+      if (segs[0] === "api" && segs[1] === "admin" && segs[2] === "users") {
+        authorize(principal, "org:configure");
+        const id = segs[3] ? decodeURIComponent(segs[3]) : undefined;
+        if (method === "GET" && !id) return ok({ users: await users.list(principal.orgId) });
+        if (method === "POST" && !id) {
+          let created;
+          try {
+            created = normalizeNewUser((body ?? {}) as Partial<NewUser>, principal.orgId);
+          } catch (e) {
+            return bad(e instanceof Error ? e.message : "Invalid user");
+          }
+          if (await users.get(created.id)) return bad("A user with that email already exists.");
+          await users.create(created);
+          return ok({ user: created, users: await users.list(principal.orgId) });
+        }
+        if (method === "POST" && id) {
+          const target = await users.get(id);
+          if (!target) return notFound();
+          // Guard: an admin can't strip the owner's role or suspend an owner.
+          const patch = normalizeUserPatch((body ?? {}) as Partial<UserPatch>);
+          if (target.role === "owner" && (patch.role !== undefined || patch.status === "suspended")) {
+            return bad("The owner account can't be demoted or suspended.");
+          }
+          const updated = await users.update(id, patch);
+          return ok({ user: updated, users: await users.list(principal.orgId) });
+        }
+        if (method === "DELETE" && id) {
+          const target = await users.get(id);
+          if (target?.role === "owner") return bad("The owner account can't be removed.");
+          if (id === principal.id) return bad("You can't remove your own account.");
+          await users.remove(id);
+          return ok({ users: await users.list(principal.orgId) });
+        }
+      }
+
+      // --- Admin: platform settings ---
+      if (segs[0] === "api" && segs[1] === "admin" && segs[2] === "settings") {
+        authorize(principal, "org:configure");
+        if (method === "GET") return ok({ settings: await settings.get() });
+        if (method === "POST") return ok({ settings: await settings.update((body ?? {}) as Partial<PlatformSettings>) });
       }
 
       // --- Connections: list / disconnect ---
@@ -348,22 +392,26 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
 
         case key === "GET /api/admin/overview": {
           authorize(principal, "org:configure"); // RBAC enforced server-side
-          const members = PERSONAS.filter((p) => p.orgId === principal.orgId).map((m) => ({
+          const roster = await users.list(principal.orgId);
+          const members = roster.map((m) => ({
             id: m.id,
             name: m.name,
             role: ROLE_LABELS[m.role],
             tier: PLANS[m.tier].name,
           }));
+          const platform = await settings.get();
           return ok({
             org: principal.orgId ?? null,
             seats: members.length,
+            activeSeats: roster.filter((m) => m.status === "active").length,
             members,
             plans: TIER_ORDER.map((t) => PLANS[t]),
+            settings: platform,
             deployment: {
               environment: config.environment,
               version: config.version,
               storeBackend: config.storeBackend,
-              enabledProviders: config.enabledProviders,
+              enabledProviders: platform.enabledProviders,
               activitiesStored: await store.count(),
             },
           });

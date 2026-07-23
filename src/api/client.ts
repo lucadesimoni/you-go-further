@@ -64,7 +64,9 @@ export interface HealthResponse {
 export interface AdminOverview {
   org: string | null;
   seats: number;
+  activeSeats?: number;
   members: { id: string; name: string; role: string; tier: string }[];
+  settings?: PlatformSettings;
   deployment: {
     environment: string;
     version: string;
@@ -76,6 +78,15 @@ export interface AdminOverview {
 
 import type { SessionFeedback } from "../feedback";
 import type { Product } from "../engine";
+import type { User, NewUser, UserPatch } from "../users";
+import type { PlatformSettings } from "../settings";
+
+export interface UsersResponse {
+  users: User[];
+}
+export interface SettingsResponse {
+  settings: PlatformSettings;
+}
 
 interface FeedbackResponse {
   feedback: SessionFeedback[];
@@ -111,4 +122,13 @@ export const api = {
     call<{ product: Product; products: Product[] }>("POST", "/api/products", { body: product, role }),
   productDelete: (role: Role, id: string) =>
     call<ProductsResponse>("DELETE", `/api/products/${encodeURIComponent(id)}`, { role }),
+  usersList: (role: Role) => call<UsersResponse>("GET", "/api/admin/users", { role }),
+  userCreate: (role: Role, body: NewUser) => call<UsersResponse>("POST", "/api/admin/users", { body, role }),
+  userUpdate: (role: Role, id: string, body: UserPatch) =>
+    call<UsersResponse>("POST", `/api/admin/users/${encodeURIComponent(id)}`, { body, role }),
+  userDelete: (role: Role, id: string) =>
+    call<UsersResponse>("DELETE", `/api/admin/users/${encodeURIComponent(id)}`, { role }),
+  settingsGet: (role: Role) => call<SettingsResponse>("GET", "/api/admin/settings", { role }),
+  settingsUpdate: (role: Role, body: Partial<PlatformSettings>) =>
+    call<SettingsResponse>("POST", "/api/admin/settings", { body, role }),
 };
