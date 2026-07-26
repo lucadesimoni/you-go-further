@@ -2440,3 +2440,6 @@ code {
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-md);
 }
+
+/* --- "Plan for this route" CTA under route insights --- */
+.geo-plan { margin-top: var(--space-6); }

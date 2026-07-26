@@ -3,7 +3,8 @@ import type { Activity, ProviderId } from "../model";
 import { ALL_PROVIDER_IDS, DESCRIPTORS, generateSampleWellness, ProviderRegistry } from "../providers";
 import type { ProviderCredential } from "../providers/types";
 import { IngestionPipeline, InMemoryActivityStore, lastNDays, toNdjson } from "../data";
-import { analyze, derivePhysiology } from "../analysis";
+import { analyze, derivePhysiology, sportToActivity } from "../analysis";
+import type { SessionInput } from "./Planner";
 import { GOALS } from "../options";
 import { can, limit, PLANS, requiredTierFor, type Tier } from "../subscription";
 import type { AthleteInput } from "../engine";
@@ -22,7 +23,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 /** Connections + analysis workspace. Feature access is gated by the active tier. */
-export function Dashboard({ tier }: { tier: Tier }) {
+export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (prefill: Partial<SessionInput>) => void }) {
   const registry = useRef(new ProviderRegistry());
   const store = useRef(new InMemoryActivityStore());
   const pipeline = useRef(new IngestionPipeline(registry.current, store.current));
@@ -277,7 +278,13 @@ export function Dashboard({ tier }: { tier: Tier }) {
             <RouteMap activity={routedActivity} />
           </Suspense>
           {routedActivity.route && (
-            <RouteInsights route={routedActivity.route} hintGainM={routedActivity.elevationGainM} />
+            <RouteInsights
+              route={routedActivity.route}
+              hintGainM={routedActivity.elevationGainM}
+              activity={sportToActivity(routedActivity.sport)}
+              durationMin={Math.round(routedActivity.durationSec / 60)}
+              onPlan={onPlanRoute}
+            />
           )}
         </section>
       )}

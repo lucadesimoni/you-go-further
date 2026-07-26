@@ -15,7 +15,7 @@ import { OfferingPanel } from "./OfferingPanel";
 import { EnergyProfile } from "./EnergyProfile";
 
 /** Only session-specific fields live in the planner now; body data comes from the profile. */
-type SessionInput = Pick<AthleteInput, "goal" | "activity" | "durationMin" | "intensity" | "conditions">;
+export type SessionInput = Pick<AthleteInput, "goal" | "activity" | "durationMin" | "intensity" | "conditions">;
 
 const DEFAULT_SESSION: SessionInput = {
   goal: "endurance-performance",

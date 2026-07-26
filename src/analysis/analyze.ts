@@ -13,6 +13,11 @@ const SPORT_TO_ENGINE: Record<SportType, EngineActivity> = {
   other: "running",
 };
 
+/** Map a normalized sport to the nutrition engine's activity vocabulary. */
+export function sportToActivity(sport: SportType): EngineActivity {
+  return SPORT_TO_ENGINE[sport];
+}
+
 /** Fraction of max HR → session intensity. Falls back to duration when no HR. */
 export function inferIntensity(activity: Activity, maxHr?: number): Intensity {
   const hrMax = activity.maxHr ?? maxHr;

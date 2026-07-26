@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { LatLng } from "../model";
+import type { Activity } from "../engine";
 import { enrichRoute, type RouteConditions } from "../geo";
+import type { SessionInput } from "./Planner";
 
 const TERRAIN_LABEL: Record<string, string> = {
   flat: "Flat",
@@ -12,9 +14,22 @@ const TERRAIN_LABEL: Record<string, string> = {
 /**
  * Terrain (swisstopo) + weather for a planned/recorded route, and how they
  * change the fuelling plan. Fetches on mount; both sources fall back to an
- * estimate offline.
+ * estimate offline. "Plan for this route" carries the derived conditions (and
+ * the route's activity + duration) straight into the planner.
  */
-export function RouteInsights({ route, hintGainM }: { route: LatLng[]; hintGainM?: number }) {
+export function RouteInsights({
+  route,
+  hintGainM,
+  activity,
+  durationMin,
+  onPlan,
+}: {
+  route: LatLng[];
+  hintGainM?: number;
+  activity?: Activity;
+  durationMin?: number;
+  onPlan?: (prefill: Partial<SessionInput>) => void;
+}) {
   const [data, setData] = useState<RouteConditions | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -90,6 +105,22 @@ export function RouteInsights({ route, hintGainM }: { route: LatLng[]; hintGainM
             <li key={i}>{t}</li>
           ))}
         </ul>
+      )}
+
+      {onPlan && (
+        <button
+          type="button"
+          className="btn btn-primary geo-plan"
+          onClick={() =>
+            onPlan({
+              ...(activity ? { activity } : {}),
+              ...(durationMin ? { durationMin } : {}),
+              conditions: weather.conditions,
+            })
+          }
+        >
+          Plan for this route →
+        </button>
       )}
     </div>
   );

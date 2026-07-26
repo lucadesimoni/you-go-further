@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Planner } from "./components/Planner";
+import { Planner, type SessionInput } from "./components/Planner";
 import { Dashboard } from "./components/Dashboard";
 import { TeamView } from "./components/TeamView";
 import { CatalogView } from "./components/CatalogView";
@@ -11,6 +11,7 @@ import { SubscriptionView } from "./components/SubscriptionView";
 import { AccountMenu } from "./components/AccountMenu";
 import { ToastHost } from "./components/ToastHost";
 import { ConfirmHost } from "./components/ConfirmHost";
+import { toast } from "./ui/toast";
 import { type Tier } from "./subscription";
 import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, type Permission } from "./auth";
 import { isSolo } from "./personas";
@@ -43,6 +44,8 @@ export function App() {
   const [account, setAccount] = useState<Account | null>(() => currentAccount());
   const [tier, setTier] = useState<Tier>(account?.tier ?? "free");
   const [tab, setTab] = useState<string>("plan");
+  // One-shot planner prefill, e.g. from "Plan for this route" in Connect.
+  const [plannerPrefill, setPlannerPrefill] = useState<Partial<SessionInput>>();
 
   const [feedbackCount, setFeedbackCount] = useState(0);
 
@@ -81,6 +84,14 @@ export function App() {
       setTab(visibleTabs[0]?.id ?? "plan");
     }
   }, [visibleTabs, tab]);
+
+  // The planner prefill is one-shot: the Planner reads it on mount, then we clear
+  // it so later visits to Plan start from the user's own defaults.
+  useEffect(() => {
+    if (tab !== "plan" || !plannerPrefill) return;
+    const t = setTimeout(() => setPlannerPrefill(undefined), 0);
+    return () => clearTimeout(t);
+  }, [tab, plannerPrefill]);
 
   // Gate: no session → login / register.
   if (!account) {
@@ -123,11 +134,22 @@ export function App() {
       </header>
 
       <div className="app-body">
-        {tab === "plan" && <Planner role={account.role} onEditProfile={() => setTab("profile")} />}
+        {tab === "plan" && (
+          <Planner initial={plannerPrefill} role={account.role} onEditProfile={() => setTab("profile")} />
+        )}
         {tab === "progress" && gamification && <ProgressView profile={gamification} />}
         {tab === "profile" && <ProfileView account={account} />}
         {tab === "subscription" && <SubscriptionView tier={tier} onChoose={setTier} canBilling={canBilling} />}
-        {tab === "connect" && <Dashboard tier={tier} />}
+        {tab === "connect" && (
+          <Dashboard
+            tier={tier}
+            onPlanRoute={(prefill) => {
+              setPlannerPrefill(prefill);
+              setTab("plan");
+              toast.info("Planning for your route — conditions applied");
+            }}
+          />
+        )}
         {tab === "team" && <TeamView canExport={hasPermission(account, "data:export")} />}
         {tab === "catalog" && <CatalogView canEdit={hasPermission(account, "catalog:edit")} role={account.role} />}
         {tab === "admin" && <AdminView config={config} tier={tier} orgId={account.orgId} role={account.role} />}
