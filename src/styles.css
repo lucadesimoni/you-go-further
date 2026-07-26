@@ -2656,3 +2656,11 @@ code {
   opacity: 0.85;
   line-height: 1.6;
 }
+.milestone-cat {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-left: var(--space-2);
+}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Account } from "../auth";
 import { ROLE_LABELS } from "../auth";
-import type { GamificationProfile } from "../gamification";
+import type { ProgressProfile } from "../progress";
 import { PERSONAS } from "../personas";
 import type { Principal } from "../auth";
 
@@ -13,7 +13,7 @@ import type { Principal } from "../auth";
  */
 export function AccountMenu({
   account,
-  gamification,
+  progress,
   allowRoleSwitching,
   canBilling,
   onNavigate,
@@ -21,7 +21,7 @@ export function AccountMenu({
   onSignOut,
 }: {
   account: Account;
-  gamification: GamificationProfile | null;
+  progress: ProgressProfile | null;
   allowRoleSwitching: boolean;
   canBilling: boolean;
   onNavigate: (tab: string) => void;
@@ -76,9 +76,9 @@ export function AccountMenu({
             </div>
           </div>
 
-          {gamification && gamification.streakDays > 0 && (
+          {progress && progress.streakDays > 0 && (
             <button type="button" className="dropdown-item dropdown-status" onClick={() => go("progress")} role="menuitem">
-              <span>{gamification.streakDays}-day training streak</span>
+              <span>{progress.streakDays}-day training streak</span>
               <span className="dropdown-lvl">Insights ›</span>
             </button>
           )}

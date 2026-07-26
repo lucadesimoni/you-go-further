@@ -1,4 +1,4 @@
-import type { GamificationProfile } from "../gamification";
+import type { ProgressProfile } from "../progress";
 import { Stat } from "./Stat";
 import { NutritionGuide } from "./NutritionGuide";
 
@@ -13,14 +13,12 @@ export function ProgressView({
   hasData = true,
   onConnect,
 }: {
-  profile: GamificationProfile;
+  profile: ProgressProfile;
   /** False until the athlete has synced real sessions — we never show invented numbers. */
   hasData?: boolean;
   onConnect?: () => void;
 }) {
-  const reached = profile.achievements.filter((a) => a.unlocked);
-  const upcoming = profile.achievements.filter((a) => !a.unlocked);
-  const ordered = [...reached, ...upcoming];
+  const ordered = [...profile.milestones].sort((a, b) => Number(b.done) - Number(a.done));
 
   return (
     <main className="dash">
@@ -35,8 +33,8 @@ export function ProgressView({
           <div className="targets plain-grid">
             <Stat label="Activities" value={String(profile.stats.activities)} />
             <Stat label="Hours" value={`${profile.stats.hours}`} />
-            <Stat label="Distance" value={`${profile.stats.distanceKm} km`} />
-            <Stat label="Climbed" value={`${profile.stats.elevationM} m`} />
+            <Stat label="Long sessions" value={String(profile.stats.longSessions)} note="90 min+" />
+            <Stat label="Logged" value={String(profile.stats.loggedSessions)} note="plan learns" />
           </div>
         ) : (
           <div className="empty-state">
@@ -57,17 +55,19 @@ export function ProgressView({
         <div className="section-head">
           <h2>Milestones</h2>
           <span className="pill">
-            {reached.length} of {profile.achievements.length}
+            {profile.doneCount} of {profile.milestones.length}
           </span>
         </div>
         <ul className="milestones">
           {ordered.map((a) => (
-            <li key={a.id} className={`milestone${a.unlocked ? " done" : ""}`}>
+            <li key={a.id} className={`milestone${a.done ? " done" : ""}`}>
               <span className="milestone-mark" aria-hidden>
-                {a.unlocked ? "✓" : "○"}
+                {a.done ? "✓" : "○"}
               </span>
               <span className="milestone-body">
-                <span className="milestone-name">{a.name}</span>
+                <span className="milestone-name">
+                  {a.name} <span className="milestone-cat">{a.category}</span>
+                </span>
                 <span className="milestone-desc">{a.description}</span>
               </span>
             </li>

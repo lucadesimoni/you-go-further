@@ -19,9 +19,9 @@ import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, typ
 import { isSolo } from "./personas";
 import { getConfig } from "./config";
 import type { Activity } from "./model";
-import { computeGamification } from "./gamification";
+import { computeProgress } from "./progress";
 import { loadFeedback } from "./api/feedbackStore";
-import { syncProfile } from "./api/profileStore";
+import { syncProfile, loadProfile } from "./api/profileStore";
 import { api, clearSessionToken, setSessionToken, isApiConfigured } from "./api/client";
 import { saveAccount } from "./auth";
 
@@ -60,8 +60,16 @@ export function App() {
   // sample data — so the numbers on screen are always really theirs.
   const [activities, setActivities] = useState<Activity[]>([]);
   const [connectionsCount, setConnectionsCount] = useState(0);
-  const gamification = useMemo(
-    () => (account ? computeGamification({ activities, feedbackCount, connectionsCount }) : null),
+  const progress = useMemo(
+    () =>
+      account
+        ? computeProgress({
+            activities,
+            feedbackCount,
+            connectionsCount,
+            hasMeasuredSweatRate: loadProfile().useSignals,
+          })
+        : null,
     [account, activities, feedbackCount, connectionsCount],
   );
   const hasSyncedData = activities.length > 0;
@@ -201,7 +209,7 @@ export function App() {
 
         <AccountMenu
           account={account}
-          gamification={gamification}
+          progress={progress}
           allowRoleSwitching={config.allowRoleSwitching}
           canBilling={canBilling}
           onNavigate={setTab}
@@ -217,8 +225,8 @@ export function App() {
         {tab === "plan" && (
           <Planner initial={plannerPrefill} role={account.role} onEditProfile={() => setTab("profile")} />
         )}
-        {tab === "progress" && gamification && (
-          <ProgressView profile={gamification} hasData={hasSyncedData} onConnect={() => setTab("connect")} />
+        {tab === "progress" && progress && (
+          <ProgressView profile={progress} hasData={hasSyncedData} onConnect={() => setTab("connect")} />
         )}
         {tab === "profile" && <ProfileView account={account} />}
         {tab === "subscription" && <SubscriptionView tier={tier} onChoose={setTier} canBilling={canBilling} />}
