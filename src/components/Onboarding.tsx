@@ -3,6 +3,10 @@ import type { Account } from "../auth";
 import { SWEAT_LEVELS } from "../options";
 import { type AthleteProfile, loadProfile, saveProfile } from "../api/profileStore";
 import { HEALTH_PLATFORMS, syncHealthSignals } from "../api/healthSync";
+import { ALL_PROVIDER_IDS, DESCRIPTORS } from "../providers";
+import { isApiConfigured } from "../api/client";
+import { getConfig } from "../config";
+import { setOnboardStep } from "../api/onboarding";
 
 /**
  * First-run guided journey. Stitches the product story into one flow — the
@@ -12,18 +16,34 @@ import { HEALTH_PLATFORMS, syncHealthSignals } from "../api/healthSync";
 export function Onboarding({
   account,
   onFinish,
-  onConnect,
+  initialStep = 0,
 }: {
   account: Account;
   onFinish: () => void;
-  onConnect: () => void;
+  initialStep?: number;
 }) {
-  const [step, setStep] = useState(0);
+  const [step, setStepRaw] = useState(initialStep);
+  const setStep = (n: number) => {
+    setOnboardStep(n); // survives the OAuth round-trip
+    setStepRaw(n);
+  };
   const [profile, setProfile] = useState<AthleteProfile>(() => loadProfile());
   const firstName = account.name.split(" ")[0];
 
   const set = <K extends keyof AthleteProfile>(key: K, value: AthleteProfile[K]) =>
     setProfile((p) => saveProfile({ ...p, [key]: value }));
+  // Connect a provider without leaving setup: we remember the step, hand off to
+  // the provider's consent screen, and come back here to finish the profile.
+  const connectProvider = (id: string) => {
+    if (!isApiConfigured()) {
+      setStep(2);
+      return;
+    }
+    setOnboardStep(2);
+    const base = getConfig().apiBaseUrl;
+    window.location.href = `${base}/api/oauth/${id}/start?return_to=${encodeURIComponent(window.location.href)}`;
+  };
+
   const syncFrom = (id: string) => {
     const platform = HEALTH_PLATFORMS.find((p) => p.id === id);
     if (!platform) return;
@@ -76,14 +96,15 @@ export function Onboarding({
               readiness and sweat data. You can always do this later.
             </p>
             <div className="onboard-logos">
-              {["Strava", "Garmin", "Polar", "Suunto", "Apple Health", "Google Health"].map((n) => (
-                <span key={n} className="onboard-logo">
-                  {n}
-                </span>
+              {ALL_PROVIDER_IDS.map((id) => (
+                <button key={id} type="button" className="onboard-logo onboard-connect" onClick={() => connectProvider(id)}>
+                  {DESCRIPTORS[id].displayName}
+                </button>
               ))}
             </div>
-            <button type="button" className="auth-btn auth-primary" onClick={onConnect}>
-              Connect a device
+            <p className="detail">Apple Health and Google Health sync from the mobile app.</p>
+            <button type="button" className="auth-btn auth-primary" onClick={() => setStep(2)}>
+              Continue →
             </button>
             <button type="button" className="auth-link" onClick={() => setStep(2)}>
               I'll connect later →

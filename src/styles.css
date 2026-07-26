@@ -2514,3 +2514,30 @@ code {
   margin: 0 0 var(--space-3);
 }
 .auth-sent strong { color: var(--text); }
+
+/* --- Accessibility: always-visible keyboard focus --- */
+:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: var(--space-3);
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-sm);
+  z-index: 100;
+}
+.skip-link:focus {
+  left: var(--space-5);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

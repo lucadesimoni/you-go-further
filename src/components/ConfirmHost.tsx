@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { resolveConfirm, subscribeConfirm, type ConfirmState } from "../ui/confirm";
+import { useFocusTrap } from "../ui/useFocusTrap";
 
 /** Renders the promise-based confirm dialog. Mount once near the app root. */
 export function ConfirmHost() {
   const [state, setState] = useState<ConfirmState>({ open: false, opts: { title: "" } });
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, state.open);
   useEffect(() => subscribeConfirm(setState), []);
 
   useEffect(() => {
@@ -21,8 +24,15 @@ export function ConfirmHost() {
 
   return (
     <div className="modal-backdrop" onClick={() => resolveConfirm(false)}>
-      <div className="modal panel confirm" role="alertdialog" aria-modal onClick={(e) => e.stopPropagation()}>
-        <h3 className="confirm-title">{title}</h3>
+      <div
+        ref={dialogRef}
+        className="modal panel confirm"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="confirm-title" id="confirm-title">{title}</h3>
         {message && <p className="detail">{message}</p>}
         <div className="modal-actions">
           <button type="button" className="btn btn-ghost" onClick={() => resolveConfirm(false)}>

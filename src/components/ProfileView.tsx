@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Account } from "../auth";
 import { ROLE_LABELS } from "../auth";
 import { SWEAT_LEVELS } from "../options";
 import { estimateSweatRateMlPerH } from "../analysis";
-import { type AthleteProfile, loadProfile, saveProfile } from "../api/profileStore";
+import { type AthleteProfile, loadProfile, saveProfile, syncProfile, profilePersistence } from "../api/profileStore";
 import { HEALTH_PLATFORMS, syncHealthSignals } from "../api/healthSync";
 
 /**
@@ -13,6 +13,16 @@ import { HEALTH_PLATFORMS, syncHealthSignals } from "../api/healthSync";
  */
 export function ProfileView({ account }: { account: Account }) {
   const [profile, setProfile] = useState<AthleteProfile>(() => loadProfile());
+
+  // The server copy is authoritative — refresh so the profile is the same on
+  // every device the athlete signs in from.
+  useEffect(() => {
+    let live = true;
+    void syncProfile().then((p) => live && setProfile(p));
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const set = <K extends keyof AthleteProfile>(key: K, value: AthleteProfile[K]) =>
     setProfile((prev) => saveProfile({ ...prev, [key]: value }));
@@ -37,7 +47,7 @@ export function ProfileView({ account }: { account: Account }) {
       <section className="panel">
         <div className="section-head">
           <h2>Your profile</h2>
-          <span className="pill">saved on this device</span>
+          <span className="pill">{profilePersistence.mode() === "server" ? "synced to your account" : "saved on this device"}</span>
         </div>
         <div className="profile-identity">
           <span className="avatar avatar-lg">{initials}</span>
@@ -50,8 +60,8 @@ export function ProfileView({ account }: { account: Account }) {
           </div>
         </div>
         <p className="detail note-top">
-          Identity comes from your sign-in (Apple / Google / email). The body data below personalizes
-          your fueling — it stays on this device.
+          Identity comes from your sign-in (Apple / Google / email). The body data below personalizes your
+          fueling{profilePersistence.mode() === "server" ? " and follows you across devices." : " and is stored in this browser."}
         </p>
       </section>
 

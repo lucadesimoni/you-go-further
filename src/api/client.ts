@@ -78,9 +78,10 @@ export interface AdminOverview {
 
 import type { SessionFeedback } from "../feedback";
 import type { Product } from "../engine";
-import type { User, NewUser, UserPatch } from "../users";
+import type { User, NewUser, UserPatch, AthleteProfile } from "../users";
 import type { PlatformSettings } from "../settings";
 import type { CartLine, Order } from "../commerce";
+import type { Activity } from "../model";
 import type { Tier } from "../subscription";
 
 export interface CheckoutResponse {
@@ -153,6 +154,10 @@ export const api = {
   checkoutSubscription: (tier: Tier, returnTo: string) =>
     call<CheckoutResponse>("POST", "/api/checkout", { body: { kind: "subscription", tier, returnTo } }),
   orders: () => call<{ orders: Order[] }>("GET", "/api/orders"),
+  profileGet: () => call<{ profile: AthleteProfile }>("GET", "/api/profile"),
+  profileSave: (patch: Partial<AthleteProfile>) => call<{ profile: AthleteProfile }>("POST", "/api/profile", { body: patch }),
+  activities: (limit = 500) => call<{ count: number; activities: Activity[] }>("GET", `/api/activities?limit=${limit}`),
+  connections: () => call<{ connections: { provider: string }[] }>("GET", "/api/connections"),
   emailLinkRequest: (email: string, returnTo: string) =>
     call<EmailRequestResponse>("POST", "/api/auth/email/request", { body: { email, returnTo } }),
   emailLinkVerify: (token: string) =>

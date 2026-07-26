@@ -13,7 +13,8 @@
     "icons": "node scripts/gen-icons.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "e2e": "node scripts/e2e-smoke.mjs"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
@@ -28,6 +29,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "playwright-core": "^1.62.0",
     "tsx": "^4.23.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",

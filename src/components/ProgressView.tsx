@@ -8,7 +8,16 @@ import { NUTRITION_GUIDE } from "../content/nutritionGuide";
  * gamified: no XP, levels or badge grid — milestones are quiet progress markers,
  * and the focus is the nutrition guide.
  */
-export function ProgressView({ profile }: { profile: GamificationProfile }) {
+export function ProgressView({
+  profile,
+  hasData = true,
+  onConnect,
+}: {
+  profile: GamificationProfile;
+  /** False until the athlete has synced real sessions — we never show invented numbers. */
+  hasData?: boolean;
+  onConnect?: () => void;
+}) {
   const reached = profile.achievements.filter((a) => a.unlocked);
   const upcoming = profile.achievements.filter((a) => !a.unlocked);
   const ordered = [...reached, ...upcoming];
@@ -18,16 +27,27 @@ export function ProgressView({ profile }: { profile: GamificationProfile }) {
       <section className="panel">
         <div className="section-head">
           <h2>Your training</h2>
-          {profile.streakDays > 0 && (
+          {hasData && profile.streakDays > 0 && (
             <span className="pill">{profile.streakDays}-day streak · best {profile.longestStreakDays}</span>
           )}
         </div>
-        <div className="targets plain-grid">
-          <Stat label="Activities" value={String(profile.stats.activities)} />
-          <Stat label="Hours" value={`${profile.stats.hours}`} />
-          <Stat label="Distance" value={`${profile.stats.distanceKm} km`} />
-          <Stat label="Climbed" value={`${profile.stats.elevationM} m`} />
-        </div>
+        {hasData ? (
+          <div className="targets plain-grid">
+            <Stat label="Activities" value={String(profile.stats.activities)} />
+            <Stat label="Hours" value={`${profile.stats.hours}`} />
+            <Stat label="Distance" value={`${profile.stats.distanceKm} km`} />
+            <Stat label="Climbed" value={`${profile.stats.elevationM} m`} />
+          </div>
+        ) : (
+          <div className="empty-state">
+            <p style={{ margin: 0 }}>No sessions synced yet — connect a service and your real training shows up here.</p>
+            {onConnect && (
+              <button type="button" className="btn btn-primary mt-5" onClick={onConnect}>
+                Connect a service
+              </button>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="panel">
@@ -49,6 +69,7 @@ export function ProgressView({ profile }: { profile: GamificationProfile }) {
         </div>
       </section>
 
+      {hasData && (
       <section className="panel">
         <div className="section-head">
           <h2>Milestones</h2>
@@ -70,6 +91,7 @@ export function ProgressView({ profile }: { profile: GamificationProfile }) {
           ))}
         </ul>
       </section>
+      )}
     </main>
   );
 }

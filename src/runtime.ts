@@ -22,7 +22,7 @@ import type { ActivityStore, ExportSink } from "./data";
 import { BufferSink, databricksSinkFromEnv } from "./data";
 import { InMemoryFeedbackStore, type FeedbackStore } from "./feedback";
 import { InMemoryProductStore, type ProductStore } from "./engine";
-import { InMemoryUserStore, seedUsers, type UserStore } from "./users";
+import { InMemoryUserStore, InMemoryProfileStore, seedUsers, type UserStore, type ProfileStore } from "./users";
 import { InMemorySettingsStore, defaultSettings, type SettingsStore } from "./settings";
 import { InMemoryOrderStore, type OrderStore } from "./commerce";
 import { paymentProviderFromEnv, type PaymentProvider } from "./commerce/payments";
@@ -37,6 +37,7 @@ import {
   FileSettingsStore,
   FileOrderStore,
   FileMagicLinkStore,
+  FileProfileStore,
   createPgStores,
 } from "./persistence";
 
@@ -51,6 +52,7 @@ export interface Runtime {
   settings: SettingsStore;
   orders: OrderStore;
   magicLinks: MagicLinkStore;
+  profiles: ProfileStore;
   payments: PaymentProvider;
   mailer: Mailer;
   sinks: ExportSink[];
@@ -68,6 +70,7 @@ interface StoreSet {
   settings: SettingsStore;
   orders: OrderStore;
   magicLinks: MagicLinkStore;
+  profiles: ProfileStore;
   init?: () => Promise<void>;
 }
 
@@ -86,6 +89,7 @@ function createStores(config: AppConfig): StoreSet {
         settings: new FileSettingsStore(dir, settings),
         orders: new FileOrderStore(dir),
         magicLinks: new FileMagicLinkStore(dir),
+        profiles: new FileProfileStore(dir),
       };
     }
     case "postgres": {
@@ -100,6 +104,7 @@ function createStores(config: AppConfig): StoreSet {
           settings: pg.settings,
           orders: pg.orders,
           magicLinks: pg.magicLinks,
+          profiles: pg.profiles,
           init: pg.init,
         };
       }
@@ -120,6 +125,7 @@ function createStores(config: AppConfig): StoreSet {
     settings: new InMemorySettingsStore(settings),
     orders: new InMemoryOrderStore(),
     magicLinks: new InMemoryMagicLinkStore(),
+    profiles: new InMemoryProfileStore(),
   };
 }
 
@@ -145,7 +151,8 @@ function createRegistry(config: AppConfig): ProviderRegistry {
 /** Assemble the runtime from a config (defaults to the resolved app config). */
 export function createRuntime(config: AppConfig = getConfig()): Runtime {
   const registry = createRegistry(config);
-  const { store, feedback, connections, products, users, settings, orders, magicLinks, init } = createStores(config);
+  const { store, feedback, connections, products, users, settings, orders, magicLinks, profiles, init } =
+    createStores(config);
   const sinks: ExportSink[] = config.exportEnabled ? [new BufferSink()] : [];
   // Stream to Databricks when configured (big-data egress).
   const dbx = databricksSinkFromEnv();
@@ -162,6 +169,7 @@ export function createRuntime(config: AppConfig = getConfig()): Runtime {
     settings,
     orders,
     magicLinks,
+    profiles,
     payments: paymentProviderFromEnv(),
     mailer: mailerFromEnv(),
     sinks,

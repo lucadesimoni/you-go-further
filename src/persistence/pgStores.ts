@@ -5,8 +5,8 @@ import type { FeedbackStore, SessionFeedback } from "../feedback";
 import type { ConnectionStore, ProviderConnection } from "../providers";
 import type { ProviderCredential } from "../providers/types";
 import type { Product, ProductStore } from "../engine";
-import type { User, UserStore, UserPatch } from "../users";
-import { normalizeUserPatch } from "../users";
+import type { User, UserStore, UserPatch, AthleteProfile, ProfileStore } from "../users";
+import { normalizeUserPatch, normalizeProfile, DEFAULT_PROFILE } from "../users";
 import type { PlatformSettings, SettingsStore } from "../settings";
 import { normalizeSettingsPatch } from "../settings";
 import type { Order, OrderStore } from "../commerce";
@@ -76,6 +76,11 @@ export async function migrate(pool: Pool): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS orders_user_idx ON orders (user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS orders_ref_idx ON orders (provider_ref);
+
+    CREATE TABLE IF NOT EXISTS profiles (
+      user_id text PRIMARY KEY,
+      data    jsonb NOT NULL
+    );
 
     CREATE TABLE IF NOT EXISTS magic_links (
       jti        text PRIMARY KEY,
@@ -342,6 +347,25 @@ export class PgMagicLinkStore implements MagicLinkStore {
   }
 }
 
+export class PgProfileStore implements ProfileStore {
+  constructor(private readonly pool: Pool) {}
+
+  async get(userId: string): Promise<AthleteProfile> {
+    const r = await this.pool.query<{ data: AthleteProfile }>("SELECT data FROM profiles WHERE user_id = $1", [userId]);
+    return r.rows[0]?.data ?? DEFAULT_PROFILE;
+  }
+
+  async save(userId: string, patch: Partial<AthleteProfile>): Promise<AthleteProfile> {
+    const next = { ...(await this.get(userId)), ...normalizeProfile(patch) };
+    await this.pool.query(
+      `INSERT INTO profiles (user_id, data) VALUES ($1, $2)
+       ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data`,
+      [userId, next],
+    );
+    return next;
+  }
+}
+
 export interface PgStores {
   pool: Pool;
   store: PgActivityStore;
@@ -352,6 +376,7 @@ export interface PgStores {
   settings: PgSettingsStore;
   orders: PgOrderStore;
   magicLinks: PgMagicLinkStore;
+  profiles: PgProfileStore;
   init(): Promise<void>;
 }
 
@@ -368,6 +393,7 @@ export function createPgStores(databaseUrl: string, seed: PgSeed = {}): PgStores
     settings: new PgSettingsStore(pool, seed.settings ?? DEFAULT_SETTINGS_FALLBACK),
     orders: new PgOrderStore(pool),
     magicLinks: new PgMagicLinkStore(pool),
+    profiles: new PgProfileStore(pool),
     init: () => migrate(pool),
   };
 }

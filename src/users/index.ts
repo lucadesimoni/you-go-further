@@ -8,3 +8,10 @@ export {
   normalizeNewUser,
   normalizeUserPatch,
 } from "./store";
+export {
+  type AthleteProfile,
+  type ProfileStore,
+  DEFAULT_PROFILE,
+  InMemoryProfileStore,
+  normalizeProfile,
+} from "./profileStore";

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CATALOG, productUsage, type Phase, type Product, type ProductCategory } from "../engine";
 import type { Role } from "../auth";
 import { catalogPersistence, deleteProduct, loadCatalog, saveProduct } from "../api/productLibrary";
 import { toast } from "../ui/toast";
 import { confirm } from "../ui/confirm";
+import { useFocusTrap } from "../ui/useFocusTrap";
 
 const CATEGORY_LABELS: Record<ProductCategory, string> = {
   "drink-mix": "Drink mix",
@@ -29,6 +30,16 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, draft !== null);
+
+  // Esc closes the product editor, matching the confirm dialog.
+  useEffect(() => {
+    if (!draft) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !busy && setDraft(null);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [draft, busy]);
 
   useEffect(() => {
     let cancelled = false;
@@ -216,9 +227,16 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
 
       {draft && (
         <div className="modal-backdrop" onClick={() => !busy && setDraft(null)}>
-          <div className="modal panel" onClick={(e) => e.stopPropagation()}>
+          <div
+            ref={dialogRef}
+            className="modal panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-dialog-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="section-head">
-              <h3>{draft.id ? "Edit product" : "Add Swiss product"}</h3>
+              <h3 id="product-dialog-title">{draft.id ? "Edit product" : "Add Swiss product"}</h3>
               <span className="pill">Swiss only</span>
             </div>
             <div className="field-row">

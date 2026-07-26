@@ -5,8 +5,8 @@ import type { FeedbackStore, SessionFeedback } from "../feedback";
 import type { ConnectionStore, ProviderConnection } from "../providers";
 import type { ProviderCredential } from "../providers/types";
 import type { Product, ProductStore } from "../engine";
-import type { User, UserStore, UserPatch } from "../users";
-import { normalizeUserPatch } from "../users";
+import type { User, UserStore, UserPatch, AthleteProfile, ProfileStore } from "../users";
+import { normalizeUserPatch, normalizeProfile, DEFAULT_PROFILE } from "../users";
 import type { PlatformSettings, SettingsStore } from "../settings";
 import type { Order, OrderStore } from "../commerce";
 import type { MagicLinkStore } from "../auth/magicLink";
@@ -282,5 +282,26 @@ export class FileMagicLinkStore implements MagicLinkStore {
     this.data[jti] = expUnix;
     this.file.write(this.data);
     return true;
+  }
+}
+
+export class FileProfileStore implements ProfileStore {
+  private readonly file: JsonFile<Record<string, AthleteProfile>>;
+  private data: Record<string, AthleteProfile>;
+
+  constructor(dir: string) {
+    this.file = new JsonFile(join(dir, "profiles.json"), {});
+    this.data = this.file.read();
+  }
+
+  async get(userId: string): Promise<AthleteProfile> {
+    return this.data[userId] ?? DEFAULT_PROFILE;
+  }
+
+  async save(userId: string, patch: Partial<AthleteProfile>): Promise<AthleteProfile> {
+    const next = { ...(await this.get(userId)), ...normalizeProfile(patch) };
+    this.data[userId] = next;
+    this.file.write(this.data);
+    return next;
   }
 }

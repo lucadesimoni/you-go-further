@@ -33,6 +33,7 @@ import type { Tier } from "../subscription";
 import { DESCRIPTORS, ALL_PROVIDER_IDS } from "../providers";
 import { normalizeNewUser, normalizeUserPatch, type NewUser, type UserPatch } from "../users";
 import type { PlatformSettings } from "../settings";
+import type { AthleteProfile } from "../users";
 
 export interface ApiRequest {
   method: string;
@@ -71,7 +72,7 @@ const GI_RATINGS: GiRating[] = ["none", "mild", "severe"];
 const ENERGY_RATINGS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
 
 export function createApiRouter(runtime: Runtime = createRuntime()) {
-  const { config, store, pipeline, feedback, registry, connections, products, users, settings, orders, magicLinks, payments, mailer } = runtime;
+  const { config, store, pipeline, feedback, registry, connections, products, users, settings, orders, magicLinks, profiles, payments, mailer } = runtime;
 
   const isProvider = (v: string): v is ProviderId => (ALL_PROVIDER_IDS as string[]).includes(v);
 
@@ -186,6 +187,12 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
       }
 
 
+
+      // --- Athlete profile (per user, follows them across devices) ---------
+      if (key === "GET /api/profile") return ok({ profile: await profiles.get(principal.id) });
+      if (key === "POST /api/profile") {
+        return ok({ profile: await profiles.save(principal.id, (body ?? {}) as Partial<AthleteProfile>) });
+      }
 
       // --- Passwordless email sign-in --------------------------------------
       // POST /api/auth/email/request — mail a signed, expiring, single-use link.
