@@ -11,6 +11,8 @@ import { SubscriptionView } from "./components/SubscriptionView";
 import { AccountMenu } from "./components/AccountMenu";
 import { ToastHost } from "./components/ToastHost";
 import { ConfirmHost } from "./components/ConfirmHost";
+import { Onboarding } from "./components/Onboarding";
+import { isOnboarded, setOnboarded } from "./api/onboarding";
 import { toast } from "./ui/toast";
 import { type Tier } from "./subscription";
 import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, type Permission } from "./auth";
@@ -46,6 +48,7 @@ export function App() {
   const [tab, setTab] = useState<string>("plan");
   // One-shot planner prefill, e.g. from "Plan for this route" in Connect.
   const [plannerPrefill, setPlannerPrefill] = useState<Partial<SessionInput>>();
+  const [onboarding, setOnboarding] = useState(false);
 
   const [feedbackCount, setFeedbackCount] = useState(0);
 
@@ -93,9 +96,23 @@ export function App() {
     return () => clearTimeout(t);
   }, [tab, plannerPrefill]);
 
+  // First-run guided journey — shown once per browser after the first sign-in.
+  useEffect(() => {
+    if (account && !isOnboarded()) setOnboarding(true);
+  }, [account]);
+
   // Gate: no session → login / register.
   if (!account) {
     return <LoginScreen onSignedIn={setAccount} allowDemo={config.allowRoleSwitching} />;
+  }
+
+  if (onboarding) {
+    const done = (nextTab: string) => {
+      setOnboarded();
+      setOnboarding(false);
+      setTab(nextTab);
+    };
+    return <Onboarding account={account} onFinish={() => done("plan")} onConnect={() => done("connect")} />;
   }
 
   return (

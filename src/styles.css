@@ -2443,3 +2443,65 @@ code {
 
 /* --- "Plan for this route" CTA under route insights --- */
 .geo-plan { margin-top: var(--space-6); }
+
+/* --- First-run onboarding --- */
+.onboard-card { max-width: 460px; position: relative; }
+.onboard-progress {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+.onboard-dot {
+  height: 4px;
+  flex: 1;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+}
+.onboard-dot.active { background: var(--accent); }
+.onboard-dot.done { background: var(--post); }
+.onboard-promise {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: var(--space-7) 0;
+}
+.onboard-promise-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-md);
+  color: var(--text);
+}
+.onboard-logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-6) 0;
+}
+.onboard-logo {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+}
+.onboard-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+}
+.onboard-check { margin: var(--space-5) 0; }
+.onboard-sync { margin: var(--space-6) 0; }
+.onboard-sync .group-label { display: block; margin-bottom: var(--space-3); }
+.onboard-skip {
+  display: block;
+  margin: var(--space-6) auto 0;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: var(--text-base);
+  cursor: pointer;
+}
+.onboard-skip:hover { color: var(--text); }
