@@ -2541,3 +2541,118 @@ code {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- Nutrition guide: filters, article list, expanded content --- */
+.guide-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 var(--space-6);
+}
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.guide-article {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel-2);
+  overflow: hidden;
+}
+.guide-article.open { border-color: var(--border-strong); }
+.guide-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: var(--space-6);
+  cursor: pointer;
+}
+.guide-head:hover { background: var(--surface-3); }
+.guide-head-text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.guide-meta { display: flex; align-items: center; gap: var(--space-3); flex: 0 0 auto; }
+.guide-read { font-size: var(--text-xs); color: var(--muted); font-variant-numeric: tabular-nums; }
+.guide-chevron { color: var(--accent); font-size: var(--text-sm); }
+
+.guide-content {
+  padding: 0 var(--space-6) var(--space-6);
+  border-top: 1px solid var(--border);
+}
+.guide-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-6) 0;
+}
+.guide-number {
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+}
+.guide-number dt {
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.guide-number dd {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text);
+}
+.guide-para {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-md);
+  line-height: 1.65;
+  color: var(--muted);
+}
+.guide-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  margin: var(--space-6) 0 0;
+}
+@media (max-width: 640px) {
+  .guide-cols { grid-template-columns: 1fr; }
+}
+.guide-sub {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.guide-sub.good { color: var(--post); }
+.guide-sub.warn { color: var(--during); }
+.guide-cols ul {
+  margin: 0;
+  padding-left: var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+  color: var(--muted);
+  line-height: 1.55;
+}
+.guide-evidence {
+  margin: var(--space-6) 0 0;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.guide-disclaimer {
+  margin: var(--space-7) 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  opacity: 0.85;
+  line-height: 1.6;
+}

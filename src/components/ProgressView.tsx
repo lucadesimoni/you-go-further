@@ -1,6 +1,6 @@
 import type { GamificationProfile } from "../gamification";
 import { Stat } from "./Stat";
-import { NUTRITION_GUIDE } from "../content/nutritionGuide";
+import { NutritionGuide } from "./NutritionGuide";
 
 /**
  * Insights — a calm, editorial view of the athlete's training consistency and,
@@ -50,24 +50,7 @@ export function ProgressView({
         )}
       </section>
 
-      <section className="panel">
-        <div className="section-head">
-          <h2>Fuel &amp; nutrition guide</h2>
-          <span className="pill">{NUTRITION_GUIDE.length} reads</span>
-        </div>
-        <p className="detail">
-          Getting fuelling and everyday eating right — the fundamentals behind every plan.
-        </p>
-        <div className="guide-grid">
-          {NUTRITION_GUIDE.map((c) => (
-            <article className="guide-card" key={c.title}>
-              <span className="guide-cat">{c.category}</span>
-              <h3 className="guide-title">{c.title}</h3>
-              <p className="guide-body">{c.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+      <NutritionGuide />
 
       {hasData && (
       <section className="panel">
