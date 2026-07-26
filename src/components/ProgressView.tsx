@@ -1,19 +1,23 @@
 import type { ProgressProfile } from "../progress";
 import { Stat } from "./Stat";
 import { NutritionGuide } from "./NutritionGuide";
+import { FuellingScoreCard } from "./FuellingScoreCard";
+import type { FuellingScore } from "../progress";
 
 /**
- * Insights — a calm, editorial view of the athlete's training consistency and,
- * more importantly, guidance on fuelling and everyday eating. Deliberately not
- * gamified: no XP, levels or badge grid — milestones are quiet progress markers,
- * and the focus is the nutrition guide.
+ * Insights — how well the athlete is fuelling, what to change next, the guidance
+ * behind it, and the habits that make plans better. Progress here is measured in
+ * fuelling quality rather than points: no XP, no levels, no badge grid.
  */
 export function ProgressView({
   profile,
+  fuelling,
   hasData = true,
   onConnect,
 }: {
   profile: ProgressProfile;
+  /** How well the athlete is fuelling, and what to do next. */
+  fuelling?: FuellingScore;
   /** False until the athlete has synced real sessions — we never show invented numbers. */
   hasData?: boolean;
   onConnect?: () => void;
@@ -22,6 +26,8 @@ export function ProgressView({
 
   return (
     <main className="dash">
+      {fuelling && <FuellingScoreCard score={fuelling} />}
+
       <section className="panel">
         <div className="section-head">
           <h2>Your training</h2>

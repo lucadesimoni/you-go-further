@@ -2664,3 +2664,76 @@ code {
   color: var(--muted);
   margin-left: var(--space-2);
 }
+
+/* --- Fuelling score --- */
+.score-top {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: var(--space-8);
+  align-items: start;
+}
+@media (max-width: 640px) {
+  .score-top { grid-template-columns: 1fr; }
+  .score-ring-wrap { max-width: 168px; margin: 0 auto; }
+}
+.score-ring { width: 100%; height: auto; transform: rotate(-90deg); }
+.score-track { fill: none; stroke: var(--panel-2); stroke-width: 10; }
+.score-arc {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.5s ease;
+}
+.score-arc.score-dialled-in { stroke: var(--post); }
+.score-arc.score-solid { stroke: var(--post); opacity: 0.75; }
+.score-arc.score-building { stroke: var(--during); }
+.score-arc.score-getting-started { stroke: var(--muted); }
+.score-value {
+  transform: rotate(90deg);
+  transform-origin: 60px 60px;
+  fill: var(--text);
+  font-size: 30px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.score-band {
+  transform: rotate(90deg);
+  transform-origin: 60px 60px;
+  fill: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.score-trend {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+.score-trend-up { color: var(--post); }
+.score-trend-down { color: var(--during); }
+.score-trend-flat { color: var(--muted); }
+.score-components { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-5); }
+.score-component-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-4); }
+.score-component-label { font-size: var(--text-md); font-weight: 600; }
+.score-component-value { font-size: var(--text-base); font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.score-bar { height: 6px; background: var(--surface-inset); border-radius: var(--radius-pill); margin: var(--space-2) 0; overflow: hidden; }
+.score-bar-fill { height: 100%; background: var(--post); border-radius: var(--radius-pill); }
+.score-component-detail { margin: 0; font-size: var(--text-base); color: var(--muted); line-height: 1.5; }
+
+.score-health {
+  margin-top: var(--space-7);
+  padding: var(--space-6);
+  border: 1px solid rgba(228, 161, 27, 0.4);
+  background: rgba(228, 161, 27, 0.08);
+  border-radius: var(--radius-md);
+}
+.score-health-title { margin: 0 0 var(--space-3); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--during); }
+.score-health-text { margin: 0; font-size: var(--text-base); color: var(--text); line-height: 1.6; }
+
+.score-next { margin-top: var(--space-7); padding-top: var(--space-6); border-top: 1px solid var(--border); }
+.score-next-title { margin: 0 0 var(--space-4); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--post); }
+.score-next-list { margin: 0; padding-left: var(--space-7); display: flex; flex-direction: column; gap: var(--space-4); }
+.score-next-list li { font-size: var(--text-md); }
+.score-next-list strong { display: block; }
+.score-next-list span { display: block; font-size: var(--text-base); color: var(--muted); line-height: 1.55; margin-top: 2px; }

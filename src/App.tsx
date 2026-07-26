@@ -19,8 +19,9 @@ import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, typ
 import { isSolo } from "./personas";
 import { getConfig } from "./config";
 import type { Activity } from "./model";
-import { computeProgress } from "./progress";
+import { computeProgress, fuellingScore } from "./progress";
 import { loadFeedback } from "./api/feedbackStore";
+import type { SessionFeedback } from "./feedback";
 import { syncProfile, loadProfile } from "./api/profileStore";
 import { api, clearSessionToken, setSessionToken, isApiConfigured } from "./api/client";
 import { saveAccount } from "./auth";
@@ -51,7 +52,8 @@ export function App() {
   const [plannerPrefill, setPlannerPrefill] = useState<Partial<SessionInput>>();
   const [onboarding, setOnboarding] = useState(false);
 
-  const [feedbackCount, setFeedbackCount] = useState(0);
+  const [feedback, setFeedback] = useState<SessionFeedback[]>([]);
+  const feedbackCount = feedback.length;
 
   const visibleTabs = useMemo(() => (account ? TABS.filter((t) => hasPermission(account, t.perm)) : []), [account]);
   const canBilling = account ? hasPermission(account, "billing:manage") || isSolo(account) : false;
@@ -73,6 +75,17 @@ export function App() {
     [account, activities, feedbackCount, connectionsCount],
   );
   const hasSyncedData = activities.length > 0;
+  // How well the athlete is actually fuelling — and what to change next.
+  const fuelling = useMemo(
+    () =>
+      fuellingScore({
+        feedback,
+        longSessions: activities.filter((a) => a.durationSec >= 90 * 60).length,
+        connectionsCount,
+        hasMeasuredSweatRate: loadProfile().useSignals,
+      }),
+    [feedback, activities, connectionsCount],
+  );
 
   useEffect(() => {
     if (account) setTier(account.tier);
@@ -81,7 +94,7 @@ export function App() {
     if (!account) return;
     let alive = true;
     loadFeedback(account.role)
-      .then((list) => alive && setFeedbackCount(list.length))
+      .then((list) => alive && setFeedback(list))
       .catch(() => {});
     // Real synced sessions + connections (empty in the API-less build).
     if (isApiConfigured()) {
@@ -226,7 +239,7 @@ export function App() {
           <Planner initial={plannerPrefill} role={account.role} onEditProfile={() => setTab("profile")} />
         )}
         {tab === "progress" && progress && (
-          <ProgressView profile={progress} hasData={hasSyncedData} onConnect={() => setTab("connect")} />
+          <ProgressView profile={progress} fuelling={fuelling} hasData={hasSyncedData} onConnect={() => setTab("connect")} />
         )}
         {tab === "profile" && <ProfileView account={account} />}
         {tab === "subscription" && <SubscriptionView tier={tier} onChoose={setTier} canBilling={canBilling} />}
