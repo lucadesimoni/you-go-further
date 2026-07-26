@@ -8,6 +8,8 @@ import type { Product, ProductStore } from "../engine";
 import type { User, UserStore, UserPatch } from "../users";
 import { normalizeUserPatch } from "../users";
 import type { PlatformSettings, SettingsStore } from "../settings";
+import type { Order, OrderStore } from "../commerce";
+import type { MagicLinkStore } from "../auth/magicLink";
 import { normalizeSettingsPatch } from "../settings";
 import { JsonFile } from "./jsonFile";
 
@@ -219,5 +221,66 @@ export class FileSettingsStore implements SettingsStore {
     this.settings = { ...this.settings, ...normalizeSettingsPatch(patch) };
     this.file.write(this.settings);
     return this.settings;
+  }
+}
+
+export class FileOrderStore implements OrderStore {
+  private readonly file: JsonFile<Record<string, Order>>;
+  private data: Record<string, Order>;
+
+  constructor(dir: string) {
+    this.file = new JsonFile(join(dir, "orders.json"), {});
+    this.data = this.file.read();
+  }
+
+  async create(order: Order): Promise<Order> {
+    this.data[order.id] = order;
+    this.file.write(this.data);
+    return order;
+  }
+
+  async get(id: string): Promise<Order | undefined> {
+    return this.data[id];
+  }
+
+  async getByProviderRef(ref: string): Promise<Order | undefined> {
+    return Object.values(this.data).find((o) => o.providerRef === ref);
+  }
+
+  async list(userId: string): Promise<Order[]> {
+    return Object.values(this.data)
+      .filter((o) => o.userId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async update(
+    id: string,
+    patch: Partial<Pick<Order, "status" | "providerRef" | "paidAt">>,
+  ): Promise<Order | undefined> {
+    const cur = this.data[id];
+    if (!cur) return undefined;
+    const next = { ...cur, ...patch };
+    this.data[id] = next;
+    this.file.write(this.data);
+    return next;
+  }
+}
+
+export class FileMagicLinkStore implements MagicLinkStore {
+  private readonly file: JsonFile<Record<string, number>>;
+  private data: Record<string, number>;
+
+  constructor(dir: string) {
+    this.file = new JsonFile(join(dir, "magiclinks.json"), {});
+    this.data = this.file.read();
+  }
+
+  async consume(jti: string, expUnix: number): Promise<boolean> {
+    const now = Math.floor(Date.now() / 1000);
+    for (const [k, exp] of Object.entries(this.data)) if (exp < now) delete this.data[k];
+    if (this.data[jti]) return false;
+    this.data[jti] = expUnix;
+    this.file.write(this.data);
+    return true;
   }
 }

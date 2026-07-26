@@ -2505,3 +2505,12 @@ code {
   cursor: pointer;
 }
 .onboard-skip:hover { color: var(--text); }
+
+/* --- Magic-link "check your inbox" state --- */
+.auth-sent {
+  font-size: var(--text-md);
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 var(--space-3);
+}
+.auth-sent strong { color: var(--text); }

@@ -22,7 +22,8 @@ import { generateSampleActivities } from "./providers";
 import { lastNDays } from "./data";
 import { computeGamification } from "./gamification";
 import { loadFeedback } from "./api/feedbackStore";
-import { clearSessionToken } from "./api/client";
+import { api, clearSessionToken, setSessionToken } from "./api/client";
+import { saveAccount } from "./auth";
 
 interface TabDef {
   id: string;
@@ -95,6 +96,41 @@ export function App() {
     const t = setTimeout(() => setPlannerPrefill(undefined), 0);
     return () => clearTimeout(t);
   }, [tab, plannerPrefill]);
+
+  // Redeem an emailed magic link (?magic=…) and confirm a completed payment
+  // (?paid=…) on load, then clean the URL so a refresh can't replay either.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const magic = params.get("magic");
+    const paid = params.get("paid");
+    if (!magic && !paid) return;
+    const clean = () => window.history.replaceState({}, "", window.location.pathname);
+    if (paid) {
+      toast.success("Payment received — thank you!");
+      clean();
+    }
+    if (magic) {
+      api
+        .emailLinkVerify(magic)
+        .then((res) => {
+          setSessionToken(res.token);
+          setAccount(
+            saveAccount({
+              id: res.account.id,
+              name: res.account.name,
+              email: res.account.email,
+              role: res.account.role,
+              tier: res.account.tier,
+              authProvider: "email",
+              createdAt: new Date().toISOString(),
+            }),
+          );
+          toast.success(`Signed in as ${res.account.email}`);
+        })
+        .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "That sign-in link is no longer valid."))
+        .finally(clean);
+    }
+  }, []);
 
   // First-run guided journey — shown once per browser after the first sign-in.
   useEffect(() => {

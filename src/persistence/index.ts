@@ -6,6 +6,8 @@ export {
   FileProductStore,
   FileUserStore,
   FileSettingsStore,
+  FileOrderStore,
+  FileMagicLinkStore,
 } from "./fileStores";
 export {
   createPgStores,
@@ -16,6 +18,8 @@ export {
   PgProductStore,
   PgUserStore,
   PgSettingsStore,
+  PgOrderStore,
+  PgMagicLinkStore,
   type PgStores,
   type PgSeed,
 } from "./pgStores";

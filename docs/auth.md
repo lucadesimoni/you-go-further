@@ -18,6 +18,23 @@ Session state lives in `src/auth/session.ts` (`Account` = a `Principal` + email 
 auth provider), persisted client-side and cleared on **Sign out**. A demo-account
 picker lets you explore the coach / nutritionist / admin views.
 
+### Real email sign-in — magic link (implemented)
+Email sign-in used to trust whatever address was typed in the browser. It is now
+a server-verified, passwordless flow:
+
+1. `POST /api/auth/email/request` — the server issues an **HMAC-signed token**
+   carrying the address, a token id (`jti`) and a 15-minute expiry
+   (`src/auth/magicLink.ts`) and mails the link (`src/auth/mailer.ts`).
+2. The athlete clicks the link; the app posts it to
+   `POST /api/auth/email/verify`, which checks the signature and expiry, then
+   **consumes the `jti` so the link cannot be replayed**, upserts the user and
+   issues the normal HMAC session.
+
+The token is tamper-evident (swapping the email invalidates the signature),
+single-use, and short-lived. Suspended accounts are refused. Configure delivery
+with `MAIL_API_URL` / `MAIL_API_KEY` / `MAIL_FROM`; without them the console
+mailer logs the link so the flow stays walkable in dev.
+
 ### Real Google / Apple sign-in (implemented)
 The secure flow is built end to end:
 

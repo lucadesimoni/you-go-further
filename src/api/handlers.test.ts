@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createApiRouter, type ApiRequest } from "./handlers";
+import { signStripePayload } from "../commerce/payments";
 import { createRuntime } from "../runtime";
 import { getConfig } from "../config";
 import type { Principal } from "../auth";
@@ -302,5 +303,111 @@ describe("API router", () => {
     const s = (updated.data as { settings: { registrationOpen: boolean; defaultTier: string } }).settings;
     expect(s.registrationOpen).toBe(false);
     expect(s.defaultTier).toBe("pro");
+  });
+
+  it("creates a pending product order and a checkout session", async () => {
+    const lines = [
+      { productId: "p1", name: "Competition", brand: "Sponser", qty: 2, unitPriceChf: 2.2, lineTotalChf: 4.4 },
+    ];
+    const res = await route(req("POST", "/api/checkout", { body: { kind: "products", lines, returnTo: "/plan" } }));
+    expect(res.status).toBe(200);
+    const d = res.data as { orderId: string; url: string; amountChf: number };
+    expect(d.amountChf).toBe(4.4);
+    expect(d.url).toContain("/api/checkout/dev-complete");
+
+    const list = await route(req("GET", "/api/orders"));
+    const orders = (list.data as { orders: { id: string; status: string }[] }).orders;
+    expect(orders.find((o) => o.id === d.orderId)?.status).toBe("pending");
+  });
+
+  it("rejects an empty cart", async () => {
+    expect((await route(req("POST", "/api/checkout", { body: { kind: "products", lines: [] } }))).status).toBe(400);
+  });
+
+  it("marks an order paid only via a validly signed webhook", async () => {
+    const res = await route(
+      req("POST", "/api/checkout", {
+        body: {
+          kind: "products",
+          lines: [{ productId: "p1", name: "Gel", brand: "Winforce", qty: 1, unitPriceChf: 2.6, lineTotalChf: 2.6 }],
+        },
+      }),
+    );
+    const orderId = (res.data as { orderId: string }).orderId;
+    const ref = `dev_cs_${orderId}`;
+    const payload = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: ref } } });
+
+    // A forged signature must not settle the order.
+    const forged = await route(
+      req("POST", "/api/webhooks/payments", {
+        body: JSON.parse(payload),
+        rawBody: payload,
+        headers: { "stripe-signature": "t=1,v1=deadbeef" },
+      }),
+    );
+    expect(forged.status).toBe(400);
+    let list = await route(req("GET", "/api/orders"));
+    expect((list.data as { orders: { id: string; status: string }[] }).orders.find((o) => o.id === orderId)?.status).toBe(
+      "pending",
+    );
+
+    // A correctly signed webhook settles it.
+    const good = await route(
+      req("POST", "/api/webhooks/payments", {
+        body: JSON.parse(payload),
+        rawBody: payload,
+        headers: { "stripe-signature": signStripePayload(payload, "dev-webhook-secret") },
+      }),
+    );
+    expect(good.status).toBe(200);
+    list = await route(req("GET", "/api/orders"));
+    expect((list.data as { orders: { id: string; status: string }[] }).orders.find((o) => o.id === orderId)?.status).toBe(
+      "paid",
+    );
+  });
+
+  it("upgrades the user's tier when a subscription order is paid", async () => {
+    const admin2 = { ...admin, id: "club-athlete-1" };
+    const res = await route(req("POST", "/api/checkout", { body: { kind: "subscription", tier: "elite" }, principal: admin2 }));
+    const orderId = (res.data as { orderId: string }).orderId;
+    const payload = JSON.stringify({
+      type: "checkout.session.completed",
+      data: { object: { id: `dev_cs_${orderId}` } },
+    });
+    await route(
+      req("POST", "/api/webhooks/payments", {
+        body: JSON.parse(payload),
+        rawBody: payload,
+        headers: { "stripe-signature": signStripePayload(payload, "dev-webhook-secret") },
+      }),
+    );
+    const users = await route(req("GET", "/api/admin/users", { principal: admin }));
+    const u = (users.data as { users: { id: string; tier: string }[] }).users.find((x) => x.id === "club-athlete-1");
+    expect(u?.tier).toBe("elite");
+  });
+
+  it("sends a magic link and issues a session only for a redeemed link", async () => {
+    const asked = await route(req("POST", "/api/auth/email/request", { body: { email: "New@Runner.ch", returnTo: "/" } }));
+    expect(asked.status).toBe(200);
+    const devLink = (asked.data as { devLink?: string }).devLink!;
+    expect(devLink).toContain("magic=");
+    const token = decodeURIComponent(devLink.split("magic=")[1]);
+
+    // A bad token is refused.
+    expect((await route(req("POST", "/api/auth/email/verify", { body: { token: "not-a-token" } }))).status).toBe(401);
+
+    const verified = await route(req("POST", "/api/auth/email/verify", { body: { token } }));
+    expect(verified.status).toBe(200);
+    const d = verified.data as { token: string; account: { email: string } };
+    expect(d.account.email).toBe("new@runner.ch");
+    expect(d.token.split(".").length).toBeGreaterThan(1);
+
+    // The same link cannot be redeemed twice.
+    const replay = await route(req("POST", "/api/auth/email/verify", { body: { token } }));
+    expect(replay.status).toBe(401);
+  });
+
+  it("rejects an invalid email address", async () => {
+    expect((await route(req("POST", "/api/auth/email/request", { body: { email: "nope" } }))).status).toBe(400);
   });
 });

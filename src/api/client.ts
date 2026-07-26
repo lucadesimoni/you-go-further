@@ -80,6 +80,23 @@ import type { SessionFeedback } from "../feedback";
 import type { Product } from "../engine";
 import type { User, NewUser, UserPatch } from "../users";
 import type { PlatformSettings } from "../settings";
+import type { CartLine, Order } from "../commerce";
+import type { Tier } from "../subscription";
+
+export interface CheckoutResponse {
+  orderId: string;
+  url: string;
+  provider: string;
+  amountChf: number;
+}
+export interface EmailRequestResponse {
+  sent: boolean;
+  devLink?: string;
+}
+export interface EmailVerifyResponse {
+  token: string;
+  account: { id: string; name: string; email: string; role: Role; tier: Tier };
+}
 
 export interface UsersResponse {
   users: User[];
@@ -131,4 +148,13 @@ export const api = {
   settingsGet: (role: Role) => call<SettingsResponse>("GET", "/api/admin/settings", { role }),
   settingsUpdate: (role: Role, body: Partial<PlatformSettings>) =>
     call<SettingsResponse>("POST", "/api/admin/settings", { body, role }),
+  checkoutProducts: (lines: CartLine[], returnTo: string) =>
+    call<CheckoutResponse>("POST", "/api/checkout", { body: { kind: "products", lines, returnTo } }),
+  checkoutSubscription: (tier: Tier, returnTo: string) =>
+    call<CheckoutResponse>("POST", "/api/checkout", { body: { kind: "subscription", tier, returnTo } }),
+  orders: () => call<{ orders: Order[] }>("GET", "/api/orders"),
+  emailLinkRequest: (email: string, returnTo: string) =>
+    call<EmailRequestResponse>("POST", "/api/auth/email/request", { body: { email, returnTo } }),
+  emailLinkVerify: (token: string) =>
+    call<EmailVerifyResponse>("POST", "/api/auth/email/verify", { body: { token } }),
 };

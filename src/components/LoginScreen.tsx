@@ -12,19 +12,39 @@ import {
   type Account,
 } from "../auth";
 import { PERSONAS } from "../personas";
+import { api, isApiConfigured } from "../api/client";
 
 /** Sign-in / register gate. Choose Apple, Google, or email — or a demo account. */
 export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account) => void; allowDemo: boolean }) {
-  const [mode, setMode] = useState<"choose" | "email">("choose");
+  const [mode, setMode] = useState<"choose" | "email" | "sent">("choose");
+  const [devLink, setDevLink] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const live = isApiConfigured();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"google" | "apple" | null>(null);
 
-  const submitEmail = () => {
-    const a = signInWithEmail(email, name);
-    if (!a) return setError("Please enter a valid email address.");
-    onSignedIn(a);
+  // With a server, email sign-in is a real magic link: the server mails a signed,
+  // single-use token and only issues a session when it is redeemed. Without a
+  // server (pure client demo) we fall back to a clearly-labelled local identity.
+  const submitEmail = async () => {
+    if (!live) {
+      const a = signInWithEmail(email, name);
+      if (!a) return setError("Please enter a valid email address.");
+      return onSignedIn(a);
+    }
+    setSending(true);
+    setError(null);
+    try {
+      const res = await api.emailLinkRequest(email, window.location.origin + window.location.pathname);
+      setDevLink(res.devLink ?? null);
+      setMode("sent");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not send the sign-in link.");
+    } finally {
+      setSending(false);
+    }
   };
 
   // Use the provider's real sign-in when a client id is configured; otherwise a
@@ -73,6 +93,21 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
               <span className="auth-glyph">✉</span> Continue with email
             </button>
           </div>
+        ) : mode === "sent" ? (
+          <div className="auth-actions">
+            <p className="auth-sent">
+              Check your inbox — we sent a sign-in link to <strong>{email}</strong>. It works once and
+              expires in 15 minutes.
+            </p>
+            {devLink && (
+              <a className="auth-btn auth-primary" href={devLink}>
+                Open the link (dev mailer)
+              </a>
+            )}
+            <button type="button" className="auth-link" onClick={() => setMode("email")}>
+              ← use a different address
+            </button>
+          </div>
         ) : (
           <div className="auth-actions">
             <input
@@ -95,8 +130,8 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
               onKeyDown={(e) => e.key === "Enter" && submitEmail()}
             />
             {error && <p className="auth-error">{error}</p>}
-            <button type="button" className="auth-btn auth-primary" onClick={submitEmail}>
-              Create account / sign in
+            <button type="button" className="auth-btn auth-primary" onClick={submitEmail} disabled={sending}>
+              {sending ? "Sending…" : live ? "Email me a sign-in link" : "Create account / sign in"}
             </button>
             <button type="button" className="auth-link" onClick={() => setMode("choose")}>
               ← other options
@@ -106,9 +141,9 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
 
         <p className="auth-legal">
           By continuing you agree to our terms.{" "}
-          {googleConfigured() || appleConfigured()
-            ? "Sign-in is verified server-side against the provider."
-            : "Social sign-in is simulated in this demo; set the provider client ids to enable real Google / Apple auth."}
+          {live
+            ? "Sign-in is verified server-side — social tokens against the provider, email via a single-use link."
+            : "Running without a server: sign-in is simulated for the demo."}
         </p>
 
         {allowDemo && mode === "choose" && (

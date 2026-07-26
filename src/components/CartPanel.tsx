@@ -1,14 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
 import { buildCart } from "../commerce";
 import type { Recommendation } from "../engine";
+import { api, isApiConfigured } from "../api/client";
+import { toast } from "../ui/toast";
 
 /** "Shop this plan" — turns the recommendation into a priced, shoppable cart. */
 export function CartPanel({ rec }: { rec: Recommendation }) {
   const [sessions, setSessions] = useState(1);
   const [ordered, setOrdered] = useState(false);
+  const [busy, setBusy] = useState(false);
   const cart = useMemo(() => buildCart(rec, sessions), [rec, sessions]);
+  const live = isApiConfigured();
 
   useEffect(() => setOrdered(false), [rec, sessions]);
+
+  // Real checkout: the server creates a pending order and hands back the payment
+  // provider's URL. The order only becomes paid on the signed webhook.
+  const checkout = async () => {
+    if (!live) return setOrdered(true); // client-only build: nothing to charge
+    setBusy(true);
+    try {
+      const res = await api.checkoutProducts(cart.lines, window.location.href);
+      window.location.href = res.url;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not start checkout");
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="panel cart">
@@ -47,14 +65,16 @@ export function CartPanel({ rec }: { rec: Recommendation }) {
       <button
         type="button"
         className={`btn btn-primary cart-checkout${ordered ? " done" : ""}`}
-        onClick={() => setOrdered(true)}
-        disabled={ordered}
+        onClick={checkout}
+        disabled={ordered || busy || cart.lines.length === 0}
       >
-        {ordered ? "✓ Order placed (demo)" : "Add to cart · checkout"}
+        {ordered ? "✓ Added (demo)" : busy ? "Starting checkout…" : `Checkout · CHF ${cart.subtotalChf.toFixed(2)}`}
       </button>
       <p className="detail note-top">
-        Fulfilled by our Swiss partners (Sponser, Winforce). Checkout is a demo — wires to Shopify /
-        the brand store in production.
+        Fulfilled by our Swiss partners (Sponser, Winforce).{" "}
+        {live
+          ? "Payment is handled by our payment provider; your order is confirmed once payment clears."
+          : "Connect the app to its API to enable real checkout."}
       </p>
     </div>
   );

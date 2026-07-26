@@ -17,7 +17,7 @@ import {
   CATALOG,
 } from "../engine";
 import type { AthleteInput, Product } from "../engine";
-import { buildCart } from "../commerce";
+import { buildCart, newProductOrder, newSubscriptionOrder, type CartLine, type Order } from "../commerce";
 import { deriveAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
 import { analyze, derivePhysiology } from "../analysis";
 import { generateSampleWellness } from "../providers";
@@ -27,6 +27,7 @@ import { createRuntime, type Runtime } from "../runtime";
 import { PLANS, TIER_ORDER } from "../subscription";
 import { authorize, ForbiddenError, ROLE_LABELS, type Principal, type Role } from "../auth";
 import { signSession, DEV_AUTH_SECRET } from "../auth/jwt";
+import { createMagicToken, verifyMagicToken, magicLinkUrl, isEmail } from "../auth/magicLink";
 import { verifyGoogleIdToken, verifyAppleIdToken } from "../auth/oidcVerify";
 import type { Tier } from "../subscription";
 import { DESCRIPTORS, ALL_PROVIDER_IDS } from "../providers";
@@ -38,6 +39,9 @@ export interface ApiRequest {
   path: string;
   query: Record<string, string>;
   body?: unknown;
+  /** Unparsed request body — required to verify payment webhook signatures. */
+  rawBody?: string;
+  headers?: Record<string, string>;
   principal: Principal;
 }
 
@@ -67,12 +71,24 @@ const GI_RATINGS: GiRating[] = ["none", "mild", "severe"];
 const ENERGY_RATINGS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
 
 export function createApiRouter(runtime: Runtime = createRuntime()) {
-  const { config, store, pipeline, feedback, registry, connections, products, users, settings } = runtime;
+  const { config, store, pipeline, feedback, registry, connections, products, users, settings, orders, magicLinks, payments, mailer } = runtime;
 
   const isProvider = (v: string): v is ProviderId => (ALL_PROVIDER_IDS as string[]).includes(v);
 
+  /** Apply a payment outcome: mark the order and, for plans, move the user's tier. */
+  async function settleOrder(order: Order, outcome: "paid" | "failed"): Promise<void> {
+    if (order.status === "paid") return; // idempotent — webhooks can repeat
+    await orders.update(order.id, {
+      status: outcome,
+      paidAt: outcome === "paid" ? new Date().toISOString() : undefined,
+    });
+    if (outcome === "paid" && order.kind === "subscription" && order.tier) {
+      await users.update(order.userId, { tier: order.tier });
+    }
+  }
+
   return async function route(req: ApiRequest): Promise<ApiResponse> {
-    const { method, path, query, body, principal } = req;
+    const { method, path, query, body, rawBody, headers, principal } = req;
     const key = `${method} ${path}`;
     const segs = path.split("/").filter(Boolean); // ["api","oauth","strava","callback"]
 
@@ -167,6 +183,118 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           await products.remove(id);
           return ok({ products: mergeCatalog(await products.list()) });
         }
+      }
+
+
+
+      // --- Passwordless email sign-in --------------------------------------
+      // POST /api/auth/email/request — mail a signed, expiring, single-use link.
+      if (key === "POST /api/auth/email/request") {
+        const b = (body ?? {}) as { email?: string; returnTo?: string };
+        const email = (b.email ?? "").trim().toLowerCase();
+        if (!isEmail(email)) return bad("Please enter a valid email address.");
+        const platform = await settings.get();
+        const known = await users.get(`user:${email}`);
+        if (!platform.registrationOpen && !known) {
+          return bad("Registration is closed. Ask an admin for an invitation.");
+        }
+        const secret = getEnv("AUTH_SECRET") ?? DEV_AUTH_SECRET;
+        const token = createMagicToken(email, secret);
+        const link = magicLinkUrl(b.returnTo || "/", token);
+        await mailer.send({
+          to: email,
+          subject: "Your You Go Further sign-in link",
+          text: `Sign in here (valid 15 minutes, one use):\n\n${link}`,
+        });
+        // Only the console (dev) mailer echoes the link back to the caller.
+        return ok({ sent: true, devLink: mailer.id === "console" ? link : undefined });
+      }
+
+      // POST /api/auth/email/verify — redeem the link and issue a real session.
+      if (key === "POST /api/auth/email/verify") {
+        const b = (body ?? {}) as { token?: string };
+        const secret = getEnv("AUTH_SECRET") ?? DEV_AUTH_SECRET;
+        const claims = b.token ? verifyMagicToken(b.token, secret) : null;
+        if (!claims) return { status: 401, data: { error: "That link is invalid or has expired." } };
+        if (!(await magicLinks.consume(claims.jti, claims.exp))) {
+          return { status: 401, data: { error: "That link has already been used." } };
+        }
+        const id = `user:${claims.email}`;
+        let user = await users.get(id);
+        if (!user) {
+          const platform = await settings.get();
+          user = await users.create({
+            id,
+            name: claims.email.split("@")[0],
+            email: claims.email,
+            role: "athlete",
+            tier: platform.defaultTier,
+            status: "active",
+            createdAt: new Date().toISOString(),
+          });
+        }
+        if (user.status === "suspended") return { status: 403, data: { error: "This account is suspended." } };
+        const token = signSession(
+          { sub: user.id, name: user.name, email: user.email, role: user.role, tier: user.tier, orgId: user.orgId },
+          secret,
+        );
+        return ok({ token, account: { id: user.id, name: user.name, email: user.email, role: user.role, tier: user.tier } });
+      }
+
+      // --- Checkout & payments ---------------------------------------------
+      if (segs[0] === "api" && segs[1] === "checkout") {
+        // POST /api/checkout — create a pending order + a provider checkout session.
+        if (method === "POST" && segs.length === 2) {
+          const b = (body ?? {}) as { kind?: string; lines?: CartLine[]; tier?: Tier; returnTo?: string };
+          const base = b.returnTo || "/";
+          let order: Order;
+          if (b.kind === "subscription") {
+            const tier = TIER_ORDER.includes(b.tier as Tier) ? (b.tier as Tier) : undefined;
+            if (!tier) return bad("Unknown plan");
+            const price = PLANS[tier].priceChfPerMonth;
+            if (price <= 0) return bad("The free plan needs no checkout");
+            order = newSubscriptionOrder(principal.id, tier, price);
+          } else {
+            const lines = Array.isArray(b.lines) ? b.lines : [];
+            if (lines.length === 0) return bad("Your cart is empty");
+            order = newProductOrder(principal.id, lines);
+            if (order.amountChf <= 0) return bad("Cart total must be greater than zero");
+          }
+          await orders.create(order);
+          const session = await payments.createCheckout(order, {
+            successUrl: `${base}${base.includes("?") ? "&" : "?"}paid=${order.id}`,
+            cancelUrl: base,
+          });
+          await orders.update(order.id, { providerRef: session.ref });
+          return ok({ orderId: order.id, url: session.url, provider: payments.id, amountChf: order.amountChf });
+        }
+
+        // GET /api/checkout/dev-complete — the simulated provider's "payment page".
+        if (method === "GET" && segs[2] === "dev-complete") {
+          const ref = query.ref ?? "";
+          const order = await orders.getByProviderRef(ref);
+          if (!order) return notFound();
+          await settleOrder(order, "paid");
+          const back = query.return_to || "/";
+          return { status: 302, data: { redirect: back } };
+        }
+      }
+
+      // POST /api/webhooks/payments — the only path that marks an order paid in
+      // production. Signature-verified; the client is never trusted for money.
+      if (key === "POST /api/webhooks/payments") {
+        const sig = headers?.["stripe-signature"] ?? headers?.["x-payment-signature"] ?? "";
+        const event = payments.verifyWebhook(rawBody ?? "", sig);
+        if (!event) return { status: 400, data: { error: "Invalid signature" } };
+        const order = await orders.getByProviderRef(event.ref);
+        if (!order) return ok({ received: true, matched: false });
+        await settleOrder(order, event.type);
+        return ok({ received: true, matched: true, status: event.type });
+      }
+
+      // GET /api/orders — the athlete's purchase history.
+      if (key === "GET /api/orders") {
+        return ok({ orders: await orders.list(principal.id) });
       }
 
       // --- Admin: user management (all gated by org:configure) ---

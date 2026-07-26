@@ -170,6 +170,34 @@ Execution API (`src/data/databricksSink.ts`):
 Unconfigured, the sink no-ops (dev). The `ExportSink` interface also has
 NDJSON / columnar helpers for S3/Parquet, Kafka, or another lakehouse.
 
+## Payments (Stripe)
+Checkout is real and server-authoritative: `POST /api/checkout` creates a
+**pending** order and returns the provider's payment URL; the order only becomes
+**paid** when a **signature-verified webhook** arrives at
+`POST /api/webhooks/payments` — the client is never trusted for money, and
+settling is idempotent so repeated webhooks are safe. Paid subscription orders
+move the user's tier automatically.
+
+| Env | Why |
+| --- | --- |
+| `STRIPE_SECRET_KEY` | enables the real Stripe provider |
+| `STRIPE_WEBHOOK_SECRET` | verifies webhook signatures (required with the key) |
+
+Point your Stripe webhook endpoint at `/api/webhooks/payments` and subscribe to
+`checkout.session.completed` (plus the async success/failure events). Without
+the keys the app uses a **simulated provider** that follows the identical server
+path — same order lifecycle, same signed-webhook verification — so the purchase
+flow is fully demoable offline.
+
+## Transactional email
+| Env | Why |
+| --- | --- |
+| `MAIL_API_URL` / `MAIL_API_KEY` | transactional provider for magic-link sign-in |
+| `MAIL_FROM` | sender address (default `no-reply@yougofurther.ch`) |
+
+Any provider accepting a JSON `{from,to,subject,text}` POST works (Resend, Brevo,
+Postmark, Mailgun). Unset, the console mailer logs the link for dev.
+
 ## Route map & network policy
 The route map (`RouteMap`) is the **one feature that fetches from an external
 host at runtime** — OpenStreetMap-based map tiles (CARTO dark by default). It is

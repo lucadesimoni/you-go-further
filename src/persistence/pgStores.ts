@@ -9,6 +9,8 @@ import type { User, UserStore, UserPatch } from "../users";
 import { normalizeUserPatch } from "../users";
 import type { PlatformSettings, SettingsStore } from "../settings";
 import { normalizeSettingsPatch } from "../settings";
+import type { Order, OrderStore } from "../commerce";
+import type { MagicLinkStore } from "../auth/magicLink";
 
 /**
  * PostgreSQL-backed stores — the production persistence backend. Selected by
@@ -63,6 +65,21 @@ export async function migrate(pool: Pool): Promise<void> {
     CREATE TABLE IF NOT EXISTS settings (
       id    text PRIMARY KEY,
       data  jsonb NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS orders (
+      id           text PRIMARY KEY,
+      user_id      text NOT NULL,
+      provider_ref text,
+      data         jsonb NOT NULL,
+      created_at   timestamptz NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS orders_user_idx ON orders (user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS orders_ref_idx ON orders (provider_ref);
+
+    CREATE TABLE IF NOT EXISTS magic_links (
+      jti        text PRIMARY KEY,
+      expires_at timestamptz NOT NULL
     );
   `);
 }
@@ -266,6 +283,65 @@ export class PgSettingsStore implements SettingsStore {
   }
 }
 
+export class PgOrderStore implements OrderStore {
+  constructor(private readonly pool: Pool) {}
+
+  async create(order: Order): Promise<Order> {
+    await this.pool.query(
+      `INSERT INTO orders (id, user_id, provider_ref, data, created_at) VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, provider_ref = EXCLUDED.provider_ref`,
+      [order.id, order.userId, order.providerRef ?? null, order, order.createdAt],
+    );
+    return order;
+  }
+
+  async get(id: string): Promise<Order | undefined> {
+    const r = await this.pool.query<{ data: Order }>("SELECT data FROM orders WHERE id = $1", [id]);
+    return r.rows[0]?.data;
+  }
+
+  async getByProviderRef(ref: string): Promise<Order | undefined> {
+    const r = await this.pool.query<{ data: Order }>("SELECT data FROM orders WHERE provider_ref = $1", [ref]);
+    return r.rows[0]?.data;
+  }
+
+  async list(userId: string): Promise<Order[]> {
+    const r = await this.pool.query<{ data: Order }>(
+      "SELECT data FROM orders WHERE user_id = $1 ORDER BY created_at DESC",
+      [userId],
+    );
+    return r.rows.map((x) => x.data);
+  }
+
+  async update(
+    id: string,
+    patch: Partial<Pick<Order, "status" | "providerRef" | "paidAt">>,
+  ): Promise<Order | undefined> {
+    const cur = await this.get(id);
+    if (!cur) return undefined;
+    const next = { ...cur, ...patch };
+    await this.pool.query("UPDATE orders SET data = $2, provider_ref = $3 WHERE id = $1", [
+      id,
+      next,
+      next.providerRef ?? null,
+    ]);
+    return next;
+  }
+}
+
+export class PgMagicLinkStore implements MagicLinkStore {
+  constructor(private readonly pool: Pool) {}
+
+  async consume(jti: string, expUnix: number): Promise<boolean> {
+    await this.pool.query("DELETE FROM magic_links WHERE expires_at < now()");
+    const r = await this.pool.query(
+      "INSERT INTO magic_links (jti, expires_at) VALUES ($1, to_timestamp($2)) ON CONFLICT (jti) DO NOTHING",
+      [jti, expUnix],
+    );
+    return (r.rowCount ?? 0) > 0;
+  }
+}
+
 export interface PgStores {
   pool: Pool;
   store: PgActivityStore;
@@ -274,6 +350,8 @@ export interface PgStores {
   products: PgProductStore;
   users: PgUserStore;
   settings: PgSettingsStore;
+  orders: PgOrderStore;
+  magicLinks: PgMagicLinkStore;
   init(): Promise<void>;
 }
 
@@ -288,6 +366,8 @@ export function createPgStores(databaseUrl: string, seed: PgSeed = {}): PgStores
     products: new PgProductStore(pool),
     users: new PgUserStore(pool, seed.users),
     settings: new PgSettingsStore(pool, seed.settings ?? DEFAULT_SETTINGS_FALLBACK),
+    orders: new PgOrderStore(pool),
+    magicLinks: new PgMagicLinkStore(pool),
     init: () => migrate(pool),
   };
 }

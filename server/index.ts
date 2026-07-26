@@ -86,12 +86,13 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname.startsWith("/api/")) {
     let body: unknown;
+    let rawBody: string | undefined;
     if (req.method === "POST") {
       const chunks: Buffer[] = [];
       for await (const c of req) chunks.push(c as Buffer);
-      const raw = Buffer.concat(chunks).toString("utf8");
+      rawBody = Buffer.concat(chunks).toString("utf8");
       try {
-        body = raw ? JSON.parse(raw) : undefined;
+        body = rawBody ? JSON.parse(rawBody) : undefined;
       } catch {
         res.writeHead(400, { "content-type": "application/json" });
         return res.end(JSON.stringify({ error: "Invalid JSON body" }));
@@ -103,6 +104,10 @@ const server = http.createServer(async (req, res) => {
       path: pathname,
       query,
       body,
+      rawBody,
+      headers: Object.fromEntries(
+        Object.entries(req.headers).map(([k, v]) => [k, Array.isArray(v) ? v.join(",") : String(v ?? "")]),
+      ),
       principal: principalFrom(req.headers),
     });
     // OAuth steps return a redirect intent — honor it as a real 302.
