@@ -43,8 +43,9 @@ HTTP API (`server/index.ts`, sharing `src/api/handlers.ts` with the browser). Se
 It's also an **installable PWA** — manifest, brand icons (`npm run icons`), and a
 service worker (`public/sw.js`) give it an offline app shell and an "Add to Home
 Screen" install on mobile/desktop. API traffic always hits the network so data
-stays live. A native **Expo / React Native app** that shares this platform's API
-lives in **`mobile/`** (see `mobile/README.md`).
+stays live. A native **Expo / React Native app** lives in **`mobile/`** (see
+`mobile/README.md`) — it is at feature parity with the web app and shares this
+platform's API, so the phone and the browser are one account.
 
 See **`docs/deployment.md`** for the full config matrix and backend-swap guide,
 and **`docs/user-flows.md`** for the per-role journeys (athlete, coach,
@@ -63,6 +64,8 @@ npm install
 npm run dev        # start the app (Vite dev server)
 npm test           # run the engine test suite
 npm run build      # typecheck + production build
+npm run e2e        # real-browser journey through the web app (needs a running server)
+npm run e2e:mobile # the same for the mobile app, rendered via react-native-web
 ```
 
 ## Using the engine directly

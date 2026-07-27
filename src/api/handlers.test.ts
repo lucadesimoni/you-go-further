@@ -205,6 +205,20 @@ describe("API router", () => {
     expect(data.custom).toBe(0);
   });
 
+  it("ships when-to-use guidance with the catalog so every client explains it the same way", async () => {
+    const res = await route(req("GET", "/api/products"));
+    const data = res.data as {
+      products: { id: string }[];
+      usage: Record<string, { summary: string; bestWhen: string[]; avoidWhen: string[] }>;
+    };
+    // Every product carries guidance, including custom ones added by an admin.
+    for (const p of data.products) {
+      expect(data.usage[p.id]?.summary.length).toBeGreaterThan(0);
+      expect(data.usage[p.id]?.bestWhen.length).toBeGreaterThan(0);
+      expect(data.usage[p.id]?.avoidWhen.length).toBeGreaterThan(0);
+    }
+  });
+
   it("lets an admin add a custom Swiss product and recommends it", async () => {
     const body = { name: "Club Mix", brand: "Club", category: "drink-mix", phases: ["during"], carbsG: 80, sodiumMg: 400, multiTransportable: true };
     const created = await route(req("POST", "/api/products", { body, principal: admin }));
@@ -409,5 +423,27 @@ describe("API router", () => {
 
   it("rejects an invalid email address", async () => {
     expect((await route(req("POST", "/api/auth/email/request", { body: { email: "nope" } }))).status).toBe(400);
+  });
+
+  it("serves insights (progress + fuelling score) for any client", async () => {
+    await route(req("POST", "/api/ingest", { body: { provider: "garmin", days: 28 } }));
+    await route(req("POST", "/api/feedback", { body: { gi: "none", energy: "strong", durationMin: 120, plannedCarbPerHourG: 60 } }));
+    const res = await route(req("GET", "/api/insights"));
+    expect(res.status).toBe(200);
+    const d = res.data as { progress: { milestones: unknown[] }; fuelling: { score: number | null; nextActions: unknown[] }; hasData: boolean };
+    expect(d.progress.milestones.length).toBeGreaterThan(0);
+    expect(d.fuelling.score).not.toBeNull();
+    expect(d.fuelling.nextActions.length).toBeGreaterThan(0);
+    expect(d.hasData).toBe(true);
+  });
+
+  it("serves the nutrition guide content", async () => {
+    const res = await route(req("GET", "/api/guide"));
+    expect(res.status).toBe(200);
+    const d = res.data as { articles: { keyNumbers: unknown[] }[]; categories: string[]; disclaimer: string };
+    expect(d.articles.length).toBeGreaterThan(10);
+    expect(d.articles[0].keyNumbers.length).toBeGreaterThan(0);
+    expect(d.categories.length).toBeGreaterThan(0);
+    expect(d.disclaimer).toMatch(/not medical advice/i);
   });
 });

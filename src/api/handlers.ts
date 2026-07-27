@@ -12,6 +12,7 @@ import {
   buildSchedule,
   computeTarget,
   idealOffering,
+  productUsage,
   normalizeProduct,
   mergeCatalog,
   CATALOG,
@@ -34,6 +35,8 @@ import { DESCRIPTORS, ALL_PROVIDER_IDS } from "../providers";
 import { normalizeNewUser, normalizeUserPatch, type NewUser, type UserPatch } from "../users";
 import type { PlatformSettings } from "../settings";
 import type { AthleteProfile } from "../users";
+import { computeProgress, fuellingScore } from "../progress";
+import { NUTRITION_GUIDE, GUIDE_CATEGORIES, GUIDE_DISCLAIMER } from "../content/nutritionGuide";
 
 export interface ApiRequest {
   method: string;
@@ -160,7 +163,13 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         // GET /api/products → the full merged catalog every athlete browses,
         // flagged so the UI can show built-in vs. house products.
         if (method === "GET" && segs.length === 2) {
-          return ok({ products: mergeCatalog(custom), builtIn: CATALOG.length, custom: custom.length });
+          const merged = mergeCatalog(custom);
+          // `usage` travels alongside (rather than inside) each product so the
+          // Product shape stays pure, and every client — web or mobile — shows
+          // the same "when to use this" guidance from the same function.
+          const usage: Record<string, ReturnType<typeof productUsage>> = {};
+          for (const p of merged) usage[p.id] = productUsage(p);
+          return ok({ products: merged, usage, builtIn: CATALOG.length, custom: custom.length });
         }
         // POST /api/products → add or edit a custom product (admin / nutritionist).
         if (method === "POST" && segs.length === 2) {
@@ -187,6 +196,38 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
       }
 
 
+
+      // --- Insights: progress + fuelling score, computed server-side so every
+      // client (web, mobile) shows exactly the same numbers ------------------
+      if (key === "GET /api/insights") {
+        const [acts, logs, prof, conns] = await Promise.all([
+          store.query(),
+          feedback.list(principal.id),
+          profiles.get(principal.id),
+          connections.list(principal.id),
+        ]);
+        const longSessions = acts.filter((a) => a.durationSec >= 90 * 60).length;
+        return ok({
+          progress: computeProgress({
+            activities: acts,
+            feedbackCount: logs.length,
+            connectionsCount: conns.length,
+            hasMeasuredSweatRate: prof.useSignals,
+          }),
+          fuelling: fuellingScore({
+            feedback: logs,
+            longSessions,
+            connectionsCount: conns.length,
+            hasMeasuredSweatRate: prof.useSignals,
+          }),
+          hasData: acts.length > 0,
+        });
+      }
+
+      // --- Nutrition guide content (shared by web and mobile) ---------------
+      if (key === "GET /api/guide") {
+        return ok({ articles: NUTRITION_GUIDE, categories: GUIDE_CATEGORIES, disclaimer: GUIDE_DISCLAIMER });
+      }
 
       // --- Athlete profile (per user, follows them across devices) ---------
       if (key === "GET /api/profile") return ok({ profile: await profiles.get(principal.id) });

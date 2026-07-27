@@ -24,21 +24,29 @@ function Seg<T extends string>({ value, current, label, onPress }: { value: T; c
 
 const badgeColor = (phase: string) => (phase === "pre" ? C.pre : phase === "during" ? C.during : C.post);
 
-export function PlannerScreen() {
-  const [input, setInput] = useState<AthleteInput>({
-    goal: "endurance-performance",
-    activity: "cycling",
-    durationMin: 120,
-    intensity: "moderate",
-    bodyWeightKg: 70,
-    caffeineOk: false,
-  });
+/**
+ * The fuel plan for one session. The session input lives in App so the shop can
+ * build a cart for exactly the session you just planned, and so your profile
+ * (weight, caffeine) seeds it without being typed twice.
+ */
+export function PlannerScreen({
+  input,
+  onInput,
+  onEditProfile,
+  onPlanned,
+}: {
+  input: AthleteInput;
+  onInput: (next: AthleteInput) => void;
+  onEditProfile: () => void;
+  /** Reports the planned carb rate so logging starts from what was actually planned. */
+  onPlanned?: (carbPerHourG: number) => void;
+}) {
   const [rec, setRec] = useState<Recommendation | null>(null);
   const [schedule, setSchedule] = useState<FuelingSchedule | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set = <K extends keyof AthleteInput>(k: K, v: AthleteInput[K]) => setInput((p) => ({ ...p, [k]: v }));
+  const set = <K extends keyof AthleteInput>(k: K, v: AthleteInput[K]) => onInput({ ...input, [k]: v });
 
   const fetchPlan = async () => {
     setLoading(true);
@@ -47,6 +55,7 @@ export function PlannerScreen() {
       const [r, s] = await Promise.all([api.recommend(input), api.schedule(input)]);
       setRec(r);
       setSchedule(s);
+      onPlanned?.(r.target.carbPerHourG);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed");
     } finally {
@@ -54,11 +63,12 @@ export function PlannerScreen() {
     }
   };
 
-  // Auto-fetch on first mount.
+  // Keep the plan in step with the session — a stale plan after changing goal or
+  // duration is worse than no plan.
   useEffect(() => {
     void fetchPlan();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [input.goal, input.activity, input.intensity, input.durationMin, input.bodyWeightKg, input.caffeineOk]);
 
   const hrs = Math.floor(input.durationMin / 60);
   const mins = input.durationMin % 60;
@@ -97,24 +107,16 @@ export function PlannerScreen() {
           </View>
         </View>
 
-        <View style={[S.row, { justifyContent: "space-between" }]}>
-          <Text style={S.label}>Body weight: {input.bodyWeightKg} kg</Text>
-          <View style={S.stepper}>
-            <Pressable style={S.stepBtn} onPress={() => set("bodyWeightKg", Math.max(40, input.bodyWeightKg - 1))}>
-              <Text style={S.stepBtnText}>−</Text>
-            </Pressable>
-            <Pressable style={S.stepBtn} onPress={() => set("bodyWeightKg", Math.min(120, input.bodyWeightKg + 1))}>
-              <Text style={S.stepBtnText}>+</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <Pressable style={[S.seg, input.caffeineOk && S.segActive, { alignSelf: "flex-start" }]} onPress={() => set("caffeineOk", !input.caffeineOk)}>
-          <Text style={[S.segText, input.caffeineOk && S.segTextActive]}>{input.caffeineOk ? "✓ " : ""}Caffeine ok</Text>
+        {/* Body data lives in the profile — one place, not repeated per screen. */}
+        <Pressable style={[S.row, { justifyContent: "space-between" }]} onPress={onEditProfile} accessibilityRole="button">
+          <Text style={S.muted}>
+            From your profile: {input.bodyWeightKg} kg · caffeine {input.caffeineOk ? "ok" : "off"}
+          </Text>
+          <Text style={[S.pillText, { color: C.accent }]}>Edit</Text>
         </Pressable>
 
         <Pressable style={S.btn} onPress={fetchPlan} disabled={loading}>
-          <Text style={S.btnText}>{loading ? "Loading…" : "Get my plan"}</Text>
+          <Text style={S.btnText}>{loading ? "Loading…" : rec ? "Refresh my plan" : "Get my plan"}</Text>
         </Pressable>
         {error && <Text style={[S.muted, { color: C.accent }]}>Could not reach the platform API: {error}</Text>}
       </View>
@@ -170,6 +172,21 @@ export function PlannerScreen() {
           ))}
           <Text style={S.muted}>
             {schedule.totalCarbG} g carb · {schedule.totalFluidMl} ml planned
+          </Text>
+        </View>
+      )}
+
+      {/* Why the plan looks like this — the same rationale the web app shows. */}
+      {rec && rec.notes.length > 0 && (
+        <View style={S.panel}>
+          <Text style={S.h2}>Why this plan</Text>
+          {rec.notes.map((n, i) => (
+            <Text key={i} style={S.muted}>
+              • {n}
+            </Text>
+          ))}
+          <Text style={S.muted}>
+            Hydration {rec.target.hydrationSource === "measured" ? "uses your measured sweat rate" : "is a population estimate — measure it once in your profile"}.
           </Text>
         </View>
       )}

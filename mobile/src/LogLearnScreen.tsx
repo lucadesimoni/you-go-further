@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { api } from "./api";
 import { C, S } from "./theme";
+import { Stepper } from "./ui";
 import type { AdaptationInsight, EnergyRating, GiRating, SessionFeedback } from "./types";
 
 const GI: GiRating[] = ["none", "mild", "severe"];
@@ -18,9 +19,18 @@ const CONF: Record<AdaptationInsight["confidence"], string> = {
  * Log & learn — reads and writes the SAME server-side feedback the web app uses,
  * so logging on the phone updates the athlete's plan on the web and vice versa.
  */
-export function LogLearnScreen() {
+export function LogLearnScreen({
+  durationMin,
+  plannedCarbPerHourG,
+}: {
+  /** The session that was just planned — logged as-is so the engine learns from real numbers. */
+  durationMin: number;
+  plannedCarbPerHourG: number;
+}) {
   const [gi, setGi] = useState<GiRating>("none");
   const [energy, setEnergy] = useState<EnergyRating>("steady");
+  const [minutes, setMinutes] = useState(durationMin);
+  const [carbs, setCarbs] = useState(plannedCarbPerHourG);
   const [feedback, setFeedback] = useState<SessionFeedback[]>([]);
   const [insight, setInsight] = useState<AdaptationInsight | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +54,7 @@ export function LogLearnScreen() {
   const log = async () => {
     setBusy(true);
     try {
-      const r = await api.feedbackAdd({ gi, energy, durationMin: 120, plannedCarbPerHourG: 60 });
+      const r = await api.feedbackAdd({ gi, energy, durationMin: minutes, plannedCarbPerHourG: carbs });
       setFeedback(r.feedback);
       setInsight(r.adaptation);
       setError(null);
@@ -89,6 +99,9 @@ export function LogLearnScreen() {
             </Pressable>
           ))}
         </View>
+
+        <Stepper label="Session length" value={minutes} onChange={setMinutes} min={20} max={600} step={15} suffix=" min" />
+        <Stepper label="Carbs taken" value={carbs} onChange={setCarbs} min={0} max={140} step={5} suffix=" g/h" />
 
         <Pressable style={S.btn} onPress={log} disabled={busy}>
           <Text style={S.btnText}>{busy ? "Saving…" : "Log this session"}</Text>

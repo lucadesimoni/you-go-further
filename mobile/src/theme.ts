@@ -47,4 +47,28 @@ export const S = StyleSheet.create({
   stepBtnText: { color: C.text, fontSize: 20, fontWeight: "700" },
   pill: { borderColor: C.border, borderWidth: 1, backgroundColor: C.panel2, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
   pillText: { color: C.muted, fontSize: 12, fontWeight: "600" },
+  input: {
+    borderColor: C.border,
+    borderWidth: 1,
+    backgroundColor: C.panel2,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    color: C.text,
+    fontSize: 15,
+  },
+  // Bottom tab bar — one navigation surface, no duplicated menus.
+  tabbar: {
+    flexDirection: "row",
+    borderTopColor: C.border,
+    borderTopWidth: 1,
+    backgroundColor: C.panel,
+    paddingTop: 6,
+    paddingBottom: 6,
+  },
+  tabItem: { flex: 1, alignItems: "center", paddingVertical: 6, gap: 3 },
+  tabLabel: { color: C.muted, fontSize: 11, fontWeight: "600" },
+  tabLabelActive: { color: C.text },
+  tabDot: { width: 5, height: 5, borderRadius: 999, backgroundColor: "transparent" },
+  tabDotActive: { backgroundColor: C.accent },
 });

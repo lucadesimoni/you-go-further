@@ -1,9 +1,10 @@
 # You Go Further — Mobile app (Expo / React Native)
 
 A native iOS/Android app that is a **thin client of the You Go Further platform
-API**. Because the phone and the web app call the same endpoints and feedback is
-persisted per-user server-side, the two are genuinely **in sync**: log a session
-on your phone and your plan updates on the web, and vice-versa.
+API**. The phone and the web app call the same endpoints, and everything that
+matters — profile, feedback, connections, insights, orders — is persisted per
+user server-side, so the two are genuinely **one account**: log a session on your
+phone and your plan updates on the web, and vice-versa.
 
 ```
 mobile app ─┐
@@ -30,29 +31,47 @@ EXPO_PUBLIC_API_BASE_URL=http://localhost:8787 npx expo start
 
 ## What's here
 
+Five tabs, one navigation surface — personal screens live under **You**, so
+nothing appears in two places.
+
 | File | Purpose |
 | --- | --- |
-| `App.tsx` | Shell: live "in sync" connection banner + tab switch. |
-| `src/api.ts` | Typed client for the platform API (recommend, schedule, feedback). |
-| `src/types.ts` | Types mirroring the API responses. |
-| `src/PlannerScreen.tsx` | Goal/session inputs → `/api/recommend` + `/api/schedule`. |
+| `App.tsx` | Shell: session restore, connection banner, bottom tab bar. |
+| `src/SignInScreen.tsx` | Passwordless sign-in via the server-verified magic link. |
+| `src/PlannerScreen.tsx` | Session inputs → `/api/recommend` + `/api/schedule`, plus the reasoning. |
 | `src/LogLearnScreen.tsx` | Reads/writes `/api/feedback` — the shared learning loop. |
-| `src/theme.ts` | Shared palette matching the web brand. |
+| `src/InsightsScreen.tsx` | Fuelling score, milestones and the nutrition guide from `/api/insights` + `/api/guide`. |
+| `src/CatalogScreen.tsx` | Product library with when-to-use guidance, cart and checkout. |
+| `src/ProfileScreen.tsx` | Body & health data and account — synced through `/api/profile`. |
+| `src/ConnectScreen.tsx` | Strava / Garmin / Polar / Suunto OAuth, opened in the system browser. |
+| `src/api.ts` | Typed client; sends the signed session as a bearer token. |
+| `src/session.ts` | Token + account persisted across launches (`src/storage.ts`). |
+| `src/ui.tsx`, `src/theme.ts` | The shared building blocks and palette — the native side of the design system. |
 
 `npm run typecheck` type-checks the app against react + react-native.
 
-## Sync — verified
+## Parity — verified
 
-Driving the platform through **this app's own `src/api.ts`** against a running
-server: `health` ok, `recommend` returned targets, `schedule` returned the cue
-list, and two GI-severe sessions logged from the mobile client produced a learned
-carb ceiling that the web app reads back identically from the same account.
+There is no simulator in CI, so the screens are rendered through
+`react-native-web` (see `verify/`) at phone width and driven in a real browser
+against a running API by `npm run e2e:mobile` from the repo root. That run
+covers: magic-link sign-in, planning and re-planning, logging feedback, the
+server-computed fuelling score, the guide, the catalog with its when-to-use
+guidance, building a cart, saving the profile and having it flow back into the
+plan, and the connections screen — with zero console, page or HTTP errors.
+
+Numbers are never recomputed on the phone: `/api/insights` returns the same
+progress and fuelling score object the web app renders, so the two clients
+cannot drift.
 
 ## Notes / next steps
 
-- **Source of truth is the server**, so recommendations are always consistent with
-  the web. For offline use, the pure `src/engine` from the web package can be
-  shared into this app (via a workspace or Metro `watchFolders`) to compute
-  locally and sync feedback when back online.
-- Auth here uses the platform's `x-role` header for the demo; wire real sign-in
-  (Expo AuthSession / OIDC) for production, matching the server's auth.
+- **Source of truth is the server.** For offline use, the pure `src/engine` from
+  the web package can be shared into this app (via a workspace or Metro
+  `watchFolders`) to compute locally and sync feedback when back online.
+- The OAuth consent screen and Stripe checkout open in the system browser and
+  return through the `yougofurther://` scheme (registered in `app.json`);
+  `App.tsx` handles the incoming link — redeeming `?magic=` sign-in tokens and
+  landing on the right screen after `?connected=` or `?paid=`.
+- Apple Health and Google Fit still need their native SDKs; the profile already
+  carries `syncedFrom` for when they land.
