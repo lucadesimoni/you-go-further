@@ -66,9 +66,13 @@ export function fuelingImplications(terrain: TerrainProfile, weather: WeatherNow
  * Enrich a planned route with swisstopo terrain and current weather, plus the
  * fueling implications. Both sources degrade gracefully to an estimate offline.
  */
-export async function enrichRoute(route: LatLng[], hintGainM?: number): Promise<RouteConditions> {
+export async function enrichRoute(
+  route: LatLng[],
+  hintGainM?: number,
+  hintDistanceKm?: number,
+): Promise<RouteConditions> {
   const [terrain, weather] = await Promise.all([
-    fetchTerrain(route, hintGainM),
+    fetchTerrain(route, hintGainM, hintDistanceKm),
     fetchWeather(route[0][0], route[0][1]),
   ]);
   return { terrain, weather, implications: fuelingImplications(terrain, weather) };

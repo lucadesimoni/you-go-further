@@ -149,6 +149,17 @@ export const en = {
   "connect.bodySignals": "Body signals",
   "connect.trainingAnalysis": "Training analysis",
 
+  // ---- Route fuelling by terrain -----------------------------------------
+  "route.fuelByTerrain": "Fuelling on this route",
+  "route.chartLabel": "Height profile with {count} fuelling stops over {gain} m of climbing",
+  "route.byTerrain": "placed by terrain",
+  "route.evenSpacing": "even spacing",
+  "route.explain":
+    "Stops are placed where the energy actually goes: climbing costs up to 2.5× the flat per metre, so a feed lands on the approach to a climb rather than on it, and never deep in a descent where eating is impractical.",
+
+  "route.estimatedProfile":
+    "Height profile estimated — swisstopo was unreachable, so the shape is indicative and the stop times are approximate.",
+
   // ---- Catalog & shop -----------------------------------------------------
   "catalog.title": "Product library",
   "catalog.bestWhen": "Best when",

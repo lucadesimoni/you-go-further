@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import type { LatLng } from "../model";
 import type { Activity } from "../engine";
 import { enrichRoute, type RouteConditions } from "../geo";
+import { computeTarget, planRouteFuelling } from "../engine";
+import { loadProfile } from "../api/profileStore";
+import { ElevationFuelChart } from "./ElevationFuelChart";
 import type { SessionInput } from "./Planner";
 import { useT } from "../i18n";
 
@@ -21,12 +24,15 @@ const TERRAIN_LABEL: Record<string, string> = {
 export function RouteInsights({
   route,
   hintGainM,
+  hintDistanceKm,
   activity,
   durationMin,
   onPlan,
 }: {
   route: LatLng[];
   hintGainM?: number;
+  /** The session's recorded distance — more reliable than measuring the track. */
+  hintDistanceKm?: number;
   activity?: Activity;
   durationMin?: number;
   onPlan?: (prefill: Partial<SessionInput>) => void;
@@ -38,18 +44,38 @@ export function RouteInsights({
   useEffect(() => {
     let live = true;
     setLoading(true);
-    enrichRoute(route, hintGainM)
+    enrichRoute(route, hintGainM, hintDistanceKm)
       .then((d) => live && setData(d))
       .catch(() => live && setData(null))
       .finally(() => live && setLoading(false));
     return () => {
       live = false;
     };
-  }, [route, hintGainM]);
+  }, [route, hintGainM, hintDistanceKm]);
 
   if (loading) return <p className="detail geo-loading">Loading terrain &amp; weather…</p>;
   if (!data) return null;
   const { terrain, weather, implications } = data;
+
+  // Fuelling placed by the height profile. The carbohydrate target comes from
+  // the same engine the planner uses, with the route's own conditions applied,
+  // so the chart and the plan can never disagree.
+  const bodyProfile = loadProfile();
+  const target = computeTarget({
+    goal: "endurance-performance",
+    activity: activity ?? "trail-running",
+    durationMin: durationMin ?? Math.round(terrain.distanceKm * 6),
+    intensity: "moderate",
+    bodyWeightKg: bodyProfile.bodyWeightKg,
+    conditions: weather.conditions,
+    sweatLevel: bodyProfile.sweatLevel,
+  });
+  const fuelPlan = planRouteFuelling({
+    samples: terrain.samples,
+    activity,
+    durationMin,
+    carbPerHourG: target.carbPerHourG,
+  });
 
   return (
     <div className="geo">
@@ -106,6 +132,17 @@ export function RouteInsights({
           <p className="geo-source-note">{weather.sourceLabel}</p>
         </div>
       </div>
+
+      {fuelPlan.stops.length > 0 && (
+        <div className="route-fuel">
+          <div className="route-fuel-head">
+            <h4 className="geo-title">{t("route.fuelByTerrain")}</h4>
+            <span className="pill">{fuelPlan.climbs.length > 0 ? t("route.byTerrain") : t("route.evenSpacing")}</span>
+          </div>
+          <ElevationFuelChart plan={fuelPlan} estimated={terrain.source === "estimated"} />
+          <p className="detail elev-note">{t("route.explain")}</p>
+        </div>
+      )}
 
       {implications.length > 0 && (
         <ul className="geo-implications">

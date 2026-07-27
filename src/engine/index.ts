@@ -20,3 +20,21 @@ export {
 export { energyProfile, type EnergyProfile, type EnergySample } from "./energy";
 export { buildSchedule, formatClock } from "./schedule";
 export type { FuelingCue, FuelingSchedule, CueKind, ScheduleOptions } from "./schedule";
+export {
+  planRouteFuelling,
+  buildSegments,
+  findClimbs,
+  runningCostPerM,
+  cyclingCostPerM,
+  relativeCost,
+  relativeSpeed,
+  sportKind,
+} from "./routeFuelling";
+export type {
+  RouteFuelPlan,
+  RouteFuelStop,
+  RouteSegment,
+  RouteSportKind,
+  Climb,
+  StopKind,
+} from "./routeFuelling";

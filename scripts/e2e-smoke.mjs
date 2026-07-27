@@ -119,6 +119,41 @@ await step("a run can be chosen, not just the latest ride", async () => {
   const foot = await page.locator(".energy-foot").innerText();
   if (!/run/i.test(foot)) throw new Error(`picker did not switch to a run: ${foot}`);
 });
+await step("fuel stops are placed on the height profile, not just the clock", async () => {
+  // Walk the sessions until one is long enough to need on-route feeds.
+  const chips = await page.locator(".route-picker .chip").count();
+  let found = false;
+  for (let i = 0; i < chips && !found; i++) {
+    await page.locator(".route-picker .chip").nth(i).click();
+    await page.waitForTimeout(2000);
+    found = (await page.locator(".route-fuel").count()) > 0;
+  }
+  if (!found) throw new Error("no session produced a terrain-aware fuelling plan");
+  await page.locator(".elev-svg").waitFor({ timeout: 10000 });
+
+  // Every stop must carry a time, a place on the route and a dose.
+  const rows = await page.locator(".elev-stop-row").count();
+  if (rows === 0) throw new Error("height profile rendered with no fuel stops");
+  const first = await page.locator(".elev-stop-row").first().innerText();
+  if (!/\d+:\d\d/.test(first)) throw new Error(`stop has no time: ${first}`);
+  if (!/km \d/.test(first)) throw new Error(`stop has no position: ${first}`);
+  if (!/\d+ g/.test(first)) throw new Error(`stop has no dose: ${first}`);
+
+  // The chart's distance must agree with the session summary above it —
+  // two different numbers for the same ride is worse than none.
+  const foot = await page.locator(".energy-foot").innerText();
+  const chart = await page.locator(".elev-foot").innerText();
+  const sessionKm = Number(/([\d.]+) km/.exec(foot)?.[1]);
+  const chartKm = Number(/([\d.]+) km/.exec(chart)?.[1]);
+  if (Math.abs(sessionKm - chartKm) > Math.max(1, sessionKm * 0.05)) {
+    throw new Error(`chart says ${chartKm} km but the session says ${sessionKm} km`);
+  }
+
+  // An estimated profile must say so — a chart looks authoritative either way.
+  const estimatedChart = (await page.locator(".elev-chart-estimated").count()) > 0;
+  const saysEstimated = (await page.locator(".elev-estimated").count()) > 0;
+  if (estimatedChart !== saysEstimated) throw new Error("estimated profile is not labelled as estimated");
+});
 await step("the weather panel names its source instead of implying MeteoSwiss", async () => {
   const note = await page.locator(".geo-source-note").innerText();
   // Whatever the environment allows, the label must match the data: never

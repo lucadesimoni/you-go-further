@@ -112,7 +112,7 @@ describe("weather", () => {
 describe("fueling implications & enrichRoute", () => {
   it("flags heat and big climbs", () => {
     const impl = fuelingImplications(
-      { distanceKm: 20, ascentM: 1200, descentM: 1200, minAltM: 600, maxAltM: 1800, terrain: "mountainous", source: "swisstopo" },
+      { distanceKm: 20, ascentM: 1200, descentM: 1200, minAltM: 600, maxAltM: 1800, terrain: "mountainous", samples: [], source: "swisstopo" },
       { temperatureC: 29, humidityPct: 50, windKmh: 5, conditions: "hot", source: "station", sourceLabel: "MeteoSwiss · Sion (3 km)" },
     );
     expect(impl.join(" ")).toMatch(/sodium/i);

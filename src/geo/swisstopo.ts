@@ -13,6 +13,13 @@ import type { LatLng } from "../model";
  */
 export type TerrainType = "flat" | "rolling" | "hilly" | "mountainous";
 
+/** One point along the route's elevation profile. */
+export interface ElevationSample {
+  /** Distance from the start, in metres. */
+  distanceM: number;
+  altM: number;
+}
+
 export interface TerrainProfile {
   distanceKm: number;
   ascentM: number;
@@ -20,6 +27,12 @@ export interface TerrainProfile {
   minAltM: number;
   maxAltM: number;
   terrain: TerrainType;
+  /**
+   * The profile itself, not just its summary. Aggregate climb tells you how
+   * hard a route is; *where* the climb sits is what decides when to eat, so the
+   * samples are kept rather than collapsed.
+   */
+  samples: ElevationSample[];
   /** Whether the numbers came from swisstopo or a local estimate. */
   source: "swisstopo" | "estimated";
 }
@@ -67,9 +80,11 @@ export function parseProfile(points: ProfilePoint[]): TerrainProfile {
   let min = Infinity;
   let max = -Infinity;
   let prev: number | undefined;
+  const samples: ElevationSample[] = [];
   for (const p of points) {
     const alt = Object.values(p.alts)[0];
     if (typeof alt !== "number") continue;
+    samples.push({ distanceM: p.dist, altM: alt });
     min = Math.min(min, alt);
     max = Math.max(max, alt);
     if (prev !== undefined) {
@@ -88,6 +103,7 @@ export function parseProfile(points: ProfilePoint[]): TerrainProfile {
     minAltM: Number.isFinite(min) ? Math.round(min) : 0,
     maxAltM: Number.isFinite(max) ? Math.round(max) : 0,
     terrain: classifyTerrain(ascentM, distanceKm),
+    samples,
     source: "swisstopo",
   };
 }
@@ -103,26 +119,48 @@ function trackKm(route: LatLng[]): number {
   return m / 1000;
 }
 
-/** Deterministic estimate when swisstopo isn't reachable, honouring a known gain. */
-export function estimateTerrain(route: LatLng[], hintGainM?: number): TerrainProfile {
-  const distanceKm = Math.round(trackKm(route) * 10) / 10;
+/**
+ * Deterministic estimate when swisstopo isn't reachable, honouring what we
+ * already know about the session.
+ *
+ * A recorded distance beats measuring the polyline: a stored track is decimated,
+ * so its straight-line length can be badly short — or, on a synthetic sample
+ * route, badly long. Using the recorded figure keeps the chart agreeing with the
+ * session summary next to it.
+ */
+export function estimateTerrain(route: LatLng[], hintGainM?: number, hintDistanceKm?: number): TerrainProfile {
+  const distanceKm = hintDistanceKm ?? Math.round(trackKm(route) * 10) / 10;
   // Base elevation from latitude band (rough Swiss plateau → alpine gradient).
   const baseAlt = Math.round(350 + (47.6 - route[0][0]) * 900);
   const ascentM = hintGainM ?? Math.round(distanceKm * 18);
+  const minAltM = Math.max(200, baseAlt);
+  const maxAltM = minAltM + Math.round(ascentM * 0.6);
+  // A single smooth out-and-back hump. It is explicitly an estimate — enough to
+  // keep the fuelling maths defined offline, and labelled so the UI can say so.
+  const n = 32;
+  const samples: ElevationSample[] = Array.from({ length: n + 1 }, (_, i) => ({
+    distanceM: Math.round((distanceKm * 1000 * i) / n),
+    altM: Math.round(minAltM + (maxAltM - minAltM) * Math.sin((Math.PI * i) / n)),
+  }));
   return {
     distanceKm,
     ascentM,
     descentM: ascentM,
-    minAltM: Math.max(200, baseAlt),
-    maxAltM: Math.max(200, baseAlt) + Math.round(ascentM * 0.6),
+    minAltM,
+    maxAltM,
     terrain: classifyTerrain(ascentM, distanceKm),
+    samples,
     source: "estimated",
   };
 }
 
 /** Fetch the terrain profile from swisstopo, falling back to an estimate. */
-export async function fetchTerrain(route: LatLng[], hintGainM?: number): Promise<TerrainProfile> {
-  if (route.length < 2) return estimateTerrain(route, hintGainM);
+export async function fetchTerrain(
+  route: LatLng[],
+  hintGainM?: number,
+  hintDistanceKm?: number,
+): Promise<TerrainProfile> {
+  if (route.length < 2) return estimateTerrain(route, hintGainM, hintDistanceKm);
   try {
     const geom = JSON.stringify({
       type: "LineString",
@@ -135,6 +173,6 @@ export async function fetchTerrain(route: LatLng[], hintGainM?: number): Promise
     if (!Array.isArray(points) || points.length === 0) throw new Error("empty profile");
     return parseProfile(points);
   } catch {
-    return estimateTerrain(route, hintGainM);
+    return estimateTerrain(route, hintGainM, hintDistanceKm);
   }
 }

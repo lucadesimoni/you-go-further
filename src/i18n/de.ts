@@ -155,6 +155,17 @@ export const de: Dictionary = {
   "connect.bodySignals": "Körperwerte",
   "connect.trainingAnalysis": "Trainingsanalyse",
 
+  // ---- Route fuelling by terrain -----------------------------------------
+  "route.fuelByTerrain": "Verpflegung auf dieser Route",
+  "route.chartLabel": "Höhenprofil mit {count} Verpflegungsstopps über {gain} Höhenmeter",
+  "route.byTerrain": "nach Gelände gesetzt",
+  "route.evenSpacing": "gleichmässige Abstände",
+  "route.explain":
+    "Die Stopps liegen dort, wo die Energie tatsächlich verbraucht wird: Bergauf kostet pro Meter bis zu 2,5-mal so viel wie flach. Deshalb liegt eine Verpflegung vor dem Anstieg statt mitten darin — und nie tief in einer Abfahrt, wo Essen kaum möglich ist.",
+
+  "route.estimatedProfile":
+    "Höhenprofil geschätzt — swisstopo war nicht erreichbar. Der Verlauf ist ungefähr, die Zeitpunkte entsprechend grob.",
+
   // ---- Catalog & shop -----------------------------------------------------
   "catalog.title": "Produktübersicht",
   "catalog.bestWhen": "Ideal wenn",

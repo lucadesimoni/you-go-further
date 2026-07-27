@@ -155,3 +155,30 @@ the pure client-side build falls back to `localStorage`.
 `src/engine/recommend.test.ts` covers the carbohydrate bands, goal effects,
 hydration/sodium scaling, the multi-transportable rule, caffeine opt-in, and the
 "Swiss brands only" and disclaimer invariants. Run with `npm test`.
+
+## Fuelling by height profile
+
+On a Swiss route a stop every 40 minutes is the wrong advice. `src/engine/routeFuelling.ts`
+places feeds by **where the energy is actually spent**:
+
+1. **Cost curve.** Running cost per metre comes from Minetti et al. (2002),
+   *Energy cost of walking and running at extreme uphill and downhill slopes*
+   (J Appl Physiol 93:1039–1046) — the polynomial behind every grade-adjusted-pace
+   implementation. It gives 3.6 J/kg/m on the flat, **1.66× at +10 %**, **2.5× at
+   +20 %**, and about **half** at −20 %, rising again on steeper descents because
+   braking is work. Cycling uses a gravity-dominated relative cost instead.
+2. **Distance → time.** The same gradient sets relative speed, so a stop lands at
+   the right *minute*, not the right kilometre. A summit halfway through a route
+   by distance arrives well past halfway by time.
+3. **Placement.** Doses are sized from the athlete's carbohydrate target and then
+   moved onto the terrain:
+   - **before** a sustained climb (≥ 60 m gain), about six minutes ahead, because
+     carbohydrate needs a head start and eating on a ramp is hard;
+   - **never** deep in a descent steeper than −6 %, where eating is impractical
+     and, on trail, unsafe;
+   - **never** in the last 10 minutes, where it cannot be absorbed in time;
+   - never closer than 15 minutes apart, which is what a gut tolerates.
+
+When the terrain profile is a local estimate (swisstopo unreachable) the chart is
+drawn dashed and labelled — a chart looks authoritative whether or not the data
+behind it is.

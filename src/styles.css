@@ -2499,6 +2499,75 @@ code {
   .page { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
 }
 
+/* --- Height profile with fuelling stops --- */
+.route-fuel {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+.route-fuel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.elev-chart { margin: 0; }
+.elev-svg {
+  width: 100%;
+  height: 96px;
+  display: block;
+  background: var(--surface-inset);
+  border-radius: var(--radius-sm);
+}
+/* Climbs shaded: the demanding stretches should read before any label does. */
+.elev-climb { fill: var(--accent); opacity: 0.10; }
+.elev-area { fill: var(--panel-2); stroke: none; opacity: 0.9; }
+.elev-line { fill: none; stroke: var(--muted); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.elev-stop line { stroke: var(--accent); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0.55; }
+.elev-stop circle { fill: var(--accent); stroke: var(--panel); stroke-width: 1.5; }
+.elev-stop-climb-prep circle { fill: var(--warn); }
+
+.elev-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+  font-size: var(--text-2xs);
+  color: var(--muted);
+}
+
+.elev-stops {
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.elev-stop-row {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  gap: var(--space-2) var(--space-4);
+  align-items: baseline;
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--accent);
+  font-size: var(--text-base);
+}
+.elev-stop-row.elev-stop-climb-prep { border-left-color: var(--warn); }
+.elev-stop-when { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.elev-stop-where { color: var(--muted); }
+.elev-stop-dose { font-weight: 700; color: var(--accent-ink); }
+.elev-stop-why { grid-column: 1 / -1; color: var(--muted); font-size: var(--text-sm); }
+.elev-note { margin: var(--space-4) 0 0; }
+/* An estimated profile is drawn dashed, so it never passes for surveyed data. */
+.elev-chart-estimated .elev-line { stroke-dasharray: 4 3; }
+.elev-estimated { color: var(--warn-ink); }
+
+@media (max-width: 560px) {
+  .elev-stop-row { grid-template-columns: 44px 1fr auto; }
+  .elev-svg { height: 84px; }
+}
+
 /* Language switch on the sign-in screen. */
 .auth-lang {
   display: flex;

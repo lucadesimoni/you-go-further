@@ -343,6 +343,9 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
               key={routedActivity.id}
               route={routedActivity.route}
               hintGainM={routedActivity.elevationGainM}
+              hintDistanceKm={
+                routedActivity.distanceM ? Math.round((routedActivity.distanceM / 1000) * 10) / 10 : undefined
+              }
               activity={sportToActivity(routedActivity.sport)}
               durationMin={Math.round(routedActivity.durationSec / 60)}
               onPlan={onPlanRoute}
