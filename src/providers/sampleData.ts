@@ -22,6 +22,9 @@ const SPORTS_BY_PROVIDER: Record<ProviderId, SportType[]> = {
   garmin: ["run", "ride", "swim", "triathlon"],
   polar: ["run", "ride"],
   suunto: ["trail-run", "run"],
+  // Phone-recorded sessions skew to what people log without a bike computer.
+  "apple-health": ["run", "ride", "other"],
+  "google-health": ["run", "ride", "other"],
 };
 
 /** Real Swiss trailheads the sample routes loop out from. */

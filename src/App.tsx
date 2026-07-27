@@ -143,6 +143,18 @@ export function App() {
     if (paid) {
       toast.success("Payment received — thank you!");
       clean();
+      // A plan bought just now isn't in the session token yet, so ask the server
+      // what this account is entitled to rather than waiting for a re-login.
+      api
+        .me()
+        .then((res) => {
+          if (res.principal.tier !== tier) {
+            setTier(res.principal.tier);
+            if (account) saveAccount({ ...account, tier: res.principal.tier });
+            toast.success(`Your ${res.principal.tier} plan is active.`);
+          }
+        })
+        .catch(() => undefined);
     }
     // Returning from a provider's consent screen: confirm it and land the athlete
     // on Connect, where their newly-synced sessions are.

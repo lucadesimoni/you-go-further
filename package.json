@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit",
     "e2e": "node scripts/e2e-smoke.mjs",
-    "e2e:mobile": "node scripts/mobile-smoke.mjs"
+    "e2e:mobile": "node scripts/mobile-smoke.mjs",
+    "verify:payments": "node scripts/stripe-verify.mjs"
   },
   "dependencies": {
     "leaflet": "^1.9.4",

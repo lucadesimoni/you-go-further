@@ -100,6 +100,35 @@ In the UI, when the app is pointed at the API (`apiBaseUrl` set), the **Connect*
 button initiates this OAuth flow; the client-side-only build keeps the sample
 connect.
 
-> Note: **Apple Health / Google Fit / Health Connect** are device-local health
-> stores, not web OAuth — they're exposed through the **native mobile app**
-> (HealthKit / Health Connect permissions), not the web app.
+## Apple Health and Health Connect
+
+These are **not** OAuth providers, and there is no server-to-server API for
+either: the samples live on the device and only an app the athlete has granted
+read access to can see them. So the flow is inverted — the phone reads and the
+server ingests:
+
+```
+phone: HealthKit / Health Connect  ──►  POST /api/health/sync  ──►  validate,
+                                                                   store activities,
+                                                                   derive readiness,
+                                                                   update profile
+```
+
+* `mobile/src/health.ts` resolves the native module at runtime
+  (`@kingstinct/react-native-healthkit` on iOS, `react-native-health-connect` on
+  Android). Both need a **development build** — they cannot work in Expo Go — so
+  where they are unavailable the app says so instead of showing a dead button.
+* Permissions are declared in `mobile/app.json`: `NSHealthShareUsageDescription`
+  plus the HealthKit entitlement on iOS, and the `android.permission.health.READ_*`
+  set on Android. Only weight, HRV, resting heart rate, sleep and workouts are
+  requested — nothing that doesn't change a fuelling plan.
+* Everything after the read is server-side (`src/health/healthIngest.ts`): every
+  field is range-checked, implausible workouts are dropped and counted back to
+  the client, unknown sports degrade to `other`, and readiness is derived from
+  HRV against the athlete's own 28-day baseline. Sweat sodium is never touched —
+  a phone cannot measure it.
+* A synced platform appears as a connection (`GET /api/connections`) so the web
+  app can show it, and can be removed like any other source.
+
+The device platforms are in `DEVICE_PLATFORM_IDS`, deliberately kept out of
+`ALL_PROVIDER_IDS`, so they are never offered as an OAuth connect anywhere.

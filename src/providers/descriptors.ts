@@ -10,6 +10,7 @@ export const DESCRIPTORS: Record<ProviderId, ProviderDescriptor> = {
   strava: {
     id: "strava",
     displayName: "Strava",
+    kind: "oauth",
     oauth: {
       authUrl: "https://www.strava.com/oauth/authorize",
       tokenUrl: "https://www.strava.com/oauth/token",
@@ -23,6 +24,7 @@ export const DESCRIPTORS: Record<ProviderId, ProviderDescriptor> = {
   garmin: {
     id: "garmin",
     displayName: "Garmin Connect",
+    kind: "oauth",
     oauth: {
       authUrl: "https://connect.garmin.com/oauthConfirm",
       tokenUrl: "https://connectapi.garmin.com/oauth-service/oauth/token",
@@ -36,6 +38,7 @@ export const DESCRIPTORS: Record<ProviderId, ProviderDescriptor> = {
   polar: {
     id: "polar",
     displayName: "Polar Flow",
+    kind: "oauth",
     oauth: {
       authUrl: "https://flow.polar.com/oauth2/authorization",
       tokenUrl: "https://polarremote.com/v2/oauth2/token",
@@ -49,6 +52,7 @@ export const DESCRIPTORS: Record<ProviderId, ProviderDescriptor> = {
   suunto: {
     id: "suunto",
     displayName: "Suunto App",
+    kind: "oauth",
     oauth: {
       authUrl: "https://cloudapi-oauth.suunto.com/oauth/authorize",
       tokenUrl: "https://cloudapi-oauth.suunto.com/oauth/token",
@@ -59,6 +63,28 @@ export const DESCRIPTORS: Record<ProviderId, ProviderDescriptor> = {
     capabilities: { activities: true, heartRate: true, power: false, trainingLoad: true, sleep: true },
     syncNote: "Workout webhook + FIT download.",
   },
+  "apple-health": {
+    id: "apple-health",
+    displayName: "Apple Health",
+    kind: "device",
+    // HealthKit has no server API by design: samples never leave the device
+    // except through an app the athlete has granted read access to.
+    capabilities: { activities: true, heartRate: true, power: false, trainingLoad: false, sleep: true },
+    syncNote: "Read on-device via HealthKit and pushed by the iOS app; no server-to-server API exists.",
+  },
+  "google-health": {
+    id: "google-health",
+    displayName: "Health Connect",
+    kind: "device",
+    capabilities: { activities: true, heartRate: true, power: false, trainingLoad: false, sleep: true },
+    syncNote: "Read on-device via Android Health Connect and pushed by the app.",
+  },
 };
 
 export const ALL_PROVIDER_IDS: ProviderId[] = ["strava", "garmin", "polar", "suunto"];
+
+/** On-device health platforms — connected from the phone, never over OAuth. */
+export const DEVICE_PLATFORM_IDS: ProviderId[] = ["apple-health", "google-health"];
+
+/** Every source a session can arrive from, whichever way it gets here. */
+export const ALL_SOURCE_IDS: ProviderId[] = [...ALL_PROVIDER_IDS, ...DEVICE_PLATFORM_IDS];

@@ -1,7 +1,7 @@
 import type { Activity, SportType } from "../model";
 import { DESCRIPTORS } from "./descriptors";
 import { generateSampleActivities } from "./sampleData";
-import { BaseActivityProvider } from "./registry";
+import { BaseActivityProvider, oauthConfig } from "./registry";
 import type { FetchRange, ProviderCredential } from "./types";
 
 /**
@@ -75,7 +75,7 @@ export class SuuntoProvider extends BaseActivityProvider {
       client_secret: env("SUUNTO_CLIENT_SECRET")!,
       redirect_uri: redirectUri,
     });
-    const res = await this.fetchImpl(this.descriptor.oauth.tokenUrl, {
+    const res = await this.fetchImpl(oauthConfig(this.descriptor).tokenUrl, {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body,

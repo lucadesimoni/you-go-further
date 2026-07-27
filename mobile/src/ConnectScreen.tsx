@@ -8,6 +8,8 @@ import type { ProviderConnection } from "./types";
 interface Provider {
   id: string;
   displayName: string;
+  /** "oauth" here; on-device platforms are synced from the profile instead. */
+  kind?: "oauth" | "device";
 }
 
 /**
@@ -26,7 +28,9 @@ export function ConnectScreen() {
   const load = useCallback(async () => {
     try {
       const [p, c] = await Promise.all([api.providers(), api.connections()]);
-      setProviders(p);
+      // Apple Health / Health Connect have no OAuth flow — they are read on the
+      // phone and synced from the profile screen, so they don't belong here.
+      setProviders(p.filter((x) => x.kind !== "device"));
       setConnections(c.connections);
       setError(null);
     } catch (e) {

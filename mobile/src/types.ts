@@ -109,6 +109,36 @@ export interface Product {
   notes?: string;
 }
 
+export type HealthPlatformId = "apple-health" | "google-health";
+
+/** What the phone reads from Apple Health / Health Connect and posts to us. */
+export interface HealthSyncPayload {
+  platform: HealthPlatformId;
+  bodyMassKg?: number;
+  daily?: { date: string; hrvMs?: number; restingHr?: number; sleepScore?: number; readiness?: number }[];
+  workouts?: {
+    externalId: string;
+    sport: string;
+    startTime: string;
+    durationSec: number;
+    distanceM?: number;
+    elevationGainM?: number;
+    avgHr?: number;
+    maxHr?: number;
+    calories?: number;
+  }[];
+}
+
+/** What the server actually did with a sync — real counts, not a hopeful "ok". */
+export interface HealthSyncResult {
+  platform: HealthPlatformId;
+  imported: number;
+  inserted: number;
+  days: number;
+  rejected: { workouts: number; days: number };
+  profile: AthleteProfile;
+}
+
 /** When a product is the right choice — derived server-side from its attributes. */
 export interface UsageGuide {
   summary: string;

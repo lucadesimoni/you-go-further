@@ -1,7 +1,7 @@
 import type { Activity, SportType } from "../model";
 import { DESCRIPTORS } from "./descriptors";
 import { generateSampleActivities } from "./sampleData";
-import { BaseActivityProvider } from "./registry";
+import { BaseActivityProvider, oauthConfig } from "./registry";
 import type { FetchRange, ProviderCredential } from "./types";
 
 /**
@@ -79,7 +79,7 @@ export class PolarProvider extends BaseActivityProvider {
       client_id: env("POLAR_CLIENT_ID")!,
       client_secret: env("POLAR_CLIENT_SECRET")!,
     });
-    const res = await this.fetchImpl(this.descriptor.oauth.tokenUrl, {
+    const res = await this.fetchImpl(oauthConfig(this.descriptor).tokenUrl, {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded", Accept: "application/json" },
       body,

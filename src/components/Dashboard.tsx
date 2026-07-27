@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Activity, ProviderId } from "../model";
-import { ALL_PROVIDER_IDS, DESCRIPTORS, generateSampleWellness, ProviderRegistry } from "../providers";
+import { ALL_PROVIDER_IDS, DEVICE_PLATFORM_IDS, DESCRIPTORS, generateSampleWellness, ProviderRegistry } from "../providers";
 import type { ProviderCredential } from "../providers/types";
 import { IngestionPipeline, InMemoryActivityStore, lastNDays, toNdjson } from "../data";
 import { analyze, derivePhysiology, sportToActivity } from "../analysis";
@@ -202,6 +202,15 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
             );
           })}
         </div>
+        {/* Apple Health and Health Connect can only be read on the phone, so
+            they are never offered here — but if the app has synced them, the
+            athlete should see that here too rather than wonder where it went. */}
+        {DEVICE_PLATFORM_IDS.filter((id) => connected.has(id)).map((id) => (
+          <p key={id} className="detail" style={{ marginBottom: 0 }}>
+            <strong>{DESCRIPTORS[id].displayName}</strong> is syncing from your phone — weight, HRV, resting heart rate
+            and workouts. Manage it in the mobile app.
+          </p>
+        ))}
         {connected.size >= maxProviders && maxProviders < ALL_PROVIDER_IDS.length && (
           <p className="upgrade-note">
             Connect all {ALL_PROVIDER_IDS.length} services with{" "}

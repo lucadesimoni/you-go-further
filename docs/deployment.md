@@ -180,14 +180,36 @@ move the user's tier automatically.
 
 | Env | Why |
 | --- | --- |
-| `STRIPE_SECRET_KEY` | enables the real Stripe provider |
+| `STRIPE_SECRET_KEY` | enables the real Stripe provider (test-mode key to rehearse) |
 | `STRIPE_WEBHOOK_SECRET` | verifies webhook signatures (required with the key) |
+| `STRIPE_API_BASE` | override the API host — used to drive the flow against a local double |
 
 Point your Stripe webhook endpoint at `/api/webhooks/payments` and subscribe to
 `checkout.session.completed` (plus the async success/failure events). Without
 the keys the app uses a **simulated provider** that follows the identical server
 path — same order lifecycle, same signed-webhook verification — so the purchase
 flow is fully demoable offline.
+
+### Verifying payments before you take money
+
+```bash
+npm run verify:payments                       # against a wire-accurate Stripe double
+STRIPE_SECRET_KEY=sk_test_… \
+STRIPE_WEBHOOK_SECRET=whsec_… npm run verify:payments   # against real Stripe, test mode
+```
+
+`scripts/stripe-verify.mjs` drives a whole purchase and asserts the rules that
+actually matter: the request goes to `/v1/checkout/sessions` with a pinned API
+version and an idempotency key, amounts are in rappen, the order starts
+**pending**, a forged or replayed webhook changes nothing, a valid one settles it
+exactly once, a late failure cannot reverse a paid order, and paying for a plan
+raises the account's tier straight away. The double refuses anything Stripe would
+refuse, so a wrong endpoint or a missing field fails there rather than on a
+customer's first purchase.
+
+The one thing neither mode covers is Stripe delivering a webhook to a public URL.
+Before going live, run `stripe listen --forward-to <host>/api/webhooks/payments`
+and complete one test-mode purchase with card `4242 4242 4242 4242`.
 
 ## Transactional email
 | Env | Why |

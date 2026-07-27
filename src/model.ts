@@ -6,7 +6,13 @@
  * against this one shape, so adding a provider never touches downstream code.
  */
 
-export type ProviderId = "strava" | "garmin" | "polar" | "suunto";
+/**
+ * Every source a session can come from. The first four are OAuth services we
+ * call server-to-server; the last two are on-device health platforms whose data
+ * only the phone can read, so it pushes them to us instead. Both kinds produce
+ * the same {@link Activity}, so nothing downstream has to care which is which.
+ */
+export type ProviderId = "strava" | "garmin" | "polar" | "suunto" | "apple-health" | "google-health";
 
 export type SportType =
   | "run"

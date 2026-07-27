@@ -14,7 +14,10 @@
 import { chromium } from "playwright-core";
 
 const API = process.env.API_URL ?? "http://localhost:8791";
-const APP = `${process.env.APP_URL ?? "http://localhost:5199"}/?api=${encodeURIComponent(API)}`;
+// `health=apple-health` swaps in a stand-in for HealthKit, which cannot run in a
+// browser. Only the device *read* is faked; the sync, validation, readiness and
+// profile update below are the real paths.
+const APP = `${process.env.APP_URL ?? "http://localhost:5199"}/?api=${encodeURIComponent(API)}&health=apple-health`;
 const CHROME = process.env.CHROME_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
 const errors = [];
@@ -128,6 +131,30 @@ await step("connections live in exactly one place", async () => {
 await step("the saved profile flows straight back into the plan", async () => {
   await page.getByLabel("Plan", { exact: true }).click();
   await page.getByText(new RegExp(`From your profile: ${expectedKg} kg`)).waitFor({ timeout: 10000 });
+});
+
+console.log("\u2500\u2500 on-device health sync \u2500\u2500");
+await step("Apple Health sync lands sessions, signals and a derived readiness", async () => {
+  await page.getByLabel("You", { exact: true }).click();
+  await page.getByText("Sync from this phone").waitFor({ timeout: 10000 });
+  await page.getByText("Sync from this phone").click();
+  // The server reports what it actually did: 2 usable workouts, 1 dropped.
+  await page.getByText(/2 new sessions · 10 days of body signals/).waitFor({ timeout: 15000 });
+  await page.getByText(/1 workout skipped as unreadable/).waitFor({ timeout: 8000 });
+  // Body mass from the phone overwrote the profile the server holds.
+  await page.getByText("Body weight: 66 kg").waitFor({ timeout: 8000 });
+  // Readiness was derived from the HRV dip, not left at the 65 default.
+  const readiness = await page.getByText(/Today: \d+/).innerText();
+  const value = Number(/(\d+)/.exec(readiness)[1]);
+  if (value === 65) throw new Error("readiness was not derived from the synced signals");
+  if (value < 0 || value > 100) throw new Error(`readiness out of range: ${value}`);
+});
+await step("the synced sessions show up in insights", async () => {
+  await page.getByLabel("Insights", { exact: true }).click();
+  await page.getByText("Your training").waitFor({ timeout: 10000 });
+  await page.getByText("Activities").waitFor({ timeout: 8000 });
+  await page.getByLabel("You", { exact: true }).click();
+  await page.getByText("Your body").waitFor({ timeout: 8000 });
 });
 
 console.log("── deep link back into the app ──");

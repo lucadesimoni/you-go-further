@@ -18,8 +18,9 @@ describe("provider registry", () => {
     const ids = reg.list().map((p) => p.descriptor.id).sort();
     expect(ids).toEqual(["garmin", "polar", "strava", "suunto"]);
     for (const p of reg.list()) {
-      expect(p.descriptor.oauth.authUrl).toMatch(/^https:\/\//);
-      expect(p.descriptor.oauth.scopes.length).toBeGreaterThan(0);
+      expect(p.descriptor.kind).toBe("oauth");
+      expect(p.descriptor.oauth?.authUrl).toMatch(/^https:\/\//);
+      expect(p.descriptor.oauth?.scopes.length).toBeGreaterThan(0);
     }
   });
 

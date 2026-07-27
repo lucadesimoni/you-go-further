@@ -7,6 +7,8 @@ import type {
   FuelingSchedule,
   GiRating,
   GuideArticle,
+  HealthSyncPayload,
+  HealthSyncResult,
   InsightsResponse,
   Order,
   Product,
@@ -89,11 +91,21 @@ export const api = {
       "/api/auth/email/verify",
       { body: { token } },
     ),
-  me: () => call<{ principal: { id: string; name: string; role: Role; tier: string } }>("GET", "/api/me"),
+  /** Who the server thinks you are *now* — including a tier bought since sign-in. */
+  me: () =>
+    call<{ principal: { id: string; name: string; role: Role; tier: "free" | "pro" | "elite" } }>("GET", "/api/me"),
 
   // --- Profile (server-synced, so it matches the web app) ---
   profileGet: () => call<{ profile: AthleteProfile }>("GET", "/api/profile"),
   profileSave: (patch: Partial<AthleteProfile>) => call<{ profile: AthleteProfile }>("POST", "/api/profile", { body: patch }),
+
+  // --- On-device health platforms (Apple Health / Health Connect) ---
+  healthSync: (payload: HealthSyncPayload) => call<HealthSyncResult>("POST", "/api/health/sync", { body: payload }),
+  healthPlatforms: () =>
+    call<{ platforms: { id: string; displayName: string; syncNote: string; connectedAt?: string }[] }>(
+      "GET",
+      "/api/health/platforms",
+    ),
 
   // --- Insights: fuelling score + milestones, computed server-side ---
   insights: () => call<InsightsResponse>("GET", "/api/insights"),
@@ -107,7 +119,8 @@ export const api = {
     ),
   connections: () => call<{ connections: ProviderConnection[] }>("GET", "/api/connections"),
   disconnect: (provider: string) => call<{ connections: ProviderConnection[] }>("DELETE", `/api/connections/${provider}`),
-  providers: () => call<{ id: string; displayName: string }[]>("GET", "/api/providers"),
+  providers: () =>
+    call<{ id: string; displayName: string; kind: "oauth" | "device" }[]>("GET", "/api/providers"),
   oauthUrl: (provider: string, returnTo: string) =>
     call<{ authorizeUrl: string }>("GET", `/api/oauth/${provider}/authorize-url?return_to=${encodeURIComponent(returnTo)}`),
 

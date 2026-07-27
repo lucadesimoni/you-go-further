@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Switch, Text, View } from "react-native";
 import { api } from "./api";
 import { clearSession, type MobileAccount } from "./session";
 import { C, S } from "./theme";
 import { Btn, Choice, ErrorText, Loading, Panel, Pill, SectionHead, Stepper } from "./ui";
-import type { AthleteProfile } from "./types";
+import { healthAvailability, syncHealth } from "./health";
+import type { AthleteProfile, HealthSyncResult } from "./types";
 
 const SWEAT: { value: AthleteProfile["sweatLevel"]; label: string }[] = [
   { value: "light", label: "Light" },
@@ -34,6 +35,24 @@ export function ProfileScreen({
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [health, setHealth] = useState<{ busy: boolean; result?: HealthSyncResult; error?: string }>({ busy: false });
+  // Probed once — whether this build can actually read the phone's health data.
+  const availability = useMemo(() => healthAvailability(), []);
+
+  /** Read from Apple Health / Health Connect and let the server do the rest. */
+  const syncFromHealth = async () => {
+    setHealth({ busy: true });
+    try {
+      const result = await syncHealth();
+      setHealth({ busy: false, result });
+      // The server just recomputed the profile — take its version, not ours.
+      setProfile(result.profile);
+      setDirty(false);
+      onProfileSaved?.(result.profile);
+    } catch (e) {
+      setHealth({ busy: false, error: e instanceof Error ? e.message : "Health sync failed" });
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -93,6 +112,33 @@ export function ProfileScreen({
           Strava, Garmin, Polar or Suunto — connected sessions are what make the plan yours instead of an average.
         </Text>
         <Btn label="Manage connections" variant="ghost" onPress={onConnect} />
+      </Panel>
+
+      <Panel tone={health.result ? "good" : "default"}>
+        <SectionHead
+          title={availability.displayName}
+          aside={profile.syncedFrom === availability.displayName ? "synced" : undefined}
+        />
+        <Text style={S.muted}>
+          Your weight, HRV, resting heart rate and workouts, read straight off this phone. Nothing leaves the device
+          until you tap sync.
+        </Text>
+        {availability.available ? (
+          <Btn label={health.busy ? "Syncing…" : "Sync from this phone"} onPress={syncFromHealth} disabled={health.busy} />
+        ) : (
+          <Text style={S.muted}>{availability.reason}</Text>
+        )}
+        {health.result && (
+          <Text style={[S.muted, { color: C.post }]}>
+            {health.result.inserted} new session{health.result.inserted === 1 ? "" : "s"} ·{" "}
+            {health.result.days} day{health.result.days === 1 ? "" : "s"} of body signals
+            {health.result.rejected.workouts > 0
+              ? ` · ${health.result.rejected.workouts} workout${health.result.rejected.workouts === 1 ? "" : "s"} skipped as unreadable`
+              : ""}
+            .
+          </Text>
+        )}
+        {health.error && <ErrorText message={health.error} />}
       </Panel>
 
       <Panel>

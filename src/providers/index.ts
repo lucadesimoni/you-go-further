@@ -1,6 +1,6 @@
 export * from "./types";
-export { DESCRIPTORS, ALL_PROVIDER_IDS } from "./descriptors";
-export { BaseActivityProvider, ProviderRegistry } from "./registry";
+export { DESCRIPTORS, ALL_PROVIDER_IDS, DEVICE_PLATFORM_IDS, ALL_SOURCE_IDS } from "./descriptors";
+export { BaseActivityProvider, ProviderRegistry, oauthConfig } from "./registry";
 export { generateSampleActivities } from "./sampleData";
 export { generateSampleWellness } from "./wellness";
 export { StravaProvider, mapStravaActivity, mapStravaSport } from "./strava";

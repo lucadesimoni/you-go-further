@@ -162,4 +162,6 @@ export const api = {
     call<EmailRequestResponse>("POST", "/api/auth/email/request", { body: { email, returnTo } }),
   emailLinkVerify: (token: string) =>
     call<EmailVerifyResponse>("POST", "/api/auth/email/verify", { body: { token } }),
+  /** Who the server thinks you are *now* — including a tier bought since sign-in. */
+  me: () => call<{ principal: { id: string; name: string; role: Role; tier: Tier } }>("GET", "/api/me"),
 };

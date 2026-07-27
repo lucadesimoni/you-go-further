@@ -14,13 +14,27 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "ch.yougofurther.app"
+      "bundleIdentifier": "ch.yougofurther.app",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "You Go Further reads your weight, heart-rate variability, resting heart rate and workouts to tailor your fuelling plan. Nothing is read until you tap sync.",
+        "NSHealthUpdateUsageDescription": "You Go Further does not write to Apple Health."
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true
+      }
     },
     "android": {
       "package": "ch.yougofurther.app",
       "adaptiveIcon": {
         "backgroundColor": "#e4002b"
-      }
+      },
+      "permissions": [
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_HEART_RATE_VARIABILITY",
+        "android.permission.health.READ_RESTING_HEART_RATE",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_EXERCISE"
+      ]
     },
     "extra": {
       "apiBaseUrl": "http://localhost:8787"

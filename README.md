@@ -66,6 +66,7 @@ npm test           # run the engine test suite
 npm run build      # typecheck + production build
 npm run e2e        # real-browser journey through the web app (needs a running server)
 npm run e2e:mobile # the same for the mobile app, rendered via react-native-web
+npm run verify:payments  # a whole purchase against a wire-accurate Stripe double
 ```
 
 ## Using the engine directly

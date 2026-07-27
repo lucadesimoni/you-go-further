@@ -46,6 +46,7 @@ nothing appears in two places.
 | `src/ConnectScreen.tsx` | Strava / Garmin / Polar / Suunto OAuth, opened in the system browser. |
 | `src/api.ts` | Typed client; sends the signed session as a bearer token. |
 | `src/session.ts` | Token + account persisted across launches (`src/storage.ts`). |
+| `src/health.ts` | Apple Health / Health Connect — read on the device, ingested by the server. |
 | `src/ui.tsx`, `src/theme.ts` | The shared building blocks and palette — the native side of the design system. |
 
 `npm run typecheck` type-checks the app against react + react-native.
@@ -73,5 +74,19 @@ cannot drift.
   return through the `yougofurther://` scheme (registered in `app.json`);
   `App.tsx` handles the incoming link — redeeming `?magic=` sign-in tokens and
   landing on the right screen after `?connected=` or `?paid=`.
-- Apple Health and Google Fit still need their native SDKs; the profile already
-  carries `syncedFrom` for when they land.
+- **Apple Health / Health Connect** are wired up end to end: `src/health.ts`
+  reads weight, HRV, resting heart rate and workouts and posts them to
+  `POST /api/health/sync`, which validates them, stores the sessions and derives
+  readiness from HRV against the athlete's own baseline. The native modules
+  (`@kingstinct/react-native-healthkit`, `react-native-health-connect`) are
+  resolved at runtime and need a **development build**; in Expo Go or on web the
+  screen says so instead of offering a dead button. Add them with:
+
+  ```bash
+  npx expo install @kingstinct/react-native-healthkit react-native-health-connect
+  npx expo prebuild && npx expo run:ios     # or run:android
+  ```
+
+  The permission strings and Android `health.READ_*` permissions are already in
+  `app.json`. The device *read* is the only part not covered by
+  `npm run e2e:mobile` — everything downstream of it is.

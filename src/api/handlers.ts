@@ -31,11 +31,12 @@ import { signSession, DEV_AUTH_SECRET } from "../auth/jwt";
 import { createMagicToken, verifyMagicToken, magicLinkUrl, isEmail } from "../auth/magicLink";
 import { verifyGoogleIdToken, verifyAppleIdToken } from "../auth/oidcVerify";
 import type { Tier } from "../subscription";
-import { DESCRIPTORS, ALL_PROVIDER_IDS } from "../providers";
+import { DESCRIPTORS, ALL_PROVIDER_IDS, ALL_SOURCE_IDS, DEVICE_PLATFORM_IDS } from "../providers";
 import { normalizeNewUser, normalizeUserPatch, type NewUser, type UserPatch } from "../users";
 import type { PlatformSettings } from "../settings";
 import type { AthleteProfile } from "../users";
 import { computeProgress, fuellingScore } from "../progress";
+import { normalizeHealthSync, profileUpdateFromSync } from "../health";
 import { NUTRITION_GUIDE, GUIDE_CATEGORIES, GUIDE_DISCLAIMER } from "../content/nutritionGuide";
 
 export interface ApiRequest {
@@ -87,8 +88,35 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
       paidAt: outcome === "paid" ? new Date().toISOString() : undefined,
     });
     if (outcome === "paid" && order.kind === "subscription" && order.tier) {
-      await users.update(order.userId, { tier: order.tier });
+      // Someone has paid: the entitlement must land, so if there is no user
+      // record yet we create one rather than dropping the upgrade on the floor.
+      const updated = await users.update(order.userId, { tier: order.tier });
+      if (!updated) {
+        await users.create({
+          id: order.userId,
+          name: order.userId,
+          email: "",
+          role: "athlete",
+          tier: order.tier,
+          status: "active",
+          createdAt: new Date().toISOString(),
+        });
+      }
     }
+  }
+
+  /**
+   * The athlete's *current* identity and entitlement.
+   *
+   * The session token carries the tier from the moment they signed in, so after
+   * an upgrade it is stale — without this the athlete pays and keeps seeing the
+   * free plan until they sign out and back in. The stored user record is the
+   * authority; the token only proves who they are.
+   */
+  async function currentPrincipal(p: Principal): Promise<Principal> {
+    const user = await users.get(p.id);
+    if (!user) return p;
+    return { ...p, role: user.role, tier: user.tier, orgId: user.orgId ?? p.orgId };
   }
 
   return async function route(req: ApiRequest): Promise<ApiResponse> {
@@ -227,6 +255,47 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
       // --- Nutrition guide content (shared by web and mobile) ---------------
       if (key === "GET /api/guide") {
         return ok({ articles: NUTRITION_GUIDE, categories: GUIDE_CATEGORIES, disclaimer: GUIDE_DISCLAIMER });
+      }
+
+      // --- On-device health platforms (Apple Health / Health Connect) -------
+      // These have no server-to-server API, so the phone reads the samples and
+      // posts them here. Everything after that is server-side, so the numbers
+      // match what the web app shows.
+      if (key === "POST /api/health/sync") {
+        const sync = normalizeHealthSync(body);
+        if (!sync) return bad("Unknown health platform or malformed payload.");
+        const inserted = await store.upsert(sync.activities);
+        const update = profileUpdateFromSync(sync, DESCRIPTORS[sync.platform].displayName);
+        // Real measured signals beat the population estimate — but only say so
+        // when something actually came back.
+        const profile = await profiles.save(principal.id, {
+          ...update,
+          ...(update.readiness !== undefined ? { useSignals: true } : {}),
+        });
+        // Record it as a connection so it appears next to the OAuth services.
+        await connections.save(principal.id, { provider: sync.platform, accessToken: "on-device" });
+        return ok({
+          platform: sync.platform,
+          imported: sync.activities.length,
+          inserted,
+          days: sync.wellness.length,
+          rejected: sync.rejected,
+          profile,
+        });
+      }
+
+      // GET /api/health/platforms — the on-device platforms and their state.
+      if (key === "GET /api/health/platforms") {
+        const conns = await connections.list(principal.id);
+        return ok({
+          platforms: DEVICE_PLATFORM_IDS.map((id) => ({
+            id,
+            displayName: DESCRIPTORS[id].displayName,
+            capabilities: DESCRIPTORS[id].capabilities,
+            syncNote: DESCRIPTORS[id].syncNote,
+            connectedAt: conns.find((c) => c.provider === id)?.connectedAt,
+          })),
+        });
       }
 
       // --- Athlete profile (per user, follows them across devices) ---------
@@ -391,7 +460,9 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
       // --- Connections: list / disconnect ---
       if (segs[0] === "api" && segs[1] === "connections") {
         if (method === "GET" && segs.length === 2) return ok({ connections: await connections.list(principal.id) });
-        if (method === "DELETE" && segs[2] && isProvider(segs[2])) {
+        // Any source can be disconnected, on-device platforms included.
+        const isSource = (v: string): v is ProviderId => (ALL_SOURCE_IDS as string[]).includes(v);
+        if (method === "DELETE" && segs[2] && isSource(segs[2])) {
           await connections.remove(principal.id, segs[2]);
           return ok({ connections: await connections.list(principal.id) });
         }
@@ -458,15 +529,20 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         }
 
         case key === "GET /api/me":
-          return ok({ principal });
+          // Reflects a tier bought since sign-in, so an upgrade takes effect
+          // immediately instead of on next login.
+          return ok({ principal: await currentPrincipal(principal) });
 
         case key === "GET /api/providers":
+          // Every source a session can come from. `kind` tells the client which
+          // ones it can start over OAuth and which the phone has to push.
           return ok(
-            ALL_PROVIDER_IDS.map((id) => ({
+            ALL_SOURCE_IDS.map((id) => ({
               id,
               displayName: DESCRIPTORS[id].displayName,
+              kind: DESCRIPTORS[id].kind,
               capabilities: DESCRIPTORS[id].capabilities,
-              scopes: DESCRIPTORS[id].oauth.scopes,
+              scopes: DESCRIPTORS[id].oauth?.scopes ?? [],
             })),
           );
 

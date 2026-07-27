@@ -106,6 +106,14 @@ export default function App() {
     if (/[?&]paid=/.test(url)) {
       setTab("shop");
       setNotice("Payment received. Your order is confirmed once our server verifies it.");
+      // A plan bought just now isn't in this device's stored account yet — ask
+      // the server what it is entitled to instead of waiting for a re-login.
+      try {
+        const { principal } = await api.me();
+        setAccount((prev) => (prev && prev.tier !== principal.tier ? { ...prev, tier: principal.tier } : prev));
+      } catch {
+        /* the next launch picks it up */
+      }
     }
   }, []);
 

@@ -22,7 +22,14 @@ export interface ProviderCapabilities {
 export interface ProviderDescriptor {
   id: ProviderId;
   displayName: string;
-  oauth: OAuthConfig;
+  /**
+   * `oauth` — a cloud service we connect to and poll ourselves.
+   * `device` — an on-device health platform (Apple Health, Health Connect) that
+   * only the phone can read; it pushes samples to `POST /api/health/sync`.
+   */
+  kind: "oauth" | "device";
+  /** Present for `kind: "oauth"` providers only. */
+  oauth?: OAuthConfig;
   capabilities: ProviderCapabilities;
   /** Human note on data freshness / rate limits. */
   syncNote: string;

@@ -95,12 +95,23 @@ export function parseStripeEvent(body: unknown): PaymentEvent | null {
   return null;
 }
 
+/**
+ * The Stripe REST API version this adapter is written against. Pinning it means
+ * Stripe cannot change response shapes underneath us when the account default
+ * moves; upgrading is then a deliberate, reviewable change.
+ */
+export const STRIPE_API_VERSION = "2024-06-20";
+
+export const STRIPE_API_BASE = "https://api.stripe.com";
+
 export class StripeProvider implements PaymentProvider {
   readonly id = "stripe" as const;
 
   constructor(
     private readonly secretKey: string,
     private readonly webhookSecret: string,
+    /** Overridable so the checkout lifecycle can be driven against a local double. */
+    private readonly apiBase: string = STRIPE_API_BASE,
   ) {}
 
   async createCheckout(order: Order, urls: CheckoutUrls): Promise<CheckoutSession> {
@@ -125,16 +136,29 @@ export class StripeProvider implements PaymentProvider {
       });
     }
 
-    const res = await fetch("https://api.stripe.com/v1/checkout_sessions", {
+    const res = await fetch(`${this.apiBase}/v1/checkout/sessions`, {
       method: "POST",
       headers: {
         authorization: `Bearer ${this.secretKey}`,
         "content-type": "application/x-www-form-urlencoded",
+        "stripe-version": STRIPE_API_VERSION,
+        // Our order id is a natural idempotency key: a retried request (network
+        // blip, double tap) returns the original session instead of charging
+        // the athlete for a second one.
+        "idempotency-key": order.id,
       },
       body: form.toString(),
     });
-    if (!res.ok) throw new Error(`Stripe checkout failed (${res.status})`);
-    const data = (await res.json()) as { id?: string; url?: string };
+    const data = (await res.json().catch(() => ({}))) as {
+      id?: string;
+      url?: string;
+      error?: { message?: string; code?: string };
+    };
+    if (!res.ok) {
+      // Stripe explains itself in the body; passing that through is the
+      // difference between a fixable error and a mystery.
+      throw new Error(`Stripe checkout failed (${res.status}): ${data.error?.message ?? "no details"}`);
+    }
     if (!data.id || !data.url) throw new Error("Stripe returned no checkout session");
     return { ref: data.id, url: data.url };
   }
@@ -184,6 +208,8 @@ const env = (k: string): string | undefined =>
 export function paymentProviderFromEnv(): PaymentProvider {
   const key = env("STRIPE_SECRET_KEY");
   const hook = env("STRIPE_WEBHOOK_SECRET");
-  if (key && hook) return new StripeProvider(key, hook);
+  // STRIPE_API_BASE points the adapter at a local double so the full checkout
+  // lifecycle can be exercised without keys; unset, it is the real Stripe.
+  if (key && hook) return new StripeProvider(key, hook, env("STRIPE_API_BASE") ?? STRIPE_API_BASE);
   return new DevPaymentProvider(hook ?? undefined);
 }

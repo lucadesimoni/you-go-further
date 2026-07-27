@@ -1,7 +1,7 @@
 import type { Activity, ProviderId } from "../model";
 import { ALL_PROVIDER_IDS, DESCRIPTORS } from "./descriptors";
 import { generateSampleActivities } from "./sampleData";
-import type { ActivityProvider, FetchRange, ProviderCredential, ProviderDescriptor } from "./types";
+import type { ActivityProvider, FetchRange, OAuthConfig, ProviderCredential, ProviderDescriptor } from "./types";
 
 /**
  * Base connector. Builds the real OAuth consent URL from the descriptor. The
@@ -9,13 +9,26 @@ import type { ActivityProvider, FetchRange, ProviderCredential, ProviderDescript
  * stack runs without credentials; a real adapter overrides it to call the
  * provider API and normalize the response into {@link Activity} objects.
  */
+/**
+ * The OAuth block of a descriptor, or a clear failure. Device platforms (Apple
+ * Health, Health Connect) have no server-side OAuth at all — asking for it is a
+ * programming error, not a runtime condition to paper over.
+ */
+export function oauthConfig(descriptor: ProviderDescriptor): OAuthConfig {
+  if (!descriptor.oauth) {
+    throw new Error(`${descriptor.displayName} is an on-device platform — it has no OAuth flow.`);
+  }
+  return descriptor.oauth;
+}
+
 export class BaseActivityProvider implements ActivityProvider {
   constructor(public readonly descriptor: ProviderDescriptor) {}
 
   authorizeUrl(redirectUri: string, state: string): string {
-    const { authUrl, scopes } = this.descriptor.oauth;
+    const oauth = oauthConfig(this.descriptor);
+    const { authUrl, scopes } = oauth;
     const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
-    const clientId = env?.[this.descriptor.oauth.clientIdEnv] ?? `\${${this.descriptor.oauth.clientIdEnv}}`;
+    const clientId = env?.[oauth.clientIdEnv] ?? `\${${oauth.clientIdEnv}}`;
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,

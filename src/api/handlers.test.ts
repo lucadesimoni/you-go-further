@@ -205,6 +205,122 @@ describe("API router", () => {
     expect(data.custom).toBe(0);
   });
 
+  it("a paid plan takes effect immediately, without signing out and back in", async () => {
+    // The tier lives in the session token, which was minted before the purchase.
+    const buyer: Principal = { id: "solo-1", name: "Solo", role: "athlete", tier: "free" };
+    const res = await route(req("POST", "/api/checkout", { body: { kind: "subscription", tier: "pro" }, principal: buyer }));
+    const orderId = (res.data as { orderId: string }).orderId;
+    const order = ((await route(req("GET", "/api/orders", { principal: buyer }))).data as {
+      orders: { id: string; providerRef: string }[];
+    }).orders.find((o) => o.id === orderId)!;
+
+    const payload = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: order.providerRef } } });
+    await route(
+      req("POST", "/api/webhooks/payments", {
+        body: JSON.parse(payload),
+        rawBody: payload,
+        headers: { "stripe-signature": signStripePayload(payload, "dev-webhook-secret") },
+      }),
+    );
+
+    // Same stale token, but the server answers with what the account now has.
+    const me = await route(req("GET", "/api/me", { principal: buyer }));
+    expect((me.data as { principal: { tier: string } }).principal.tier).toBe("pro");
+  });
+
+  it("ingests an Apple Health sync into activities, wellness and the profile", async () => {
+    const day = (i: number) => new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10);
+    const res = await route(
+      req("POST", "/api/health/sync", {
+        body: {
+          platform: "apple-health",
+          bodyMassKg: 68.4,
+          daily: Array.from({ length: 8 }, (_, i) => ({ date: day(i), hrvMs: 60, restingHr: 47 })),
+          workouts: [
+            {
+              externalId: "hk-1",
+              sport: "HKWorkoutActivityTypeTrailRunning",
+              startTime: new Date(Date.now() - 86_400_000).toISOString(),
+              durationSec: 5400,
+              distanceM: 14000,
+            },
+          ],
+        },
+      }),
+    );
+    expect(res.status).toBe(200);
+    const data = res.data as {
+      imported: number;
+      inserted: number;
+      days: number;
+      profile: { bodyWeightKg: number; readiness: number; useSignals: boolean; syncedFrom?: string };
+    };
+    expect(data.imported).toBe(1);
+    expect(data.inserted).toBe(1);
+    expect(data.days).toBe(8);
+    // Body mass and readiness land on the profile the planner actually reads.
+    expect(data.profile.bodyWeightKg).toBe(68);
+    expect(data.profile.useSignals).toBe(true);
+    expect(data.profile.syncedFrom).toBe("Apple Health");
+    // And the workout is a real activity the rest of the app can see.
+    const insights = await route(req("GET", "/api/insights"));
+    expect((insights.data as { hasData: boolean }).hasData).toBe(true);
+  });
+
+  it("re-syncing the same workouts does not duplicate them", async () => {
+    const body = {
+      platform: "google-health",
+      workouts: [
+        {
+          externalId: "hc-1",
+          sport: "RUNNING",
+          startTime: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+          durationSec: 3600,
+        },
+      ],
+    };
+    const first = await route(req("POST", "/api/health/sync", { body }));
+    const second = await route(req("POST", "/api/health/sync", { body }));
+    expect((first.data as { inserted: number }).inserted).toBe(1);
+    expect((second.data as { inserted: number }).inserted).toBe(0);
+  });
+
+  it("refuses an unknown health platform and reports what it dropped", async () => {
+    expect((await route(req("POST", "/api/health/sync", { body: { platform: "fitbit" } }))).status).toBe(400);
+    const res = await route(
+      req("POST", "/api/health/sync", {
+        body: { platform: "apple-health", workouts: [{ externalId: "x", sport: "RUNNING", durationSec: 10 }] },
+      }),
+    );
+    expect((res.data as { rejected: { workouts: number } }).rejected.workouts).toBe(1);
+    expect((res.data as { imported: number }).imported).toBe(0);
+  });
+
+  it("shows a synced health platform alongside the OAuth connections", async () => {
+    await route(req("POST", "/api/health/sync", { body: { platform: "apple-health", bodyMassKg: 70 } }));
+    const conns = await route(req("GET", "/api/connections"));
+    expect((conns.data as { connections: { provider: string }[] }).connections.map((c) => c.provider)).toContain(
+      "apple-health",
+    );
+    // And it can be disconnected again, just like a service.
+    const gone = await route(req("DELETE", "/api/connections/apple-health"));
+    expect((gone.data as { connections: unknown[] }).connections).toHaveLength(0);
+  });
+
+  it("lists the on-device platforms, which are never offered as OAuth", async () => {
+    const platforms = await route(req("GET", "/api/health/platforms"));
+    expect((platforms.data as { platforms: { id: string }[] }).platforms.map((p) => p.id)).toEqual([
+      "apple-health",
+      "google-health",
+    ]);
+    // /api/providers reports every source, but marks how each one connects.
+    const providers = (await route(req("GET", "/api/providers"))).data as { id: string; kind: string }[];
+    expect(providers.find((p) => p.id === "apple-health")?.kind).toBe("device");
+    expect(providers.find((p) => p.id === "strava")?.kind).toBe("oauth");
+    // Starting OAuth against a device platform is refused.
+    expect((await route(req("GET", "/api/oauth/apple-health/authorize-url"))).status).toBe(400);
+  });
+
   it("ships when-to-use guidance with the catalog so every client explains it the same way", async () => {
     const res = await route(req("GET", "/api/products"));
     const data = res.data as {
