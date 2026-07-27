@@ -3,9 +3,11 @@ import { buildCart } from "../commerce";
 import type { Recommendation } from "../engine";
 import { api, isApiConfigured } from "../api/client";
 import { toast } from "../ui/toast";
+import { useT } from "../i18n";
 
 /** "Shop this plan" — turns the recommendation into a priced, shoppable cart. */
 export function CartPanel({ rec }: { rec: Recommendation }) {
+  const t = useT();
   const [sessions, setSessions] = useState(1);
   const [ordered, setOrdered] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -31,7 +33,7 @@ export function CartPanel({ rec }: { rec: Recommendation }) {
   return (
     <div className="panel cart">
       <div className="section-head">
-        <h3 style={{ margin: 0, fontSize: 17 }}>Shop this plan</h3>
+        <h3 style={{ margin: 0, fontSize: 17 }}>{t("plan.shopThisPlan")}</h3>
         <div className="cart-sessions" role="group" aria-label="Sessions">
           <button type="button" className="step" onClick={() => setSessions((s) => Math.max(1, s - 1))} aria-label="Fewer sessions">
             −

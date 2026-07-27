@@ -49,7 +49,7 @@ export function ProfileView({ account }: { account: Account }) {
       <section className="panel">
         <div className="section-head">
           <h2>{t("profile.yourProfile")}</h2>
-          <span className="pill">{profilePersistence.mode() === "server" ? "synced to your account" : "saved on this device"}</span>
+          <span className="pill">{profilePersistence.mode() === "server" ? t("profile.synced") : t("profile.savedLocally")}</span>
         </div>
         <div className="profile-identity">
           <span className="avatar avatar-lg">{initials}</span>
@@ -74,7 +74,7 @@ export function ProfileView({ account }: { account: Account }) {
         <div className="profile-grid-2">
           <div className="field">
             <label htmlFor="p-weight">
-              Body weight <span className="value">{profile.bodyWeightKg} kg</span>
+              {t("profile.bodyWeight")} <span className="value">{profile.bodyWeightKg} kg</span>
             </label>
             <input
               id="p-weight"
@@ -158,7 +158,7 @@ export function ProfileView({ account }: { account: Account }) {
           <div className="signals-body">
             <div className="field">
               <label htmlFor="p-rate">
-                Sweat rate <span className="value">{profile.sweatRateMlPerH} ml/h</span>
+                {t("profile.sweatRate")} <span className="value">{profile.sweatRateMlPerH} ml/h</span>
               </label>
               <input
                 id="p-rate"
@@ -172,7 +172,7 @@ export function ProfileView({ account }: { account: Account }) {
             </div>
             <div className="field">
               <label htmlFor="p-na">
-                Sweat sodium <span className="value">{profile.sweatSodiumMgPerL} mg/L</span>
+                {t("profile.sweatSodium")} <span className="value">{profile.sweatSodiumMgPerL} mg/L</span>
               </label>
               <input
                 id="p-na"

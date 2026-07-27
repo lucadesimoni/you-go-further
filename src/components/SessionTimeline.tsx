@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatClock } from "../engine";
 import type { FuelingCue, FuelingSchedule } from "../engine";
+import { useT } from "../i18n";
 
 const KIND_LABEL: Record<FuelingCue["kind"], string> = {
   start: "Start",
@@ -19,6 +20,7 @@ const SIM_TICK_MS = 160;
  * one coming next — the same loop a watch data-field would drive in real time.
  */
 export function SessionTimeline({ schedule }: { schedule: FuelingSchedule }) {
+  const t = useT();
   const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -57,7 +59,7 @@ export function SessionTimeline({ schedule }: { schedule: FuelingSchedule }) {
         <h3 style={{ margin: 0, fontSize: 17 }}>In-session schedule</h3>
         <div className="tl-controls">
           <button type="button" className="btn btn-primary" onClick={() => setPlaying((p) => !p)}>
-            {playing ? "Pause" : elapsed >= schedule.totalMin ? "Replay" : "Simulate"}
+            {playing ? t("plan.pause") : elapsed >= schedule.totalMin ? t("plan.replay") : t("plan.simulate")}
           </button>
           <button
             type="button"
@@ -67,7 +69,7 @@ export function SessionTimeline({ schedule }: { schedule: FuelingSchedule }) {
               setElapsed(0);
             }}
           >
-            Reset
+            {t("plan.reset")}
           </button>
         </div>
       </div>

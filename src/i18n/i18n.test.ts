@@ -26,6 +26,7 @@ describe("dictionary parity", () => {
       "nav.team",
       "appearance.system",
       "activity.triathlon",
+      "plan.pause", // "Pause" is the same word in German
     ]);
     const identical = keys.filter((k) => !allowedIdentical.has(k) && de[k] === en[k]);
     expect(identical).toEqual([]);
@@ -54,6 +55,45 @@ describe("dictionary parity", () => {
       const dict = lang === "de" ? de : en;
       for (const k of keys) expect(dict[k].trim().length, `${lang}.${k} is empty`).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("no dead keys", () => {
+  /**
+   * A dictionary should describe what the app actually says. Unused keys are
+   * dead weight a translator would waste effort on, and they hide the fact that
+   * a screen was never wired up — which is exactly what happened while this
+   * feature was being built.
+   */
+  it("every key is referenced by some component", async () => {
+    const { readFileSync, readdirSync } = await import("node:fs");
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? walk(`${dir}/${e.name}`) : [`${dir}/${e.name}`],
+      );
+    const body = walk("src")
+      .filter((f) => /\.(ts|tsx)$/.test(f) && !f.includes("/i18n/"))
+      .map((f) => readFileSync(f, "utf8"))
+      .join("\n");
+
+    // Keys built at the call site, e.g. t(`appearance.${choice}`), can't be
+    // found by a literal search — match them by prefix instead.
+    const builtDynamically = [
+      /^appearance\./,
+      /^language\./,
+      /^goal\./,
+      /^activity\./,
+      /^intensity\./,
+      /^conditions\./,
+      /^sweat\./,
+      /^nav\./,
+      /^plan\.phase/,
+      /^insights\.band/,
+    ];
+    const unused = keys.filter(
+      (k) => !k.endsWith("_one") && !body.includes(`"${k}"`) && !builtDynamically.some((r) => r.test(k)),
+    );
+    expect(unused).toEqual([]);
   });
 });
 

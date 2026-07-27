@@ -5,6 +5,7 @@ import { catalogPersistence, deleteProduct, loadCatalog, saveProduct } from "../
 import { toast } from "../ui/toast";
 import { confirm } from "../ui/confirm";
 import { useFocusTrap } from "../ui/useFocusTrap";
+import { useT } from "../i18n";
 
 const CATEGORY_LABELS: Record<ProductCategory, string> = {
   "drink-mix": "Drink mix",
@@ -25,6 +26,7 @@ const EMPTY: Draft = { category: "drink-mix", phases: ["during"], swiss: true, c
  * editor to add own products, override a built-in's values, and manage shop links.
  */
 export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; role?: Role }) {
+  const t = useT();
   const [catalog, setCatalog] = useState<Product[]>(CATALOG);
   const [category, setCategory] = useState<ProductCategory | "all">("all");
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -108,7 +110,7 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
     <main className="dash">
       <section className="panel">
         <div className="section-head">
-          <h2>Swiss product library</h2>
+          <h2>{t("catalog.title")}</h2>
           <span className="pill">{catalog.length} products</span>
         </div>
         <p className="detail">
@@ -181,7 +183,7 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                     <summary>When to use · {use.summary}</summary>
                     <div className="usage-body">
                       <p className="usage-line">
-                        <span className="usage-label good">Best when</span>
+                        <span className="usage-label good">{t("catalog.bestWhen")}</span>
                         {use.bestWhen.join(" · ")}
                       </p>
                       {use.avoidWhen.length > 0 && (

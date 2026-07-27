@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { formatClock } from "../engine";
 import type { Activity, LatLng } from "../model";
 import { layersForRoute, OSM_LAYER, type BaseMapLayer } from "../geo/basemap";
+import { useT } from "../i18n";
 
 /**
  * Geographic route map — a real slippy map (Leaflet, no API key) of the
@@ -56,6 +57,7 @@ function dotIcon(className: string, label: string): L.DivIcon {
 }
 
 export function RouteMap({ activity }: { activity: Activity }) {
+  const t = useT();
   const el = useRef<HTMLDivElement>(null);
   const route = activity.route;
   const durationMin = Math.round(activity.durationSec / 60);
@@ -127,7 +129,7 @@ export function RouteMap({ activity }: { activity: Activity }) {
   return (
     <div className="route-wrap">
       {layers.length > 1 && (
-        <div className="map-layers" role="group" aria-label="Base map">
+        <div className="map-layers" role="group" aria-label={t("connect.baseMap")}>
           {layers.map((l) => (
             <button
               key={l.id}

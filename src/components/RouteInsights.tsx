@@ -3,6 +3,7 @@ import type { LatLng } from "../model";
 import type { Activity } from "../engine";
 import { enrichRoute, type RouteConditions } from "../geo";
 import type { SessionInput } from "./Planner";
+import { useT } from "../i18n";
 
 const TERRAIN_LABEL: Record<string, string> = {
   flat: "Flat",
@@ -30,6 +31,7 @@ export function RouteInsights({
   durationMin?: number;
   onPlan?: (prefill: Partial<SessionInput>) => void;
 }) {
+  const t = useT();
   const [data, setData] = useState<RouteConditions | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +56,7 @@ export function RouteInsights({
       <div className="geo-cols">
         <div className="geo-block">
           <div className="geo-head">
-            <span className="geo-title">Terrain</span>
+            <span className="geo-title">{t("connect.terrain")}</span>
             <span className={`geo-src geo-src-${terrain.source}`}>
               {terrain.source === "swisstopo" ? "swisstopo" : "estimated"}
             </span>
@@ -77,7 +79,7 @@ export function RouteInsights({
 
         <div className="geo-block">
           <div className="geo-head">
-            <span className="geo-title">Weather</span>
+            <span className="geo-title">{t("connect.weather")}</span>
             {/* Say which of the three sources this actually is — a measured
                 station, a model, or a guess — and where it came from. */}
             <span
@@ -107,8 +109,8 @@ export function RouteInsights({
 
       {implications.length > 0 && (
         <ul className="geo-implications">
-          {implications.map((t, i) => (
-            <li key={i}>{t}</li>
+          {implications.map((line, i) => (
+            <li key={i}>{line}</li>
           ))}
         </ul>
       )}
@@ -125,7 +127,7 @@ export function RouteInsights({
             })
           }
         >
-          Plan for this route →
+          {t("connect.planRoute")}
         </button>
       )}
     </div>

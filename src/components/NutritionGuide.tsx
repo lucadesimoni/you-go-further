@@ -5,6 +5,7 @@ import {
   NUTRITION_GUIDE,
   type GuideCategory,
 } from "../content/nutritionGuide";
+import { useI18n } from "../i18n";
 
 /**
  * The nutrition knowledge base. Each article leads with the numbers an athlete
@@ -12,6 +13,7 @@ import {
  * behind it — filterable, and collapsed by default so it stays scannable.
  */
 export function NutritionGuide() {
+  const { t, lang } = useI18n();
   const [category, setCategory] = useState<GuideCategory | "all">("all");
   const [open, setOpen] = useState<string | null>(null);
 
@@ -23,13 +25,13 @@ export function NutritionGuide() {
   return (
     <section className="panel">
       <div className="section-head">
-        <h2>Fuel &amp; nutrition guide</h2>
-        <span className="pill">{NUTRITION_GUIDE.length} articles</span>
+        <h2>{t("guide.title")}</h2>
+        <span className="pill">{t("guide.articles", { count: NUTRITION_GUIDE.length })}</span>
       </div>
-      <p className="detail">
-        The evidence behind every plan — what to do, how much, and why. Written against mainstream
-        sports-nutrition consensus.
-      </p>
+      <p className="detail">{t("guide.intro")}</p>
+      {/* The articles themselves are English in both languages; say so rather
+          than letting a German reader wonder whether something is broken. */}
+      {lang === "de" && <p className="detail">{t("guide.englishOnly")}</p>}
 
       <div className="guide-filters" role="group" aria-label="Filter by topic">
         <button
@@ -68,7 +70,7 @@ export function NutritionGuide() {
                   <span className="guide-body">{a.summary}</span>
                 </span>
                 <span className="guide-meta">
-                  <span className="guide-read">{a.readMinutes} min</span>
+                  <span className="guide-read">{t("guide.readMinutes", { count: a.readMinutes })}</span>
                   <span className="guide-chevron" aria-hidden>
                     {isOpen ? "▾" : "▸"}
                   </span>
@@ -94,7 +96,7 @@ export function NutritionGuide() {
 
                   <div className="guide-cols">
                     <div className="guide-col">
-                      <h4 className="guide-sub good">In practice</h4>
+                      <h4 className="guide-sub good">{t("guide.inPractice")}</h4>
                       <ul>
                         {a.practice.map((t, i) => (
                           <li key={i}>{t}</li>
@@ -102,7 +104,7 @@ export function NutritionGuide() {
                       </ul>
                     </div>
                     <div className="guide-col">
-                      <h4 className="guide-sub warn">Common mistakes</h4>
+                      <h4 className="guide-sub warn">{t("guide.pitfalls")}</h4>
                       <ul>
                         {a.pitfalls.map((t, i) => (
                           <li key={i}>{t}</li>

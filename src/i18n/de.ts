@@ -46,14 +46,6 @@ export const de: Dictionary = {
   "language.de": "Deutsch",
 
   // ---- Common -------------------------------------------------------------
-  "common.save": "Speichern",
-  "common.saved": "Gespeichert",
-  "common.cancel": "Abbrechen",
-  "common.back": "Zurück",
-  "common.close": "Schliessen",
-  "common.loading": "Wird geladen…",
-  "common.retry": "Erneut versuchen",
-  "common.continue": "Weiter",
   "common.of": "von",
 
   // ---- Domain option labels ----------------------------------------------
@@ -91,21 +83,13 @@ export const de: Dictionary = {
   "sweat.heavyText": "schwitzt stark",
 
   // ---- Planner ------------------------------------------------------------
-  "plan.title": "Ihre Einheit",
   "plan.goal": "Ziel",
   "plan.activity": "Sportart",
   "plan.intensity": "Intensität",
   "plan.duration": "Dauer",
   "plan.conditions": "Bedingungen",
-  "plan.fromProfile": "Aus Ihrem Profil: {weight} kg · Koffein {caffeine}",
-  "plan.edit": "Bearbeiten",
-  "plan.get": "Plan erstellen",
-  "plan.refresh": "Plan aktualisieren",
   "plan.carbPerHour": "Kohlenhydrate / Std.",
   "plan.fluidPerHour": "Flüssigkeit / Std.",
-  "plan.sodiumPerLitre": "Natrium / l",
-  "plan.schedule": "Ablauf während der Einheit",
-  "plan.why": "Warum dieser Plan",
   "plan.phasePre": "Vorher",
   "plan.phaseDuring": "Währenddessen",
   "plan.phasePost": "Danach",
@@ -125,6 +109,10 @@ export const de: Dictionary = {
   "plan.simulate": "Simulieren",
   "plan.reset": "Zurücksetzen",
   "plan.shopThisPlan": "Diesen Plan einkaufen",
+
+  "plan.pause": "Pause",
+  "plan.replay": "Erneut abspielen",
+  "profile.savedLocally": "auf diesem Gerät gespeichert",
 
   // ---- Insights -----------------------------------------------------------
   "insights.score": "Verpflegungs-Score",
@@ -151,7 +139,6 @@ export const de: Dictionary = {
 
   // ---- Connect ------------------------------------------------------------
   "connect.title": "Verbindungen",
-  "connect.connected": "{count} verbunden",
   "connect.connect": "Verbinden",
   "connect.disconnect": "Trennen",
   "connect.locked": "Gesperrt",
@@ -164,37 +151,18 @@ export const de: Dictionary = {
   "connect.terrain": "Gelände",
   "connect.weather": "Wetter",
   "connect.planRoute": "Für diese Route planen →",
+  "connect.athleteProfile": "Athletenprofil",
   "connect.bodySignals": "Körperwerte",
   "connect.trainingAnalysis": "Trainingsanalyse",
 
   // ---- Catalog & shop -----------------------------------------------------
   "catalog.title": "Produktübersicht",
-  "catalog.all": "Alle",
   "catalog.bestWhen": "Ideal wenn",
-  "catalog.avoidWhen": "Besser nicht wenn",
-  "catalog.cart": "Verpflegung für Ihre Einheit",
-  "catalog.buildCart": "Warenkorb zusammenstellen",
-  "catalog.checkout": "Zur Kasse · CHF {amount}",
-  "catalog.subtotal": "Zwischensumme",
-  "catalog.orders": "Ihre Bestellungen",
-  "catalog.noOrders":
-    "Noch keine Bestellungen. Stellen Sie oben einen Warenkorb zusammen — alles Gekaufte erscheint hier.",
 
   // ---- Profile ------------------------------------------------------------
-  "profile.title": "Profil & Gesundheit",
-  "profile.body": "Ihr Körper",
   "profile.bodyWeight": "Körpergewicht",
-  "profile.sweatLevel": "Wie stark Sie schwitzen",
-  "profile.sweatLight": "Wenig",
-  "profile.sweatAverage": "Normal",
-  "profile.sweatHeavy": "Stark",
-  "profile.caffeineOk": "Koffein ist für mich in Ordnung",
-  "profile.measured": "Gemessene Schweisswerte",
-  "profile.useMeasured": "Meine gemessenen Werte verwenden",
   "profile.sweatRate": "Schweissrate",
   "profile.sweatSodium": "Natrium im Schweiss",
-  "profile.readiness": "Erholung",
-  "profile.save": "Profil speichern",
   "profile.synced": "mit Ihrem Konto synchronisiert",
 
   "profile.yourProfile": "Ihr Profil",
@@ -208,15 +176,8 @@ export const de: Dictionary = {
   // ---- Auth ---------------------------------------------------------------
   "auth.headline": "Klüger verpflegen, weiter kommen",
   "auth.continueEmail": "Mit E-Mail fortfahren",
-  "auth.emailLabel": "E-Mail",
   "auth.sendLink": "Anmeldelink zusenden",
-  "auth.checkInbox": "Posteingang prüfen",
-  "auth.linkSent":
-    "Ein Anmeldelink ist unterwegs an {email}. Er ist 15 Minuten gültig und kann einmal verwendet werden.",
   "auth.openDevLink": "Link öffnen (Dev-Mailer)",
-  "auth.noPassword": "Warum kein Passwort",
-  "auth.noPasswordWhy":
-    "Es gibt nichts, was gestohlen oder wiederverwendet werden kann. Der zugesandte Link ist vom Server signiert, läuft nach 15 Minuten ab und funktioniert nur einmal.",
 
   "auth.subtitle": "Melden Sie sich an oder erstellen Sie ein Konto, um Training und Verpflegung zu synchronisieren.",
   "auth.continueApple": "Weiter mit Apple",
@@ -238,15 +199,14 @@ export const de: Dictionary = {
   "toast.planActive": "Ihr {tier}-Abo ist aktiv.",
   "toast.connected": "{provider} verbunden — Ihre Einheiten werden synchronisiert.",
   "toast.planningRoute": "Planung für Ihre Route — Bedingungen übernommen",
-  "toast.signInFailed": "Dieser Anmeldelink ist ungültig oder abgelaufen.",
 
   // ---- Nutrition guide ----------------------------------------------------
   "guide.title": "Ernährungs- & Verpflegungsratgeber",
-  "guide.read": "Ratgeber lesen",
-  "guide.hide": "Ratgeber ausblenden",
-  "guide.keyNumbers": "Kernzahlen",
   "guide.inPractice": "In der Praxis",
   "guide.pitfalls": "Häufige Fehler",
   "guide.readMinutes": "{count} Min. Lesezeit",
   "guide.englishOnly": "Die Ratgeber-Artikel sind derzeit nur auf Englisch verfügbar.",
+  "guide.articles": "{count} Artikel",
+  "guide.intro":
+    "Die Belege hinter jedem Plan — was zu tun ist, wie viel und warum. Verfasst nach dem gängigen sporternährungswissenschaftlichen Konsens.",
 };

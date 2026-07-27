@@ -11,6 +11,7 @@ import type { AthleteInput } from "../engine";
 import { isApiConfigured } from "../api/client";
 import { getConfig } from "../config";
 import { Stat } from "./Stat";
+import { useT } from "../i18n";
 import { RouteInsights } from "./RouteInsights";
 // Code-split: Leaflet (~150 KB) loads only when a route map is actually shown.
 const RouteMap = lazy(() => import("./RouteMap").then((m) => ({ default: m.RouteMap })));
@@ -34,6 +35,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 /** Connections + analysis workspace. Feature access is gated by the active tier. */
 export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (prefill: Partial<SessionInput>) => void }) {
+  const t = useT();
   const registry = useRef(new ProviderRegistry());
   const store = useRef(new InMemoryActivityStore());
   const pipeline = useRef(new IngestionPipeline(registry.current, store.current));
@@ -186,7 +188,7 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
       {/* Connections */}
       <section className="panel">
         <div className="section-head">
-          <h2>Connections</h2>
+          <h2>{t("connect.title")}</h2>
           <span className={`pill${oauthMode ? " pill-live" : ""}`}>
             {oauthMode ? "OAuth · " : "demo · "}
             {connected.size}/{maxProviders} connected
@@ -217,7 +219,7 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
                     onClick={() => toggle(id)}
                     title={atCap ? `Upgrade to connect more than ${maxProviders}` : undefined}
                   >
-                    {busy === id ? "…" : isOn ? "Disconnect" : atCap ? "Locked" : oauthMode ? "Connect →" : "Connect"}
+                    {busy === id ? "…" : isOn ? t("connect.disconnect") : atCap ? t("connect.locked") : t("connect.connect")}
                   </button>
                 </div>
                 <div className="tags">
@@ -252,7 +254,7 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
       {/* Profile controls */}
       <section className="panel">
         <div className="section-head">
-          <h2>Athlete profile</h2>
+          <h2>{t("connect.athleteProfile")}</h2>
           <span className="pill">history: {historyDays >= 365 ? `${Math.round(historyDays / 365)} yr` : `${historyDays} d`}</span>
         </div>
         <div className="profile-grid">
@@ -285,7 +287,7 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
       {physiology.hasSignals && (
         <section className="panel">
           <div className="section-head">
-            <h2>Body signals</h2>
+            <h2>{t("connect.bodySignals")}</h2>
             <span className="pill">from your devices</span>
           </div>
           <div className="targets plain-grid">
@@ -306,18 +308,16 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
       {routedActivity && (
         <section className="panel">
           <div className="section-head">
-            <h2>Route &amp; fuel stops</h2>
-            <span className="pill">{routedActivities.length} with GPS</span>
+            <h2>{t("connect.route")}</h2>
+            <span className="pill">{t("connect.withGps", { count: routedActivities.length })}</span>
           </div>
           <p className="detail">
-            A recorded route with fuelling stops pinned along it — where to take carbs so you never run the
-            tank down. Swiss routes use the official swisstopo national map, with terrain from swisstopo and
-            conditions from the nearest MeteoSwiss station.
+            {t("connect.routeIntro")}
           </p>
           {/* Pick which session to look at: the latest is often a ride, and an
               athlete wants to see the run they actually care about. */}
           {routedActivities.length > 1 && (
-            <div className="route-picker" role="group" aria-label="Choose a session">
+            <div className="route-picker" role="group" aria-label={t("connect.chooseSession")}>
               {routedActivities.map((a) => (
                 <button
                   key={a.id}
@@ -353,7 +353,7 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
 
       <section className="panel">
         <div className="section-head">
-          <h2>Training analysis</h2>
+          <h2>{t("connect.trainingAnalysis")}</h2>
           {exportEnabled && activities.length > 0 && (
             <button type="button" className="btn btn-ghost" onClick={exportData}>
               Export NDJSON
