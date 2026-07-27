@@ -91,7 +91,9 @@ describe("weather", () => {
     const w = parseWeather({ current: { temperature_2m: 26.4, relative_humidity_2m: 70, wind_speed_10m: 12 } });
     expect(w.temperatureC).toBe(26);
     expect(w.conditions).toBe("hot");
-    expect(w.source).toBe("meteoswiss");
+    // Open-Meteo serves the ICON-CH model — a forecast, not a MeteoSwiss
+    // measurement, and now labelled as such.
+    expect(w.source).toBe("forecast");
   });
 
   it("estimates seasonally when offline", () => {
@@ -111,7 +113,7 @@ describe("fueling implications & enrichRoute", () => {
   it("flags heat and big climbs", () => {
     const impl = fuelingImplications(
       { distanceKm: 20, ascentM: 1200, descentM: 1200, minAltM: 600, maxAltM: 1800, terrain: "mountainous", source: "swisstopo" },
-      { temperatureC: 29, humidityPct: 50, windKmh: 5, conditions: "hot", source: "meteoswiss" },
+      { temperatureC: 29, humidityPct: 50, windKmh: 5, conditions: "hot", source: "station", sourceLabel: "MeteoSwiss · Sion (3 km)" },
     );
     expect(impl.join(" ")).toMatch(/sodium/i);
     expect(impl.join(" ")).toMatch(/climbing/i);

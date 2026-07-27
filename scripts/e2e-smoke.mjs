@@ -18,7 +18,19 @@ let failed = 0;
 const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
 const page = await browser.newPage({ viewport: { width: 1180, height: 900 } });
 page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
-page.on("console", (m) => m.type() === "error" && errors.push(`console: ${m.text()}`));
+// Blocked tile/geodata hosts are an environment limit, not an app defect: the
+// map is *supposed* to fall back when swisstopo or MeteoSwiss is unreachable,
+// and that fallback is asserted below. Filter by the failing URL, not by the
+// message text, so real errors are never swallowed.
+const EXTERNAL_GEO = /geo\.admin\.ch|cartocdn\.com|open-meteo\.com/;
+page.on("console", (m) => {
+  if (m.type() !== "error") return;
+  if (EXTERNAL_GEO.test(m.location()?.url ?? "")) return;
+  errors.push(`console: ${m.text()}`);
+});
+page.on("requestfailed", (r) => {
+  if (!EXTERNAL_GEO.test(r.url())) errors.push(`requestfailed: ${r.url()}`);
+});
 
 const step = async (label, fn) => {
   try {
@@ -81,6 +93,38 @@ await step("checkout the planned cart", async () => {
   await page.waitForSelector("text=Shop this plan");
   await page.click('button:has-text("Checkout · CHF")');
   await page.waitForSelector("text=Payment received", { timeout: 10000 });
+});
+
+console.log("── route, terrain & weather ──");
+await step("Swiss routes are drawn on the swisstopo national map", async () => {
+  const swisstopo = [];
+  page.on("request", (r) => r.url().includes("wmts.geo.admin.ch") && swisstopo.push(r.url()));
+  await page.click('button.topnav-tab:has-text("Connect")');
+  await page.waitForSelector("text=Route & fuel stops", { timeout: 15000 });
+  await page.waitForSelector(".map-layers", { timeout: 15000 });
+  await page.waitForTimeout(2500);
+  if (swisstopo.length === 0) throw new Error("no swisstopo tiles were requested");
+  // The official editions must all be offered, not just a generic basemap.
+  const labels = await page.locator(".map-layers .chip").allInnerTexts();
+  for (const want of ["National map", "Aerial", "Muted"]) {
+    if (!labels.includes(want)) throw new Error(`missing swisstopo layer "${want}" (got ${labels.join(", ")})`);
+  }
+});
+await step("a run can be chosen, not just the latest ride", async () => {
+  const chips = await page.locator(".route-picker .chip").allInnerTexts();
+  const run = chips.find((c) => /^Run|^Trail run/.test(c));
+  if (!run) throw new Error(`no running session offered (got ${chips.join(" | ")})`);
+  await page.locator(".route-picker .chip").filter({ hasText: /^Run|^Trail run/ }).first().click();
+  await page.waitForTimeout(1200);
+  const foot = await page.locator(".energy-foot").innerText();
+  if (!/run/i.test(foot)) throw new Error(`picker did not switch to a run: ${foot}`);
+});
+await step("the weather panel names its source instead of implying MeteoSwiss", async () => {
+  const note = await page.locator(".geo-source-note").innerText();
+  // Whatever the environment allows, the label must match the data: never
+  // "MeteoSwiss" over a number we guessed.
+  if (/MeteoSwiss ·/.test(note)) return; // a real station reading
+  if (!/estimate|ICON-CH/i.test(note)) throw new Error(`unlabelled weather source: ${note}`);
 });
 
 console.log("── accessibility ──");

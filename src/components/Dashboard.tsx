@@ -15,6 +15,16 @@ import { RouteInsights } from "./RouteInsights";
 // Code-split: Leaflet (~150 KB) loads only when a route map is actually shown.
 const RouteMap = lazy(() => import("./RouteMap").then((m) => ({ default: m.RouteMap })));
 
+/** Readable sport names for the route picker. */
+const SPORT_LABEL: Record<string, string> = {
+  run: "Run",
+  "trail-run": "Trail run",
+  ride: "Ride",
+  swim: "Swim",
+  triathlon: "Triathlon",
+  other: "Session",
+};
+
 const STATUS_LABEL: Record<string, string> = {
   detraining: "Detraining",
   optimal: "Optimal",
@@ -123,14 +133,34 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
     () => (activities.length ? analyze(activities, profile, goal) : null),
     [activities, profile, goal],
   );
-  // Most recent session with a GPS track, for the route map.
-  const routedActivity = useMemo(
-    () =>
-      [...activities]
-        .filter((a) => a.route && a.route.length > 1)
-        .sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime))[0] ?? null,
-    [activities],
-  );
+  /**
+   * Sessions with a GPS track, offered as a picker.
+   *
+   * Simply taking the newest few would often show an athlete four bike rides and
+   * no run, so the most recent session of *each* sport is seeded first and the
+   * remaining slots are filled with the newest others. That guarantees a runner
+   * sees a run.
+   */
+  const routedActivities = useMemo(() => {
+    const withRoute = [...activities]
+      .filter((a) => a.route && a.route.length > 1)
+      .sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime));
+    const picked: typeof withRoute = [];
+    const seenSport = new Set<string>();
+    for (const a of withRoute) {
+      if (seenSport.has(a.sport)) continue;
+      seenSport.add(a.sport);
+      picked.push(a);
+    }
+    for (const a of withRoute) {
+      if (picked.length >= 6) break;
+      if (!picked.includes(a)) picked.push(a);
+    }
+    return picked.sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime));
+  }, [activities]);
+
+  const [routeId, setRouteId] = useState<string | null>(null);
+  const routedActivity = routedActivities.find((a) => a.id === routeId) ?? routedActivities[0] ?? null;
   const physiology = useMemo(() => {
     const wellness = [...connected].flatMap((p) => generateSampleWellness(p, 21));
     return derivePhysiology(wellness);
@@ -272,22 +302,45 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
         </section>
       )}
 
-      {/* Analysis */}
+      {/* Route, terrain and weather for a chosen session */}
       {routedActivity && (
         <section className="panel">
           <div className="section-head">
             <h2>Route &amp; fuel stops</h2>
-            <span className="pill">latest with GPS</span>
+            <span className="pill">{routedActivities.length} with GPS</span>
           </div>
           <p className="detail">
-            Your most recent recorded route, with fuelling stops pinned along it — where to take carbs so
-            you never run the tank down. Open-source map (OpenStreetMap data).
+            A recorded route with fuelling stops pinned along it — where to take carbs so you never run the
+            tank down. Swiss routes use the official swisstopo national map, with terrain from swisstopo and
+            conditions from the nearest MeteoSwiss station.
           </p>
+          {/* Pick which session to look at: the latest is often a ride, and an
+              athlete wants to see the run they actually care about. */}
+          {routedActivities.length > 1 && (
+            <div className="route-picker" role="group" aria-label="Choose a session">
+              {routedActivities.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  className={`chip${a.id === routedActivity.id ? " chip-active" : ""}`}
+                  aria-pressed={a.id === routedActivity.id}
+                  onClick={() => setRouteId(a.id)}
+                >
+                  {SPORT_LABEL[a.sport] ?? a.sport}
+                  <span className="chip-meta">
+                    {new Date(a.startTime).toLocaleDateString("de-CH", { day: "numeric", month: "short" })}
+                    {a.distanceM ? ` · ${(a.distanceM / 1000).toFixed(0)} km` : ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           <Suspense fallback={<p className="detail">Loading map…</p>}>
             <RouteMap activity={routedActivity} />
           </Suspense>
           {routedActivity.route && (
             <RouteInsights
+              key={routedActivity.id}
               route={routedActivity.route}
               hintGainM={routedActivity.elevationGainM}
               activity={sportToActivity(routedActivity.sport)}

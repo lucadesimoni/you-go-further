@@ -78,8 +78,13 @@ export function RouteInsights({
         <div className="geo-block">
           <div className="geo-head">
             <span className="geo-title">Weather</span>
-            <span className={`geo-src geo-src-${weather.source === "meteoswiss" ? "swisstopo" : "estimated"}`}>
-              {weather.source === "meteoswiss" ? "MeteoSwiss" : "estimated"}
+            {/* Say which of the three sources this actually is — a measured
+                station, a model, or a guess — and where it came from. */}
+            <span
+              className={`geo-src geo-src-${weather.source === "estimated" ? "estimated" : "swisstopo"}`}
+              title={weather.sourceLabel}
+            >
+              {weather.source === "station" ? "MeteoSwiss station" : weather.source === "forecast" ? "ICON-CH model" : "estimated"}
             </span>
           </div>
           <div className="geo-stats">
@@ -96,6 +101,7 @@ export function RouteInsights({
               <span className="stat-label">Wind</span>
             </div>
           </div>
+          <p className="geo-source-note">{weather.sourceLabel}</p>
         </div>
       </div>
 

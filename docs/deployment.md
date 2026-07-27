@@ -211,6 +211,33 @@ The one thing neither mode covers is Stripe delivering a webhook to a public URL
 Before going live, run `stripe listen --forward-to <host>/api/webhooks/payments`
 and complete one test-mode purchase with card `4242 4242 4242 4242`.
 
+## Swiss geodata: maps, terrain and weather
+
+All three are key-less public services, and all three degrade rather than fail,
+so the app works offline — it just says so instead of pretending.
+
+| Source | Used for | Fallback |
+| --- | --- | --- |
+| **swisstopo WMTS** (`wmts.geo.admin.ch`) | The base map for Swiss routes — national map, aerial, muted editions | OpenStreetMap tiles |
+| **swisstopo profile API** (`api3.geo.admin.ch`) | Elevation profile, ascent, terrain class | Estimate from the activity's own elevation gain |
+| **MeteoSwiss SwissMetNet** (`data.geo.admin.ch`) | *Measured* temperature, humidity and wind from the nearest station | ICON-CH model, then a seasonal estimate |
+
+The weather panel names which of the three it used, because "13 °C" only helps an
+athlete if they know whether it was measured 4 km away or guessed from the month.
+swisstopo attribution is set on every tile layer — that is a licence condition,
+not a nicety.
+
+| Env | Why |
+| --- | --- |
+| `METEOSWISS_STATIONS_URL` | override the station feed URL (MeteoSwiss has been migrating its open-data platform) |
+
+> **Verify before launch:** this repo's sandbox blocks `*.geo.admin.ch` and
+> `api.open-meteo.com`, so the live responses could not be exercised here — the
+> parsers, the source-selection chain and the fallbacks are unit-tested, and the
+> app was confirmed to *request* swisstopo and MeteoSwiss first. Load the Connect
+> tab once from an unrestricted network and check the weather panel reports
+> "MeteoSwiss station" rather than "estimated".
+
 ## Transactional email
 | Env | Why |
 | --- | --- |

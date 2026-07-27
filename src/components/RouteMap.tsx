@@ -1,19 +1,19 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { formatClock } from "../engine";
 import type { Activity, LatLng } from "../model";
+import { layersForRoute, OSM_LAYER, type BaseMapLayer } from "../geo/basemap";
 
 /**
- * Geographic route map — a real slippy map (Leaflet + OpenStreetMap data) of the
- * activity's GPS track, with the fuelling stops pinned along it, Tesla
- * trip-planner style. Open-source stack, no API key. The dark basemap is CARTO's
- * OSM-based "dark matter" tiles; swap TILE_URL for the standard OSM tiles if you
- * prefer the light community basemap or want to self-host for offline deploys.
+ * Geographic route map — a real slippy map (Leaflet, no API key) of the
+ * activity's GPS track with the fuelling stops pinned along it.
+ *
+ * Swiss routes are drawn on the **official swisstopo national map**, so the
+ * athlete sees the same Landeskarte they already navigate by, and can switch to
+ * the aerial or muted edition. Routes outside the swisstopo coverage fall back
+ * to OpenStreetMap.
  */
-const TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-const TILE_ATTRIB =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 /** Total metres along a [lat,lng] track (equirectangular approximation). */
 function trackLengthM(route: LatLng[]): number[] {
@@ -61,10 +61,30 @@ export function RouteMap({ activity }: { activity: Activity }) {
   const durationMin = Math.round(activity.durationSec / 60);
   const cum = useMemo(() => (route ? trackLengthM(route) : []), [route]);
 
+  // swisstopo for Swiss routes, OpenStreetMap elsewhere.
+  const { layers, swiss } = useMemo(() => layersForRoute(route ?? []), [route]);
+  const [layerId, setLayerId] = useState(layers[0]?.id);
+  const layer: BaseMapLayer = layers.find((l) => l.id === layerId) ?? layers[0];
+
+  // A route change can swap the whole layer set (Swiss ↔ elsewhere); keep the
+  // selection valid rather than falling through to a layer that isn't offered.
   useEffect(() => {
-    if (!el.current || !route || route.length < 2) return;
+    if (!layers.some((l) => l.id === layerId)) setLayerId(layers[0]?.id);
+  }, [layers, layerId]);
+
+  useEffect(() => {
+    if (!el.current || !route || route.length < 2 || !layer) return;
     const map = L.map(el.current, { zoomControl: true, attributionControl: true, scrollWheelZoom: false });
-    L.tileLayer(TILE_URL, { maxZoom: 19, attribution: TILE_ATTRIB }).addTo(map);
+    const tiles = L.tileLayer(layer.url, { maxZoom: layer.maxZoom, attribution: layer.attribution }).addTo(map);
+    // If swisstopo can't be reached, show the athlete their route on OSM rather
+    // than an empty grey box.
+    let fellBack = false;
+    tiles.on("tileerror", () => {
+      if (fellBack || layer.id === OSM_LAYER.id) return;
+      fellBack = true;
+      map.removeLayer(tiles);
+      L.tileLayer(OSM_LAYER.url, { maxZoom: OSM_LAYER.maxZoom, attribution: OSM_LAYER.attribution }).addTo(map);
+    });
 
     const line = L.polyline(route as L.LatLngExpression[], { color: "#e4002b", weight: 4, opacity: 0.95 }).addTo(map);
     map.fitBounds(line.getBounds(), { padding: [26, 26] });
@@ -96,7 +116,7 @@ export function RouteMap({ activity }: { activity: Activity }) {
       ro.disconnect();
       map.remove();
     };
-  }, [route, cum, durationMin]);
+  }, [route, cum, durationMin, layer]);
 
   if (!route || route.length < 2) {
     return <p className="detail">No GPS track for this session (indoor or pool swim).</p>;
@@ -106,6 +126,22 @@ export function RouteMap({ activity }: { activity: Activity }) {
   const stops = fuelStopMinutes(durationMin).length;
   return (
     <div className="route-wrap">
+      {layers.length > 1 && (
+        <div className="map-layers" role="group" aria-label="Base map">
+          {layers.map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              className={`chip${l.id === layer?.id ? " chip-active" : ""}`}
+              aria-pressed={l.id === layer?.id}
+              onClick={() => setLayerId(l.id)}
+            >
+              {l.label}
+            </button>
+          ))}
+          {swiss && <span className="map-source">swisstopo</span>}
+        </div>
+      )}
       <div ref={el} className="route-map" />
       <div className="energy-foot">
         <span>{activity.name ?? activity.sport}</span>

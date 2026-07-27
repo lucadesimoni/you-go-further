@@ -15,9 +15,26 @@ export {
   conditionsForTemp,
   parseWeather,
   estimateWeather,
+  fromStation,
   fetchWeather,
   type WeatherNow,
+  type WeatherSource,
 } from "./weather";
+export {
+  parseStations,
+  nearestStation,
+  fetchNearestStation,
+  distanceKm,
+  stationsUrl,
+  type StationReading,
+} from "./meteoswiss";
+export {
+  SWISS_LAYERS,
+  OSM_LAYER,
+  isInSwitzerland,
+  layersForRoute,
+  type BaseMapLayer,
+} from "./basemap";
 
 export interface RouteConditions {
   terrain: TerrainProfile;
