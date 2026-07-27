@@ -25,26 +25,32 @@ import type { SessionFeedback } from "./feedback";
 import { syncProfile, loadProfile } from "./api/profileStore";
 import { api, clearSessionToken, setSessionToken, isApiConfigured } from "./api/client";
 import { saveAccount } from "./auth";
+import { useI18n, type TranslationKey } from "./i18n";
+import { useTheme } from "./theme/useTheme";
 
 interface TabDef {
   id: string;
-  label: string;
+  /** Translation key — the label is resolved at render, so it follows the language. */
+  labelKey: TranslationKey;
   perm: Permission;
 }
 
 // Primary navigation — the core work surfaces. Personal screens (Profile,
 // Subscription) live in the account menu, not here, so each is in one place.
 const TABS: TabDef[] = [
-  { id: "plan", label: "Plan", perm: "plan:use" },
-  { id: "progress", label: "Insights", perm: "plan:use" },
-  { id: "connect", label: "Connect", perm: "analysis:view_own" },
-  { id: "team", label: "Team", perm: "analysis:view_team" },
-  { id: "catalog", label: "Catalog", perm: "catalog:read" },
-  { id: "admin", label: "Admin", perm: "org:configure" },
+  { id: "plan", labelKey: "nav.plan", perm: "plan:use" },
+  { id: "progress", labelKey: "nav.progress", perm: "plan:use" },
+  { id: "connect", labelKey: "nav.connect", perm: "analysis:view_own" },
+  { id: "team", labelKey: "nav.team", perm: "analysis:view_team" },
+  { id: "catalog", labelKey: "nav.catalog", perm: "catalog:read" },
+  { id: "admin", labelKey: "nav.admin", perm: "org:configure" },
 ];
 
 export function App() {
   const config = useMemo(() => getConfig(), []);
+  const { t, lang, setLang } = useI18n();
+  // Applies data-theme to <html> and follows the OS while on "system".
+  const { choice: themeChoice, setChoice: setThemeChoice } = useTheme();
   const [account, setAccount] = useState<Account | null>(() => currentAccount());
   const [tier, setTier] = useState<Tier>(account?.tier ?? "free");
   const [tab, setTab] = useState<string>("plan");
@@ -141,7 +147,7 @@ export function App() {
     if (!magic && !paid && !connected) return;
     const clean = () => window.history.replaceState({}, "", window.location.pathname);
     if (paid) {
-      toast.success("Payment received — thank you!");
+      toast.success(t("toast.paymentReceived"));
       clean();
       // A plan bought just now isn't in the session token yet, so ask the server
       // what this account is entitled to rather than waiting for a re-login.
@@ -151,7 +157,7 @@ export function App() {
           if (res.principal.tier !== tier) {
             setTier(res.principal.tier);
             if (account) saveAccount({ ...account, tier: res.principal.tier });
-            toast.success(`Your ${res.principal.tier} plan is active.`);
+            toast.success(t("toast.planActive", { tier: res.principal.tier }));
           }
         })
         .catch(() => undefined);
@@ -159,7 +165,7 @@ export function App() {
     // Returning from a provider's consent screen: confirm it and land the athlete
     // on Connect, where their newly-synced sessions are.
     if (connected) {
-      toast.success(`${connected[0].toUpperCase()}${connected.slice(1)} connected — your sessions are syncing.`);
+      toast.success(t("toast.connected", { provider: `${connected[0].toUpperCase()}${connected.slice(1)}` }));
       setTab("connect");
       clean();
     }
@@ -212,22 +218,22 @@ export function App() {
 
   return (
     <div className="page">
-      <a className="skip-link" href="#main">Skip to content</a>
+      <a className="skip-link" href="#main">{t("app.skipToContent")}</a>
       <header className="topbar">
         <button type="button" className="brand" onClick={() => setTab("plan")}>
           <span className="brand-mark">▲</span>
-          <span className="brand-name">You Go Further</span>
+          <span className="brand-name">{t("app.brand")}</span>
         </button>
 
-        <nav className="topnav" aria-label="Primary">
-          {visibleTabs.map((t) => (
+        <nav className="topnav" aria-label={t("app.nav")}>
+          {visibleTabs.map((t2) => (
             <button
-              key={t.id}
+              key={t2.id}
               type="button"
-              className={tab === t.id ? "topnav-tab active" : "topnav-tab"}
-              onClick={() => setTab(t.id)}
+              className={tab === t2.id ? "topnav-tab active" : "topnav-tab"}
+              onClick={() => setTab(t2.id)}
             >
-              {t.label}
+              {t2.labelKey ? t(t2.labelKey) : ""}
             </button>
           ))}
         </nav>
@@ -238,6 +244,10 @@ export function App() {
           allowRoleSwitching={config.allowRoleSwitching}
           canBilling={canBilling}
           onNavigate={setTab}
+          lang={lang}
+          onLang={setLang}
+          themeChoice={themeChoice}
+          onTheme={setThemeChoice}
           onSwitchDemo={(p) => setAccount(signInAsDemo(p))}
           onSignOut={() => {
             clearSessionToken();
@@ -261,7 +271,7 @@ export function App() {
             onPlanRoute={(prefill) => {
               setPlannerPrefill(prefill);
               setTab("plan");
-              toast.info("Planning for your route — conditions applied");
+              toast.info(t("toast.planningRoute"));
             }}
           />
         )}
@@ -271,9 +281,7 @@ export function App() {
       </div>
 
       <footer className="foot">
-        {config.environment} · v{config.version} · General guidance for healthy adults — not medical
-        advice. Provider connectors use official OAuth scopes; sample data is shown until a real account
-        is linked.
+        {config.environment} · v{config.version} · {t("app.disclaimer")}
       </footer>
 
       <ToastHost />

@@ -13,9 +13,11 @@ import {
 } from "../auth";
 import { PERSONAS } from "../personas";
 import { api, isApiConfigured } from "../api/client";
+import { useI18n, LANGS } from "../i18n";
 
 /** Sign-in / register gate. Choose Apple, Google, or email — or a demo account. */
 export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account) => void; allowDemo: boolean }) {
+  const { t, lang, setLang } = useI18n();
   const [mode, setMode] = useState<"choose" | "email" | "sent">("choose");
   const [devLink, setDevLink] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -77,35 +79,50 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
   return (
     <div className="auth">
       <div className="auth-card">
-        <p className="kicker">You Go Further</p>
-        <h1 className="auth-title">Fuel smarter, go further</h1>
-        <p className="auth-sub">Sign in or create your account to sync your training and fueling.</p>
+        {/* Language is switchable before sign-in too — otherwise a German
+            speaker whose browser reports English has no way to change it. */}
+        <div className="auth-lang" role="group" aria-label={t("language.title")}>
+          {LANGS.map((l) => (
+            <button
+              key={l}
+              type="button"
+              lang={l}
+              className={`auth-lang-btn${l === lang ? " active" : ""}`}
+              aria-pressed={l === lang}
+              onClick={() => setLang(l)}
+            >
+              {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <p className="kicker">{t("app.brand")}</p>
+        <h1 className="auth-title">{t("auth.headline")}</h1>
+        <p className="auth-sub">{t("auth.subtitle")}</p>
 
         {mode === "choose" ? (
           <div className="auth-actions">
             <button type="button" className="auth-btn auth-apple" onClick={signInApple} disabled={busy !== null}>
-              <span className="auth-glyph"></span> {busy === "apple" ? "Signing in…" : "Continue with Apple"}
+              <span className="auth-glyph"></span> {busy === "apple" ? t("auth.signingIn") : t("auth.continueApple")}
             </button>
             <button type="button" className="auth-btn auth-google" onClick={signInGoogle} disabled={busy !== null}>
-              <span className="auth-glyph">G</span> {busy === "google" ? "Signing in…" : "Continue with Google"}
+              <span className="auth-glyph">G</span> {busy === "google" ? t("auth.signingIn") : t("auth.continueGoogle")}
             </button>
             <button type="button" className="auth-btn auth-email-btn" onClick={() => setMode("email")}>
-              <span className="auth-glyph">✉</span> Continue with email
+              <span className="auth-glyph">✉</span> {t("auth.continueEmail")}
             </button>
           </div>
         ) : mode === "sent" ? (
           <div className="auth-actions">
             <p className="auth-sent">
-              Check your inbox — we sent a sign-in link to <strong>{email}</strong>. It works once and
-              expires in 15 minutes.
+              {t("auth.sentTo", { email })}
             </p>
             {devLink && (
               <a className="auth-btn auth-primary" href={devLink}>
-                Open the link (dev mailer)
+                {t("auth.openDevLink")}
               </a>
             )}
             <button type="button" className="auth-link" onClick={() => setMode("email")}>
-              ← use a different address
+              {t("auth.differentAddress")}
             </button>
           </div>
         ) : (
@@ -113,14 +130,14 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
             <input
               className="auth-input"
               type="text"
-              placeholder="Your name (optional)"
+              placeholder={t("auth.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
             <input
               className="auth-input"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t("auth.emailPlaceholder")}
               value={email}
               autoComplete="email"
               onChange={(e) => {
@@ -131,24 +148,22 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
             />
             {error && <p className="auth-error">{error}</p>}
             <button type="button" className="auth-btn auth-primary" onClick={submitEmail} disabled={sending}>
-              {sending ? "Sending…" : live ? "Email me a sign-in link" : "Create account / sign in"}
+              {sending ? t("auth.sending") : live ? t("auth.sendLink") : t("auth.createOrSignIn")}
             </button>
             <button type="button" className="auth-link" onClick={() => setMode("choose")}>
-              ← other options
+              {t("auth.otherOptions")}
             </button>
           </div>
         )}
 
         <p className="auth-legal">
-          By continuing you agree to our terms.{" "}
-          {live
-            ? "Sign-in is verified server-side — social tokens against the provider, email via a single-use link."
-            : "Running without a server: sign-in is simulated for the demo."}
+          {t("auth.terms")}{" "}
+          {live ? t("auth.termsLive") : t("auth.termsDemo")}
         </p>
 
         {allowDemo && mode === "choose" && (
           <div className="auth-demo">
-            <span className="auth-demo-label">Explore a demo account</span>
+            <span className="auth-demo-label">{t("auth.exploreDemo")}</span>
             <div className="auth-demo-row">
               {PERSONAS.map((p) => (
                 <button key={p.id} type="button" className="auth-demo-chip" onClick={() => onSignedIn(signInAsDemo(p))}>

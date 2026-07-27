@@ -6,13 +6,14 @@ import type { Role } from "../auth";
 import { addFeedback, clearFeedback, feedbackPersistence, loadFeedback } from "../api/feedbackStore";
 import { loadCatalog } from "../api/productLibrary";
 import { loadProfile } from "../api/profileStore";
-import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_LABELS } from "../options";
+import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_KEYS, SWEAT_TEXT_KEYS } from "../options";
 import { Stat } from "./Stat";
 import { SessionTimeline } from "./SessionTimeline";
 import { CartPanel } from "./CartPanel";
 import { FeedbackPanel } from "./FeedbackPanel";
 import { OfferingPanel } from "./OfferingPanel";
 import { EnergyProfile } from "./EnergyProfile";
+import { useT } from "../i18n";
 
 /** Only session-specific fields live in the planner now; body data comes from the profile. */
 export type SessionInput = Pick<AthleteInput, "goal" | "activity" | "durationMin" | "intensity" | "conditions">;
@@ -25,7 +26,6 @@ const DEFAULT_SESSION: SessionInput = {
   conditions: "temperate",
 };
 
-const SWEAT_TEXT: Record<string, string> = { light: "light sweat", average: "average sweat", heavy: "heavy sweat" };
 
 /** Standalone session fuel planner. Body/health data is read from Profile settings. */
 export function Planner({
@@ -37,6 +37,7 @@ export function Planner({
   role?: Role;
   onEditProfile?: () => void;
 }) {
+  const t = useT();
   const [input, setInput] = useState<SessionInput>({ ...DEFAULT_SESSION, ...initial });
   const profile = useMemo(() => loadProfile(), []);
 
@@ -97,20 +98,20 @@ export function Planner({
 
   return (
     <main className="layout">
-      <section className="panel form" aria-label="Session details">
+      <section className="panel form" aria-label={t("plan.sessionDetails")}>
         <div className="field">
-          <label htmlFor="goal">Goal</label>
+          <label htmlFor="goal">{t("plan.goal")}</label>
           <select id="goal" value={input.goal} onChange={(e) => set("goal", e.target.value as SessionInput["goal"])}>
             {GOALS.map((g) => (
               <option key={g.value} value={g.value}>
-                {g.label} — {g.blurb}
+                {t(g.labelKey)} — {t(g.blurbKey)}
               </option>
             ))}
           </select>
         </div>
 
         <div className="field">
-          <label htmlFor="activity">Activity</label>
+          <label htmlFor="activity">{t("plan.activity")}</label>
           <select
             id="activity"
             value={input.activity}
@@ -118,7 +119,7 @@ export function Planner({
           >
             {ACTIVITIES.map((a) => (
               <option key={a.value} value={a.value}>
-                {a.label}
+                {t(a.labelKey)}
               </option>
             ))}
           </select>
@@ -126,7 +127,7 @@ export function Planner({
 
         <div className="field">
           <label htmlFor="duration">
-            Duration <span className="value">{durationLabel}</span>
+            {t("plan.duration")} <span className="value">{durationLabel}</span>
           </label>
           <input
             id="duration"
@@ -140,8 +141,8 @@ export function Planner({
         </div>
 
         <div className="field">
-          <span className="group-label">Intensity</span>
-          <div className="segmented" role="group" aria-label="Intensity">
+          <span className="group-label">{t("plan.intensity")}</span>
+          <div className="segmented" role="group" aria-label={t("plan.intensity")}>
             {INTENSITIES.map((i) => (
               <button
                 key={i.value}
@@ -149,14 +150,14 @@ export function Planner({
                 className={input.intensity === i.value ? "seg active" : "seg"}
                 onClick={() => set("intensity", i.value)}
               >
-                {i.label}
+                {t(i.labelKey)}
               </button>
             ))}
           </div>
         </div>
 
         <div className="field">
-          <label htmlFor="conditions">Conditions</label>
+          <label htmlFor="conditions">{t("plan.conditions")}</label>
           <select
             id="conditions"
             value={input.conditions}
@@ -164,7 +165,7 @@ export function Planner({
           >
             {CONDITIONS.map((c) => (
               <option key={c.value} value={c.value}>
-                {c.label}
+                {t(c.labelKey)}
               </option>
             ))}
           </select>
@@ -172,13 +173,13 @@ export function Planner({
 
         <div className="from-profile">
           <span>
-            Tuned to <strong>{profile.bodyWeightKg} kg</strong> · {SWEAT_TEXT[profile.sweatLevel]}
-            {profile.caffeineOk ? " · caffeine ok" : ""}
-            {profile.useSignals ? " · measured signals" : ""}
+            {t("plan.tunedTo")} <strong>{profile.bodyWeightKg} kg</strong> · {t(SWEAT_TEXT_KEYS[profile.sweatLevel])}
+            {profile.caffeineOk ? ` · ${t("plan.caffeineOk")}` : ""}
+            {profile.useSignals ? ` · ${t("plan.measuredSignals")}` : ""}
           </span>
           {onEditProfile && (
             <button type="button" className="link-btn" onClick={onEditProfile}>
-              Edit profile
+              {t("plan.editProfile")}
             </button>
           )}
         </div>
@@ -186,17 +187,17 @@ export function Planner({
 
       <section className="results" aria-live="polite">
         <div className="targets panel">
-          <Stat label="Carb / hour" value={rec.target.carbPerHourG ? `${rec.target.carbPerHourG} g` : "—"} />
-          <Stat label="Carb total" value={rec.target.carbTotalG ? `${rec.target.carbTotalG} g` : "—"} />
+          <Stat label={t("plan.carbPerHour")} value={rec.target.carbPerHourG ? `${rec.target.carbPerHourG} g` : "—"} />
+          <Stat label={t("plan.carbTotal")} value={rec.target.carbTotalG ? `${rec.target.carbTotalG} g` : "—"} />
           <Stat
-            label="Fluid / hour"
+            label={t("plan.fluidPerHour")}
             value={`${rec.target.fluidPerHourMl} ml`}
-            note={rec.target.hydrationSource === "measured" ? "measured" : undefined}
+            note={rec.target.hydrationSource === "measured" ? t("plan.measured") : undefined}
           />
           <Stat
-            label="Sodium / litre"
+            label={t("plan.sodiumPerLitreLong")}
             value={`${rec.target.sodiumPerLitreMg} mg`}
-            note={rec.target.sodiumSource === "measured" ? "measured" : undefined}
+            note={rec.target.sodiumSource === "measured" ? t("plan.measured") : undefined}
           />
         </div>
 
@@ -207,7 +208,7 @@ export function Planner({
         {rec.phases.map((phase) => (
           <div className="panel phase" key={phase.phase}>
             <div className="phase-head">
-              <span className={`badge badge-${phase.phase}`}>{PHASE_LABELS[phase.phase]}</span>
+              <span className={`badge badge-${phase.phase}`}>{t(PHASE_KEYS[phase.phase])}</span>
               <h3>{phase.headline}</h3>
             </div>
             <p className="detail">{phase.detail}</p>
@@ -218,7 +219,7 @@ export function Planner({
                     <div className="product-top">
                       <span className="product-name">
                         <strong>{p.brand}</strong> {p.name}
-                        {p.custom && <span className="tag tag-house">house</span>}
+                        {p.custom && <span className="tag tag-house">{t("plan.house")}</span>}
                       </span>
                       <span className="serving">{p.servingLabel}</span>
                     </div>
@@ -241,7 +242,7 @@ export function Planner({
             )}
             {phase.rationale.length > 0 && (
               <details className="why">
-                <summary>Why these — ingredients &amp; combo</summary>
+                <summary>{t("plan.whyThese")}</summary>
                 <ul className="why-list">
                   {phase.rationale.map((r, i) => (
                     <li key={i}>{r}</li>
@@ -255,7 +256,7 @@ export function Planner({
         <OfferingPanel input={effectiveInput} target={rec.target} catalog={catalog} />
 
         <details className="panel notes-details">
-          <summary>Notes &amp; caveats</summary>
+          <summary>{t("plan.notes")}</summary>
           <ul className="notes-list">
             {rec.notes.map((n, i) => (
               <li key={i}>{n}</li>

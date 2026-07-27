@@ -5,6 +5,7 @@ import { SWEAT_LEVELS } from "../options";
 import { estimateSweatRateMlPerH } from "../analysis";
 import { type AthleteProfile, loadProfile, saveProfile, syncProfile, profilePersistence } from "../api/profileStore";
 import { HEALTH_PLATFORMS, syncHealthSignals } from "../api/healthSync";
+import { useT } from "../i18n";
 
 /**
  * Profile settings — the athlete's body + health data, moved out of the planner
@@ -12,6 +13,7 @@ import { HEALTH_PLATFORMS, syncHealthSignals } from "../api/healthSync";
  * reads this profile to personalize every plan.
  */
 export function ProfileView({ account }: { account: Account }) {
+  const t = useT();
   const [profile, setProfile] = useState<AthleteProfile>(() => loadProfile());
 
   // The server copy is authoritative — refresh so the profile is the same on
@@ -46,7 +48,7 @@ export function ProfileView({ account }: { account: Account }) {
     <main className="dash profile">
       <section className="panel">
         <div className="section-head">
-          <h2>Your profile</h2>
+          <h2>{t("profile.yourProfile")}</h2>
           <span className="pill">{profilePersistence.mode() === "server" ? "synced to your account" : "saved on this device"}</span>
         </div>
         <div className="profile-identity">
@@ -67,7 +69,7 @@ export function ProfileView({ account }: { account: Account }) {
 
       <section className="panel">
         <div className="section-head">
-          <h2>Body &amp; preferences</h2>
+          <h2>{t("profile.bodyPrefs")}</h2>
         </div>
         <div className="profile-grid-2">
           <div className="field">
@@ -85,7 +87,7 @@ export function ProfileView({ account }: { account: Account }) {
             />
           </div>
           <div className="field">
-            <label htmlFor="p-sweat">Sweat level</label>
+            <label htmlFor="p-sweat">{t("profile.sweatLevelShort")}</label>
             <select
               id="p-sweat"
               value={profile.sweatLevel}
@@ -102,13 +104,13 @@ export function ProfileView({ account }: { account: Account }) {
 
         <label className="checkbox" style={{ marginTop: "var(--space-6)" }}>
           <input type="checkbox" checked={profile.caffeineOk} onChange={(e) => set("caffeineOk", e.target.checked)} />
-          <span>I tolerate caffeine — suggest it for long / hard efforts</span>
+          <span>{t("profile.caffeineLong")}</span>
         </label>
       </section>
 
       <section className="panel">
         <div className="section-head">
-          <h2>Measured body signals</h2>
+          <h2>{t("profile.measuredSignals")}</h2>
           <span className="pill">optional</span>
         </div>
         <p className="detail">
@@ -117,7 +119,7 @@ export function ProfileView({ account }: { account: Account }) {
         </p>
 
         <div className="health-sync">
-          <span className="group-label health-sync-label">Sync from your health platform</span>
+          <span className="group-label health-sync-label">{t("profile.syncPlatform")}</span>
           <div className="health-platforms">
             {HEALTH_PLATFORMS.map((p) => (
               <button
@@ -149,7 +151,7 @@ export function ProfileView({ account }: { account: Account }) {
               set("useSignals", on);
             }}
           />
-          <span>Use my measured body signals</span>
+          <span>{t("profile.useMeasuredSignals")}</span>
         </label>
 
         {profile.useSignals && (

@@ -1,4 +1,13 @@
-import { BAND_LABEL, type FuellingScore } from "../progress";
+import { type FuellingScore } from "../progress";
+import { useT, type TranslationKey } from "../i18n";
+
+/** Band labels come from the engine; the UI translates them for display. */
+const BAND_KEY: Record<FuellingScore["band"], TranslationKey> = {
+  "getting-started": "insights.bandGettingStarted",
+  building: "insights.bandBuilding",
+  solid: "insights.bandSolid",
+  "dialled-in": "insights.bandDialledIn",
+};
 
 /**
  * The fuelling score — how well you're actually fuelling, what's driving it, and
@@ -6,6 +15,7 @@ import { BAND_LABEL, type FuellingScore } from "../progress";
  * outrank performance advice.
  */
 export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore; onLearnMore?: () => void }) {
+  const t = useT();
   const pct = score.score ?? 0;
   // Circumference of the r=52 ring, for the progress arc.
   const C = 2 * Math.PI * 52;
@@ -13,10 +23,8 @@ export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore
   return (
     <section className="panel">
       <div className="section-head">
-        <h2>Fuelling score</h2>
-        <span className="pill">
-          {score.sessionsLogged} session{score.sessionsLogged === 1 ? "" : "s"} logged
-        </span>
+        <h2>{t("insights.score")}</h2>
+        <span className="pill">{t("insights.sessionsLogged", { count: score.sessionsLogged })}</span>
       </div>
 
       <div className="score-top">
@@ -36,7 +44,7 @@ export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore
               {score.score ?? "—"}
             </text>
             <text className="score-band" x="60" y="76" textAnchor="middle">
-              {BAND_LABEL[score.band]}
+              {t(BAND_KEY[score.band])}
             </text>
           </svg>
         </div>
@@ -44,8 +52,7 @@ export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore
         <div className="score-body">
           {score.score === null ? (
             <p className="detail" style={{ margin: 0 }}>
-              Log a session and this starts tracking how well your fuelling is actually working — energy,
-              gut, and whether the long ones are covered.
+              {t("insights.notScored")}
             </p>
           ) : (
             <>
@@ -79,7 +86,7 @@ export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore
 
       {score.healthFlags.length > 0 && (
         <div className="score-health">
-          <h4 className="score-health-title">Worth attention</h4>
+          <h4 className="score-health-title">{t("insights.worthAttention")}</h4>
           {score.healthFlags.map((f, i) => (
             <p key={i} className="score-health-text">
               {f}
@@ -89,7 +96,7 @@ export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore
       )}
 
       <div className="score-next">
-        <h4 className="score-next-title">Do this next</h4>
+        <h4 className="score-next-title">{t("insights.doNext")}</h4>
         <ol className="score-next-list">
           {score.nextActions.map((a, i) => (
             <li key={i}>

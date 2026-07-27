@@ -3,6 +3,7 @@ import { Stat } from "./Stat";
 import { NutritionGuide } from "./NutritionGuide";
 import { FuellingScoreCard } from "./FuellingScoreCard";
 import type { FuellingScore } from "../progress";
+import { useT } from "../i18n";
 
 /**
  * Insights — how well the athlete is fuelling, what to change next, the guidance
@@ -22,6 +23,7 @@ export function ProgressView({
   hasData?: boolean;
   onConnect?: () => void;
 }) {
+  const t = useT();
   const ordered = [...profile.milestones].sort((a, b) => Number(b.done) - Number(a.done));
 
   return (
@@ -30,24 +32,24 @@ export function ProgressView({
 
       <section className="panel">
         <div className="section-head">
-          <h2>Your training</h2>
+          <h2>{t("insights.yourTraining")}</h2>
           {hasData && profile.streakDays > 0 && (
-            <span className="pill">{profile.streakDays}-day streak · best {profile.longestStreakDays}</span>
+            <span className="pill">{t("insights.streak", { days: profile.streakDays, best: profile.longestStreakDays })}</span>
           )}
         </div>
         {hasData ? (
           <div className="targets plain-grid">
-            <Stat label="Activities" value={String(profile.stats.activities)} />
-            <Stat label="Hours" value={`${profile.stats.hours}`} />
-            <Stat label="Long sessions" value={String(profile.stats.longSessions)} note="90 min+" />
-            <Stat label="Logged" value={String(profile.stats.loggedSessions)} note="plan learns" />
+            <Stat label={t("insights.activities")} value={String(profile.stats.activities)} />
+            <Stat label={t("insights.hours")} value={`${profile.stats.hours}`} />
+            <Stat label={t("insights.longSessions")} value={String(profile.stats.longSessions)} note="90 min+" />
+            <Stat label={t("insights.logged")} value={String(profile.stats.loggedSessions)} note="plan learns" />
           </div>
         ) : (
           <div className="empty-state">
-            <p style={{ margin: 0 }}>No sessions synced yet — connect a service and your real training shows up here.</p>
+            <p style={{ margin: 0 }}>{t("insights.noSessions")}</p>
             {onConnect && (
               <button type="button" className="btn btn-primary mt-5" onClick={onConnect}>
-                Connect a service
+                {t("insights.connectService")}
               </button>
             )}
           </div>
@@ -59,9 +61,9 @@ export function ProgressView({
       {hasData && (
       <section className="panel">
         <div className="section-head">
-          <h2>Milestones</h2>
+          <h2>{t("insights.milestones")}</h2>
           <span className="pill">
-            {profile.doneCount} of {profile.milestones.length}
+            {profile.doneCount} {t("common.of")} {profile.milestones.length}
           </span>
         </div>
         <ul className="milestones">

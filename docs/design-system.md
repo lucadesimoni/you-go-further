@@ -43,6 +43,48 @@ is `--text-md`/`--text-base`; labels `--text-sm`; stats & headings `--text-2xl`+
 ### Elevation & motion
 `--shadow-sm` `--shadow-md` `--shadow-lg`; `--transition` (0.15s ease).
 
+## Light and dark
+
+Both themes are the *same* design: only the colour tokens change — spacing,
+type, radius and motion are shared. Dark is the default; light is a token
+override on `:root[data-theme="light"]`.
+
+* `useTheme()` (`src/theme/`) resolves **system | light | dark**, persists the
+  choice, and puts the result on `<html data-theme>`. On "system" it keeps
+  listening, so a phone that switches at dusk switches the app too.
+* It also sets `color-scheme` — without that, native scrollbars and form
+  controls stay dark on a light page and the whole thing looks broken — and
+  updates `<meta name="theme-color">` so the browser chrome matches.
+* A `prefers-color-scheme` block covers first paint, before any JS runs, so a
+  light-mode device never flashes dark.
+
+### Ink tokens
+
+A colour that reads well as a **fill** is often illegible as **text**. Every
+semantic colour therefore has an `--*-ink` variant used for text:
+
+| Fill | Text |
+| --- | --- |
+| `--accent`, `--info`, `--warn`, `--success`, `--accent-purple` | `--accent-ink`, `--info-ink`, `--warn-ink`, `--success-ink`, `--accent-purple-ink` |
+
+In dark mode the ink is an alias of the vivid colour. In light mode each one is
+darkened until it carries at least **4.5:1** on a white panel — amber especially,
+which is unreadable at its pill brightness. Use the vivid token for fills,
+borders and pills; use ink whenever the colour is the text.
+
+## Mobile
+
+* Below 640px the primary navigation becomes a **fixed bottom bar**, where a
+  thumb reaches, with `env(safe-area-inset-bottom)` padding for notched phones.
+  Note the header cannot carry a `backdrop-filter` at that width: it would become
+  the containing block for the nav's `position: fixed` and pin it inside the
+  header.
+* Every interactive element clears **44px** on touch.
+* Panels get more padding, a stronger border and a shadow, so a long scroll reads
+  as distinct sections rather than one continuous surface.
+* `.section-head` carries a short accent rule before the title — two pixels that
+  do most of the work in separating sections on a narrow screen.
+
 ## Component primitives
 
 | Class | What |

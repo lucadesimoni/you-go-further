@@ -4,6 +4,8 @@ import { ROLE_LABELS } from "../auth";
 import type { ProgressProfile } from "../progress";
 import { PERSONAS } from "../personas";
 import type { Principal } from "../auth";
+import { useT, LANGS, type Lang } from "../i18n";
+import type { ThemeChoice } from "../theme/theme";
 
 /**
  * The single home for everything "me": identity, quick status, and links to
@@ -11,11 +13,17 @@ import type { Principal } from "../auth";
  * out. Consolidating these here removes the identity/profile duplication that was
  * spread across the header, a Profile tab and the level chip.
  */
+const THEMES: ThemeChoice[] = ["system", "light", "dark"];
+
 export function AccountMenu({
   account,
   progress,
   allowRoleSwitching,
   canBilling,
+  lang,
+  onLang,
+  themeChoice,
+  onTheme,
   onNavigate,
   onSwitchDemo,
   onSignOut,
@@ -24,10 +32,15 @@ export function AccountMenu({
   progress: ProgressProfile | null;
   allowRoleSwitching: boolean;
   canBilling: boolean;
+  lang: Lang;
+  onLang: (l: Lang) => void;
+  themeChoice: ThemeChoice;
+  onTheme: (c: ThemeChoice) => void;
   onNavigate: (tab: string) => void;
   onSwitchDemo: (persona: Principal) => void;
   onSignOut: () => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -59,7 +72,14 @@ export function AccountMenu({
 
   return (
     <div className="account-menu" ref={ref}>
-      <button type="button" className="account-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu">
+      <button
+        type="button"
+        className="account-btn"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={t("account.menu")}
+      >
         <span className="avatar">{initials}</span>
         <span className="account-btn-name">{account.name}</span>
         <span className="chev" aria-hidden>▾</span>
@@ -78,28 +98,62 @@ export function AccountMenu({
 
           {progress && progress.streakDays > 0 && (
             <button type="button" className="dropdown-item dropdown-status" onClick={() => go("progress")} role="menuitem">
-              <span>{progress.streakDays}-day training streak</span>
-              <span className="dropdown-lvl">Insights ›</span>
+              <span>{t("account.streak", { days: progress.streakDays })}</span>
+              <span className="dropdown-lvl">{t("account.insightsLink")}</span>
             </button>
           )}
 
           <div className="dropdown-sep" />
           <button type="button" className="dropdown-item" onClick={() => go("profile")} role="menuitem">
-            Profile &amp; health
+            {t("account.profile")}
           </button>
           {canBilling && (
             <button type="button" className="dropdown-item" onClick={() => go("subscription")} role="menuitem">
-              Subscription &amp; billing
+              {t("account.billing")}
             </button>
           )}
           <button type="button" className="dropdown-item" onClick={() => go("connect")} role="menuitem">
-            Connected services
+            {t("account.connections")}
           </button>
+
+          {/* Appearance and language live with the rest of "me", so there is one
+              place to look for a personal setting. */}
+          <div className="dropdown-sep" />
+          <div className="dropdown-label">{t("appearance.title")}</div>
+          <div className="dropdown-choice" role="group" aria-label={t("appearance.title")}>
+            {THEMES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={`choice${c === themeChoice ? " choice-active" : ""}`}
+                aria-pressed={c === themeChoice}
+                onClick={() => onTheme(c)}
+              >
+                {t(`appearance.${c}` as "appearance.system")}
+              </button>
+            ))}
+          </div>
+
+          <div className="dropdown-label">{t("language.title")}</div>
+          <div className="dropdown-choice" role="group" aria-label={t("language.title")}>
+            {LANGS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                className={`choice${l === lang ? " choice-active" : ""}`}
+                aria-pressed={l === lang}
+                lang={l}
+                onClick={() => onLang(l)}
+              >
+                {t(`language.${l}` as "language.en")}
+              </button>
+            ))}
+          </div>
 
           {allowRoleSwitching && (
             <>
               <div className="dropdown-sep" />
-              <div className="dropdown-label">Switch demo account</div>
+              <div className="dropdown-label">{t("account.switchDemo")}</div>
               {PERSONAS.map((p) => (
                 <button
                   key={p.id}
@@ -127,7 +181,7 @@ export function AccountMenu({
             }}
             role="menuitem"
           >
-            Sign out
+            {t("account.signOut")}
           </button>
         </div>
       )}

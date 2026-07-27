@@ -127,6 +127,46 @@ await step("the weather panel names its source instead of implying MeteoSwiss", 
   if (!/estimate|ICON-CH/i.test(note)) throw new Error(`unlabelled weather source: ${note}`);
 });
 
+console.log("── appearance & language ──");
+await step("light and dark are switchable and stick to <html>", async () => {
+  await page.locator(".account-btn").click();
+  await page.locator(".choice", { hasText: "Light" }).click();
+  await page.waitForTimeout(300);
+  const light = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
+  if (light !== "light") throw new Error(`expected light, got ${light}`);
+  // The page background must actually change, not just the attribute.
+  const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  if (!/^rgb\((2[0-9]{2}|1[89][0-9])/.test(bg)) throw new Error(`light background did not apply: ${bg}`);
+  await page.locator(".choice", { hasText: "Dark" }).click();
+  await page.waitForTimeout(300);
+  const dark = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
+  if (dark !== "dark") throw new Error(`expected dark, got ${dark}`);
+});
+await step("German switches the interface and the html lang", async () => {
+  await page.locator(".choice", { hasText: "Deutsch" }).click();
+  await page.waitForTimeout(400);
+  const lang = await page.evaluate(() => document.documentElement.lang);
+  if (lang !== "de") throw new Error(`html lang is ${lang}`);
+  const nav = await page.locator(".topnav").innerText();
+  if (!/Planen/.test(nav)) throw new Error(`nav did not translate: ${nav.replace(/\n/g, " | ")}`);
+  // The screen body must translate too, not only the chrome.
+  await page.keyboard.press("Escape");
+  await page.locator('button.topnav-tab:has-text("Planen")').click();
+  await page.waitForSelector("text=Sportart", { timeout: 8000 });
+  await page.waitForSelector("text=Intensität", { timeout: 8000 });
+});
+await step("the choice survives a reload", async () => {
+  await page.reload({ waitUntil: "networkidle" });
+  const lang = await page.evaluate(() => document.documentElement.lang);
+  const theme = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
+  if (lang !== "de" || theme !== "dark") throw new Error(`lost after reload: lang=${lang} theme=${theme}`);
+  // Put it back so later steps read English.
+  await page.evaluate(() => {
+    localStorage.setItem("ygf.lang", "en");
+    localStorage.setItem("ygf.theme", "system");
+  });
+});
+
 console.log("── accessibility ──");
 await step("skip link is the first tab stop", async () => {
   await page.goto(B, { waitUntil: "networkidle" });

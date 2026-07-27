@@ -20,6 +20,8 @@ Scope: general endurance — running, trail running, cycling, triathlon, swimmin
 | **RBAC** | `src/auth/` | Roles → permissions (athlete, coach, nutritionist, admin, owner), orthogonal to tiers. |
 | **Runtime config** | `src/config.ts`, `public/config.js` | Env + runtime-injected config so one build runs in any environment. |
 | **Composition root** | `src/runtime.ts` | Wires store/providers/sinks from config — swap a backend without code changes. |
+| **Design system** | `src/styles.css`, `docs/design-system.md` | One token layer driving light + dark, with contrast-safe "ink" variants for text. |
+| **Languages** | `src/i18n/`, `docs/i18n.md` | English + Swiss German, with guard tests for parity, placeholders and ss-not-ß. |
 | **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fueling formulas. |
 | **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `user-flows.md`. |
 | **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |
