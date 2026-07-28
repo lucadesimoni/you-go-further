@@ -106,6 +106,13 @@ export function ElevationFuelChart({
               km {s.atKm} · {s.altM} m
             </span>
             <span className="elev-stop-dose">{s.carbG} g</span>
+            {/* Naming the product is the difference between a target and an
+                instruction: "25 g" is what the athlete already knew. */}
+            {s.product && (
+              <span className="elev-stop-product">
+                {s.product.brand} {s.product.name} <span className="elev-stop-serving">· {s.product.servingLabel}</span>
+              </span>
+            )}
             <span className="elev-stop-why">{s.reason}</span>
           </li>
         ))}

@@ -12,6 +12,15 @@ export type EnergyRating = "bonked" | "faded" | "steady" | "strong";
 
 export interface SessionFeedback {
   id: string;
+  /**
+   * The synced session this log is about, when it came from one.
+   *
+   * Without this, logs and activities are two unconnected datasets and the
+   * platform can never say "on *that* run you took 40 g/h and the terrain
+   * needed 65". It stays optional because an athlete can still log a session
+   * that was never synced.
+   */
+  activityId?: string;
   /** ISO timestamp. */
   date: string;
   durationMin: number;

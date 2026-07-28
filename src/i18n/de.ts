@@ -51,6 +51,10 @@ export const de: Dictionary = {
   "home.readinessSelf": "Ihre eigene Einschätzung",
   "home.longestRecent": "Längste zuletzt",
   "home.fuelIt": "Diese verpflegen →",
+  "home.reviewIt": "Wie lief sie? →",
+  "home.logged": "Erfasst",
+  "home.reviewPending": "{count} Einheiten noch nicht ausgewertet",
+  "home.reviewPending_one": "{count} Einheit noch nicht ausgewertet",
   "home.shortcuts": "Ihre Werkzeuge",
   "home.shortcutTeam": "Ihr Kader",
   "home.shortcutTeamWhy": "Belastung und Verpflegung der von Ihnen betreuten Athletinnen und Athleten.",
@@ -175,10 +179,10 @@ export const de: Dictionary = {
   "action.logFirst": "Erfassen Sie Ihre nächste Einheit",
   "action.logFirst.why":
     "Eine einzige Erfassung zeigt dem Planer, wie sich die Verpflegung angefühlt hat — daraus lernt alles Weitere hier.",
-  "action.lowerCarbRate": "Kohlenhydratrate um ~10 g/Std. senken und neu aufbauen",
+  "action.lowerCarbRate": "Kohlenhydratrate um ~10 g/h senken und neu aufbauen",
   "action.lowerCarbRate.why":
     "Ihr Magen bremst Sie. Der Algorithmus hat Ihre Obergrenze bereits gesenkt; bauen Sie über einige Wochen in kleinen Schritten wieder auf.",
-  "action.addCarbs": "Bei Einheiten über 90 Minuten ~10 g/Std. mehr Kohlenhydrate",
+  "action.addCarbs": "Bei Einheiten über 90 Minuten ~10 g/h mehr Kohlenhydrate",
   "action.addCarbs.why":
     "Ihnen geht die Energie aus, während der Magen ruhig bleibt — das deutlichste Zeichen, dass noch Luft nach oben ist.",
   "action.measureSweat": "Messen Sie Ihre Schweissrate einmal",
@@ -225,6 +229,39 @@ export const de: Dictionary = {
   "route.estimatedProfile":
     "Höhenprofil geschätzt — swisstopo war nicht erreichbar. Der Verlauf ist ungefähr, die Zeitpunkte entsprechend grob.",
 
+  // ---- Session debrief ----------------------------------------------------
+  "debrief.title": "Wie diese Einheit lief",
+  "debrief.needed": "Diese Route brauchte",
+  "debrief.youTook": "Sie nahmen",
+  "debrief.short": "{gap} g/h zu wenig",
+  "debrief.onTarget": "Im Ziel",
+  "debrief.notLogged": "Noch nicht erfasst",
+  "debrief.howWasIt": "Wie lief es?",
+  "debrief.gut": "Magen",
+  "debrief.energy": "Energie",
+  "debrief.actualCarbs": "Aufgenommene Kohlenhydrate",
+  "debrief.save": "Speichern und Auswertung ansehen",
+  "debrief.whereToTake": "Was Sie beim nächsten Mal wo nehmen",
+  "debrief.leadToPlan": "Dieselbe Route mit der Verpflegung, die sie gebraucht hätte — was Sie wo nehmen.",
+  "debrief.verdictUnderFuelled": "Zu wenig verpflegt",
+  "debrief.verdictAboutRight": "Gut verpflegt",
+  "debrief.verdictOverGut": "Vom Magen begrenzt",
+  "debrief.verdictUnknown": "Zu wenig für ein Urteil",
+  "debrief.gi.none": "Gut",
+  "debrief.gi.mild": "Etwas flau",
+  "debrief.gi.severe": "Schlecht",
+  "debrief.energy.bonked": "Eingebrochen",
+  "debrief.energy.faded": "Nachgelassen",
+  "debrief.energy.steady": "Gleichmässig",
+  "debrief.energy.strong": "Stark",
+  "finding.underFuelled": "Sie nahmen rund {actual} g/h; die Anstiege dieser Route verlangten {required} g/h — etwa {gap} g/h zu wenig.",
+  "finding.aboutRight": "Die Verpflegung passte zu dem, was diese Route verlangte — genau so wieder.",
+  "finding.gutLimited": "Hier war Ihr Magen die Grenze, nicht die Menge. Senken Sie die Rate und bauen Sie sie wieder auf, bevor Sie mehr nehmen.",
+  "finding.startedLate": "Auch früher beginnen: Die erste Verpflegung gehört in die ersten 30–40 Minuten, nicht erst nach {atMin}.",
+  "finding.climbUnfuelled": "Der {gain}-m-Anstieg ab km {km} ist die Stelle, an der diese Lücke zuschlägt — nehmen Sie die Kohlenhydrate schon im Anlauf.",
+  "finding.noLog": "Sagen Sie uns, wie es lief — dann zeigen wir Ihnen genau, wo die Verpflegung zu kurz kam.",
+  "finding.shortSession": "Unter einer Stunde — die Verpflegung während der Einheit war hier nicht entscheidend.",
+
   // ---- Catalog & shop -----------------------------------------------------
   "catalog.title": "Produktübersicht",
   "catalog.bestWhen": "Ideal wenn",
@@ -270,6 +307,8 @@ export const de: Dictionary = {
   "toast.planActive": "Ihr {tier}-Abo ist aktiv.",
   "toast.connected": "{provider} verbunden — Ihre Einheiten werden synchronisiert.",
   "toast.planningRoute": "Planung für Ihre Route — Bedingungen übernommen",
+  "toast.sessionLogged": "Erfasst — das sagt uns die Einheit.",
+  "toast.saveFailed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
 
   // ---- Nutrition guide ----------------------------------------------------
   "guide.title": "Ernährungs- & Verpflegungsratgeber",

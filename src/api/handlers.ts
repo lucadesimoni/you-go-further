@@ -119,6 +119,32 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
     return { ...p, role: user.role, tier: user.tier, orgId: user.orgId ?? p.orgId };
   }
 
+  /**
+   * OAuth `state` → the athlete who started the flow.
+   *
+   * A provider consent screen sends the browser back as a *top-level
+   * navigation*, which carries no Authorization header — so the callback cannot
+   * tell who it is for. Binding the identity to the one-time `state` value is
+   * what `state` is for, and it keeps the session token out of URLs (where it
+   * would land in server logs and Referer headers). Single-use, 10 minutes.
+   */
+  const oauthStates = new Map<string, { userId: string; at: number }>();
+  const STATE_TTL_MS = 10 * 60 * 1000;
+  function mintState(userId: string): string {
+    const now = Date.now();
+    for (const [k, v] of oauthStates) if (now - v.at > STATE_TTL_MS) oauthStates.delete(k);
+    const state = `${now.toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+    oauthStates.set(state, { userId, at: now });
+    return state;
+  }
+  function claimState(state: string | undefined): string | undefined {
+    if (!state) return undefined;
+    const entry = oauthStates.get(state);
+    if (!entry) return undefined;
+    oauthStates.delete(state);
+    return Date.now() - entry.at > STATE_TTL_MS ? undefined : entry.userId;
+  }
+
   return async function route(req: ApiRequest): Promise<ApiResponse> {
     const { method, path, query, body, rawBody, headers, principal } = req;
     const key = `${method} ${path}`;
@@ -136,8 +162,10 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         if (action === "start") {
           // Top-level navigation entry point: 302 the browser to the provider's
           // consent screen (or the dev stub), which returns to the callback.
+          // The caller should mint `state` from `authorize-url` first — that is
+          // the only step that knows who is signing in.
           const returnTo = query.return_to ?? "";
-          const state = query.state ?? Math.random().toString(36).slice(2);
+          const state = query.state ?? mintState(principal.id);
           const hasCreds = Boolean(getEnv(`${provider.toUpperCase()}_CLIENT_ID`));
           const redirect = hasCreds
             ? prov.authorizeUrl(query.redirect_uri ?? `/api/oauth/${provider}/callback`, state)
@@ -147,7 +175,9 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
 
         if (action === "authorize-url") {
           const returnTo = query.return_to ?? "";
-          const state = query.state ?? Math.random().toString(36).slice(2);
+          // Authenticated call: bind the flow to this athlete, so whatever comes
+          // back from the provider lands on their account and nobody else's.
+          const state = mintState(principal.id);
           // Dev (or no real adapter): route to a local consent stub so the flow
           // completes without a registered app. Prod: the real provider URL.
           const hasCreds = Boolean(getEnv(`${provider.toUpperCase()}_CLIENT_ID`));
@@ -159,11 +189,15 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         }
 
         if (action === "dev-consent") {
-          // Stand-in for the provider's consent screen (dev only).
+          // Stand-in for the provider's consent screen (dev only). It must hand
+          // `state` on to the callback exactly as a real provider would.
           const returnTo = query.return_to ?? "";
+          const state = query.state ? `&state=${encodeURIComponent(query.state)}` : "";
           return {
             status: 302,
-            data: { redirect: `/api/oauth/${provider}/callback?code=dev-code&return_to=${encodeURIComponent(returnTo)}` },
+            data: {
+              redirect: `/api/oauth/${provider}/callback?code=dev-code&return_to=${encodeURIComponent(returnTo)}${state}`,
+            },
           };
         }
 
@@ -173,9 +207,13 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           const cred = prov.exchangeToken
             ? await prov.exchangeToken(code, query.redirect_uri ?? "")
             : { provider, accessToken: `dev-${provider}-token` };
-          await connections.save(principal.id, cred);
+          // Who this is for comes from the one-time `state`, not the request:
+          // a consent redirect carries no session, so trusting the request's
+          // principal would file another athlete's training under the demo user.
+          const ownerId = claimState(query.state) ?? principal.id;
+          await connections.save(ownerId, cred);
           const activities = await prov.fetchActivities(cred, lastNDays(28));
-          const inserted = await store.upsert(activities);
+          const inserted = await store.upsert(activities, ownerId);
           if (query.return_to) {
             const sep = query.return_to.includes("?") ? "&" : "?";
             return { status: 302, data: { redirect: `${query.return_to}${sep}connected=${provider}` } };
@@ -229,7 +267,7 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
       // client (web, mobile) shows exactly the same numbers ------------------
       if (key === "GET /api/insights") {
         const [acts, logs, prof, conns] = await Promise.all([
-          store.query(),
+          store.query({ userId: principal.id }),
           feedback.list(principal.id),
           profiles.get(principal.id),
           connections.list(principal.id),
@@ -264,7 +302,7 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
       if (key === "POST /api/health/sync") {
         const sync = normalizeHealthSync(body);
         if (!sync) return bad("Unknown health platform or malformed payload.");
-        const inserted = await store.upsert(sync.activities);
+        const inserted = await store.upsert(sync.activities, principal.id);
         const update = profileUpdateFromSync(sync, DESCRIPTORS[sync.platform].displayName);
         // Real measured signals beat the population estimate — but only say so
         // when something actually came back.
@@ -590,9 +628,15 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           }
           const entry: SessionFeedback = {
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            // Attach the session when the client names one, so a debrief can
+            // hold this log against that run's actual terrain.
+            ...(typeof b.activityId === "string" && b.activityId ? { activityId: b.activityId.slice(0, 200) } : {}),
             date: new Date().toISOString(),
             durationMin: typeof b.durationMin === "number" ? b.durationMin : 0,
             plannedCarbPerHourG: typeof b.plannedCarbPerHourG === "number" ? b.plannedCarbPerHourG : 0,
+            ...(typeof b.actualCarbPerHourG === "number"
+              ? { actualCarbPerHourG: Math.max(0, Math.min(200, Math.round(b.actualCarbPerHourG))) }
+              : {}),
             gi: b.gi,
             energy: b.energy,
           };
@@ -615,12 +659,20 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           const b = (body ?? {}) as { provider?: string; days?: number };
           const provider = b.provider as ProviderId | undefined;
           if (!provider || !ALL_PROVIDER_IDS.includes(provider)) return bad("Unknown provider");
-          const res = await pipeline.ingest(provider, { provider, accessToken: "demo" }, lastNDays(b.days ?? 28));
-          return ok({ provider, fetched: res.fetched, inserted: res.inserted, totalStored: await store.count() });
+          const res = await pipeline.ingest(
+            provider,
+            { provider, accessToken: "demo" },
+            lastNDays(b.days ?? 28),
+            principal.id,
+          );
+          return ok({ provider, fetched: res.fetched, inserted: res.inserted, totalStored: await store.count(principal.id) });
         }
 
         case key === "GET /api/activities": {
           const activities = await store.query({
+            // Scoped to the signed-in athlete: without this, one athlete's start
+            // screen would count everybody's sessions as their own.
+            userId: principal.id,
             provider: (query.provider as ProviderId) || undefined,
             after: query.after,
           });
@@ -628,7 +680,7 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         }
 
         case key === "GET /api/analysis": {
-          const activities = await store.query();
+          const activities = await store.query({ userId: principal.id });
           if (!activities.length) return ok({ empty: true });
           const profile = { bodyWeightKg: Number(query.bodyWeightKg) || 70, maxHr: Number(query.maxHr) || 190 };
           const goal = (query.goal as AthleteInput["goal"]) || "endurance-performance";
@@ -636,7 +688,7 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         }
 
         case key === "GET /api/physiology": {
-          const activities = await store.query();
+          const activities = await store.query({ userId: principal.id });
           const providers = [...new Set(activities.map((a) => a.provider))];
           const wellness = providers.flatMap((p) => generateSampleWellness(p, Number(query.days) || 21));
           return ok(derivePhysiology(wellness));

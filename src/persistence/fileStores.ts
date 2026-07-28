@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import type { Activity, ProviderId } from "../model";
-import type { ActivityQuery, ActivityStore } from "../data";
+import type { ActivityQuery, ActivityStore, OwnedActivity } from "../data";
+import { matchesQuery, ownedKey, withoutOwner } from "../data";
 import type { FeedbackStore, SessionFeedback } from "../feedback";
 import type { ConnectionStore, ProviderConnection } from "../providers";
 import type { ProviderCredential } from "../providers/types";
@@ -20,49 +21,46 @@ import { JsonFile } from "./jsonFile";
  */
 
 export class FileActivityStore implements ActivityStore {
-  private readonly file: JsonFile<Activity[]>;
-  private readonly byId: Map<string, Activity>;
+  private readonly file: JsonFile<OwnedActivity[]>;
+  private readonly byId: Map<string, OwnedActivity>;
 
   constructor(dir: string) {
     this.file = new JsonFile(join(dir, "activities.json"), []);
-    this.byId = new Map(this.file.read().map((a) => [a.id, a]));
+    // Rows written before sessions were owned have no userId; they stay
+    // readable and simply belong to nobody.
+    this.byId = new Map(this.file.read().map((a) => [ownedKey(a.userId, a.id), a]));
   }
 
   private flush() {
     this.file.write([...this.byId.values()]);
   }
 
-  async upsert(activities: Activity[]): Promise<number> {
+  async upsert(activities: Activity[], userId?: string): Promise<number> {
     let inserted = 0;
     for (const a of activities) {
-      if (!this.byId.has(a.id)) inserted++;
-      this.byId.set(a.id, a);
+      const key = ownedKey(userId, a.id);
+      if (!this.byId.has(key)) inserted++;
+      this.byId.set(key, userId === undefined ? { ...a } : { ...a, userId });
     }
     this.flush();
     return inserted;
   }
 
   async query(q: ActivityQuery = {}): Promise<Activity[]> {
-    const afterMs = q.after ? Date.parse(q.after) : undefined;
-    const beforeMs = q.before ? Date.parse(q.before) : undefined;
     return [...this.byId.values()]
-      .filter((a) => {
-        if (q.provider && a.provider !== q.provider) return false;
-        if (q.sport && a.sport !== q.sport) return false;
-        const t = Date.parse(a.startTime);
-        if (afterMs !== undefined && t < afterMs) return false;
-        if (beforeMs !== undefined && t >= beforeMs) return false;
-        return true;
-      })
-      .sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime));
+      .filter((a) => matchesQuery(a, q))
+      .sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime))
+      .map(withoutOwner);
   }
 
-  async count(): Promise<number> {
-    return this.byId.size;
+  async count(userId?: string): Promise<number> {
+    if (userId === undefined) return this.byId.size;
+    return [...this.byId.values()].filter((a) => a.userId === userId).length;
   }
 
-  async clear(): Promise<void> {
-    this.byId.clear();
+  async clear(userId?: string): Promise<void> {
+    if (userId === undefined) this.byId.clear();
+    else for (const [key, a] of this.byId) if (a.userId === userId) this.byId.delete(key);
     this.flush();
   }
 }

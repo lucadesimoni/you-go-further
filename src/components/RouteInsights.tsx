@@ -3,6 +3,9 @@ import type { LatLng } from "../model";
 import type { Activity } from "../engine";
 import { enrichRoute, type RouteConditions } from "../geo";
 import { computeTarget, planRouteFuelling } from "../engine";
+import { debriefSession, logForActivity } from "../analysis";
+import { SessionDebrief } from "./SessionDebrief";
+import type { SessionFeedback } from "../feedback";
 import { loadProfile } from "../api/profileStore";
 import { ElevationFuelChart } from "./ElevationFuelChart";
 import type { SessionInput } from "./Planner";
@@ -25,6 +28,9 @@ export function RouteInsights({
   route,
   hintGainM,
   hintDistanceKm,
+  activityId,
+  feedback = [],
+  onLogSession,
   activity,
   durationMin,
   onPlan,
@@ -33,6 +39,14 @@ export function RouteInsights({
   hintGainM?: number;
   /** The session's recorded distance — more reliable than measuring the track. */
   hintDistanceKm?: number;
+  /** The synced session this route belongs to, when it is a past run. */
+  activityId?: string;
+  /** The athlete's logs, so a past run can be held against what really happened. */
+  feedback?: SessionFeedback[];
+  onLogSession?: (
+    activityId: string,
+    entry: Pick<SessionFeedback, "gi" | "energy" | "actualCarbPerHourG"> & { durationMin: number; plannedCarbPerHourG: number },
+  ) => Promise<void> | void;
   activity?: Activity;
   durationMin?: number;
   onPlan?: (prefill: Partial<SessionInput>) => void;
@@ -40,6 +54,7 @@ export function RouteInsights({
   const t = useT();
   const [data, setData] = useState<RouteConditions | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -70,12 +85,35 @@ export function RouteInsights({
     conditions: weather.conditions,
     sweatLevel: bodyProfile.sweatLevel,
   });
+  const sessionInput = {
+    goal: "endurance-performance" as const,
+    activity: activity ?? ("trail-running" as const),
+    durationMin: durationMin ?? Math.round(terrain.distanceKm * 6),
+    intensity: "moderate" as const,
+    bodyWeightKg: bodyProfile.bodyWeightKg,
+    conditions: weather.conditions,
+    sweatLevel: bodyProfile.sweatLevel,
+  };
   const fuelPlan = planRouteFuelling({
     samples: terrain.samples,
     activity,
     durationMin,
     carbPerHourG: target.carbPerHourG,
+    // With the session and target in hand, every stop can name a real product.
+    input: sessionInput,
+    target,
   });
+
+  // A past run can be held against what the athlete says actually happened.
+  const log = activityId ? logForActivity(feedback, activityId) : undefined;
+  const debrief = activityId
+    ? debriefSession({
+        plan: fuelPlan,
+        requiredCarbPerHourG: target.carbPerHourG,
+        log,
+        durationMin: durationMin ?? sessionInput.durationMin,
+      })
+    : null;
 
   return (
     <div className="geo">
@@ -133,10 +171,39 @@ export function RouteInsights({
         </div>
       </div>
 
+      {/* The debrief comes first for a past run: "how did that go?" is the
+          question the athlete actually has, and answering it is what makes the
+          plan below meaningful. */}
+      {debrief && activityId && (
+        <SessionDebrief
+          debrief={debrief}
+          plan={fuelPlan}
+          saving={saving}
+          onLog={
+            onLogSession
+              ? async (entry) => {
+                  setSaving(true);
+                  try {
+                    await onLogSession(activityId, {
+                      ...entry,
+                      durationMin: durationMin ?? sessionInput.durationMin,
+                      plannedCarbPerHourG: target.carbPerHourG,
+                    });
+                  } finally {
+                    setSaving(false);
+                  }
+                }
+              : undefined
+          }
+        />
+      )}
+
       {fuelPlan.stops.length > 0 && (
         <div className="route-fuel">
           <div className="route-fuel-head">
-            <h4 className="geo-title">{t("route.fuelByTerrain")}</h4>
+            {/* Same stops, different question: on a reviewed past run this list
+                is the answer to "what should I have taken?". */}
+            <h4 className="geo-title">{debrief?.hasLog ? t("debrief.whereToTake") : t("route.fuelByTerrain")}</h4>
             <span className="pill">{fuelPlan.climbs.length > 0 ? t("route.byTerrain") : t("route.evenSpacing")}</span>
           </div>
           <ElevationFuelChart plan={fuelPlan} estimated={terrain.source === "estimated"} />

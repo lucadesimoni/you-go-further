@@ -3,28 +3,31 @@ import type { Activity, ProviderId } from "../model";
 import { ALL_PROVIDER_IDS, DEVICE_PLATFORM_IDS, DESCRIPTORS, generateSampleWellness, ProviderRegistry } from "../providers";
 import type { ProviderCredential } from "../providers/types";
 import { IngestionPipeline, InMemoryActivityStore, lastNDays, toNdjson } from "../data";
-import { analyze, derivePhysiology, sportToActivity } from "../analysis";
+import { analyze, derivePhysiology, logForActivity, sportToActivity } from "../analysis";
 import type { SessionInput } from "./Planner";
 import { GOALS } from "../options";
 import { can, limit, PLANS, requiredTierFor, type Tier } from "../subscription";
 import type { AthleteInput } from "../engine";
-import { isApiConfigured } from "../api/client";
+import { api, isApiConfigured } from "../api/client";
+import type { SessionFeedback } from "../feedback";
 import { getConfig } from "../config";
 import { loadProfile } from "../api/profileStore";
 import { Stat } from "./Stat";
-import { useT } from "../i18n";
+import { useI18n, type TranslationKey } from "../i18n";
 import { RouteInsights } from "./RouteInsights";
 // Code-split: Leaflet (~150 KB) loads only when a route map is actually shown.
 const RouteMap = lazy(() => import("./RouteMap").then((m) => ({ default: m.RouteMap })));
 
-/** Readable sport names for the route picker. */
-const SPORT_LABEL: Record<string, string> = {
-  run: "Run",
-  "trail-run": "Trail run",
-  ride: "Ride",
-  swim: "Swim",
-  triathlon: "Triathlon",
-  other: "Session",
+/**
+ * Sport names for the route picker — the same translated names the start screen
+ * uses, so a session called "Trail running" there isn't "Trail run" here.
+ */
+const SPORT_KEY: Record<string, TranslationKey> = {
+  run: "activity.running",
+  "trail-run": "activity.trail-running",
+  ride: "activity.cycling",
+  swim: "activity.swimming",
+  triathlon: "activity.triathlon",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -37,15 +40,29 @@ const STATUS_LABEL: Record<string, string> = {
 /** Connections + analysis workspace. Feature access is gated by the active tier. */
 export function Dashboard({
   tier,
+  feedback = [],
+  onLogSession,
+  focusActivityId,
   onPlanRoute,
   onEditProfile,
 }: {
   tier: Tier;
+  /** The athlete's session logs, so a past route can be debriefed here. */
+  feedback?: SessionFeedback[];
+  onLogSession?: (
+    activityId: string,
+    entry: Pick<SessionFeedback, "gi" | "energy" | "actualCarbPerHourG"> & {
+      durationMin: number;
+      plannedCarbPerHourG: number;
+    },
+  ) => Promise<void> | void;
+  /** Open on a specific session — e.g. "How did it go?" from the start screen. */
+  focusActivityId?: string;
   onPlanRoute?: (prefill: Partial<SessionInput>) => void;
   /** Opens the one place body data is edited. */
   onEditProfile?: () => void;
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
   const registry = useRef(new ProviderRegistry());
   const store = useRef(new InMemoryActivityStore());
   const pipeline = useRef(new IngestionPipeline(registry.current, store.current));
@@ -77,6 +94,19 @@ export function Dashboard({
     async (providers: Set<ProviderId>) => {
       setBusy("all");
       await store.current.clear();
+      // With an API, the server already holds the athlete's imported sessions —
+      // and the start screen reads that same list. Re-generating them here would
+      // give the two screens different sessions with different ids, so a
+      // "review this run" handoff would silently land on the wrong one.
+      if (isApiConfigured()) {
+        try {
+          setActivities((await api.activities()).activities);
+          setBusy(null);
+          return;
+        } catch {
+          /* API unreachable — fall back to the local pipeline below */
+        }
+      }
       const creds: ProviderCredential[] = [...providers].map((p) => ({ provider: p, accessToken: "demo" }));
       const window = lastNDays(Math.min(historyDays, 120));
       if (creds.length) await pipeline.current.ingestAll(creds, window);
@@ -101,9 +131,10 @@ export function Dashboard({
     const justConnected = new URLSearchParams(window.location.search).get("connected");
     (async () => {
       try {
-        const res = await fetch(`${apiBase}/api/connections`, { headers: { "x-role": "athlete" } });
-        const data = (await res.json()) as { connections: { provider: ProviderId }[] };
-        const provs = new Set(data.connections.map((c) => c.provider));
+        // Through the API client, so the request carries the session: a
+        // role header would read the demo persona's connections instead.
+        const data = await api.connections();
+        const provs = new Set(data.connections.map((c) => c.provider as ProviderId));
         setConnected(provs);
         await sync(provs);
         if (justConnected) {
@@ -122,7 +153,7 @@ export function Dashboard({
     if (oauthMode) {
       if (connected.has(id)) {
         setBusy(id);
-        await fetch(`${apiBase}/api/connections/${id}`, { method: "DELETE", headers: { "x-role": "athlete" } });
+        await api.connectionRemove(id);
         const next = new Set(connected);
         next.delete(id);
         setConnected(next);
@@ -130,7 +161,10 @@ export function Dashboard({
         return;
       }
       if (connected.size >= maxProviders) return;
-      window.location.href = `${apiBase}/api/oauth/${id}/start?return_to=${encodeURIComponent(window.location.href)}`;
+      // Fetch the consent URL with the session attached, so the `state` it
+      // carries binds the imported sessions to this athlete (see the router).
+      const { authorizeUrl } = await api.oauthAuthorizeUrl(id, window.location.href);
+      window.location.href = authorizeUrl.startsWith("http") ? authorizeUrl : `${apiBase}${authorizeUrl}`;
       return;
     }
 
@@ -176,8 +210,17 @@ export function Dashboard({
     return picked.sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime));
   }, [activities]);
 
+  const dateFmt = useMemo(
+    () => new Intl.DateTimeFormat(lang === "de" ? "de-CH" : "en-GB", { day: "numeric", month: "short" }),
+    [lang],
+  );
   const [routeId, setRouteId] = useState<string | null>(null);
+  // Arriving from "How did it go?" on the start screen: open that session.
+  useEffect(() => {
+    if (focusActivityId) setRouteId(focusActivityId);
+  }, [focusActivityId]);
   const routedActivity = routedActivities.find((a) => a.id === routeId) ?? routedActivities[0] ?? null;
+  const unreviewed = (id: string) => !logForActivity(feedback, id);
   const physiology = useMemo(() => {
     const wellness = [...connected].flatMap((p) => generateSampleWellness(p, 21));
     return derivePhysiology(wellness);
@@ -332,15 +375,20 @@ export function Dashboard({
                 <button
                   key={a.id}
                   type="button"
-                  className={`chip${a.id === routedActivity.id ? " chip-active" : ""}`}
+                  className={`chip${a.id === routedActivity.id ? " chip-active" : ""}${
+                    unreviewed(a.id) ? " chip-todo" : ""
+                  }`}
                   aria-pressed={a.id === routedActivity.id}
                   onClick={() => setRouteId(a.id)}
                 >
-                  {SPORT_LABEL[a.sport] ?? a.sport}
+                  {SPORT_KEY[a.sport] ? t(SPORT_KEY[a.sport]) : a.sport}
                   <span className="chip-meta">
-                    {new Date(a.startTime).toLocaleDateString("de-CH", { day: "numeric", month: "short" })}
+                    {dateFmt.format(new Date(a.startTime))}
                     {a.distanceM ? ` · ${(a.distanceM / 1000).toFixed(0)} km` : ""}
                   </span>
+                  {/* A quiet dot marks the sessions still waiting for a debrief,
+                      so the athlete sees where the gap is without reading. */}
+                  {unreviewed(a.id) && <span className="chip-dot" aria-label={t("debrief.notLogged")} />}
                 </button>
               ))}
             </div>
@@ -358,6 +406,9 @@ export function Dashboard({
               }
               activity={sportToActivity(routedActivity.sport)}
               durationMin={Math.round(routedActivity.durationSec / 60)}
+              activityId={routedActivity.id}
+              feedback={feedback}
+              onLogSession={onLogSession}
               onPlan={onPlanRoute}
             />
           )}

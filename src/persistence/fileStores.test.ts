@@ -63,3 +63,45 @@ describe("file-backed stores persist across restarts", () => {
     expect(await new FileConnectionStore(dir).list("user-a")).toHaveLength(0);
   });
 });
+
+describe("sessions belong to one athlete", () => {
+  const owned = mkdtempSync(join(tmpdir(), "ygf-owned-"));
+  afterAll(() => rmSync(owned, { recursive: true, force: true }));
+
+  it("never returns another athlete's sessions", async () => {
+    const s = new FileActivityStore(owned);
+    await s.upsert([activity("1"), activity("2")], "user-a");
+    await s.upsert([activity("9")], "user-b");
+
+    expect((await s.query({ userId: "user-a" })).map((a) => a.id)).toEqual(["strava:1", "strava:2"]);
+    expect((await s.query({ userId: "user-b" })).map((a) => a.id)).toEqual(["strava:9"]);
+    expect(await s.count("user-a")).toBe(2);
+  });
+
+  it("keeps two athletes' identically-numbered sessions apart", async () => {
+    // A provider activity id is unique within an account, not across the
+    // platform: "strava:1" can be a different ride for a different athlete.
+    const s = new FileActivityStore(mkdtempSync(join(tmpdir(), "ygf-owned2-")));
+    await s.upsert([{ ...activity("1"), durationSec: 3600 }], "user-a");
+    await s.upsert([{ ...activity("1"), durationSec: 7200 }], "user-b");
+
+    expect(await s.count()).toBe(2);
+    expect((await s.query({ userId: "user-a" }))[0].durationSec).toBe(3600);
+    expect((await s.query({ userId: "user-b" }))[0].durationSec).toBe(7200);
+  });
+
+  it("does not hand the ownership marker back to callers", async () => {
+    const s = new FileActivityStore(mkdtempSync(join(tmpdir(), "ygf-owned3-")));
+    await s.upsert([activity("1")], "user-a");
+    expect(Object.keys((await s.query({ userId: "user-a" }))[0])).not.toContain("userId");
+  });
+
+  it("clears one athlete without touching the other", async () => {
+    const s = new FileActivityStore(mkdtempSync(join(tmpdir(), "ygf-owned4-")));
+    await s.upsert([activity("1")], "user-a");
+    await s.upsert([activity("2")], "user-b");
+    await s.clear("user-a");
+    expect(await s.count("user-a")).toBe(0);
+    expect(await s.count("user-b")).toBe(1);
+  });
+});

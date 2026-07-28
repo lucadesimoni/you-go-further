@@ -28,9 +28,11 @@ export class IngestionPipeline {
     provider: ProviderId,
     credential: ProviderCredential,
     range: FetchRange,
+    /** Whose sessions these are. Omitted only by the client-side demo store. */
+    userId?: string,
   ): Promise<IngestResult> {
     const activities = await this.registry.get(provider).fetchActivities(credential, range);
-    const inserted = await this.store.upsert(activities);
+    const inserted = await this.store.upsert(activities, userId);
     for (const sink of this.sinks) await sink.write(activities);
     return { provider, fetched: activities.length, inserted, activities };
   }
@@ -39,8 +41,9 @@ export class IngestionPipeline {
   async ingestAll(
     credentials: ProviderCredential[],
     range: FetchRange,
+    userId?: string,
   ): Promise<IngestResult[]> {
-    return Promise.all(credentials.map((c) => this.ingest(c.provider, c, range)));
+    return Promise.all(credentials.map((c) => this.ingest(c.provider, c, range, userId)));
   }
 }
 

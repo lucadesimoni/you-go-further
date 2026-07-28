@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Planner, type SessionInput } from "./components/Planner";
 import { Dashboard } from "./components/Dashboard";
 import { TeamView } from "./components/TeamView";
@@ -22,7 +22,7 @@ import { getConfig } from "./config";
 import type { Activity } from "./model";
 import { computeProgress, fuellingScore } from "./progress";
 import { sportToActivity } from "./analysis";
-import { loadFeedback } from "./api/feedbackStore";
+import { addFeedback, loadFeedback } from "./api/feedbackStore";
 import type { SessionFeedback } from "./feedback";
 import { syncProfile, loadProfile } from "./api/profileStore";
 import { api, clearSessionToken, setSessionToken, isApiConfigured } from "./api/client";
@@ -63,6 +63,9 @@ export function App() {
 
   const [feedback, setFeedback] = useState<SessionFeedback[]>([]);
   const feedbackCount = feedback.length;
+  // Which past session the athlete asked to review, carried from the start
+  // screen into Connect so "How did it go?" lands on that exact run.
+  const [reviewActivityId, setReviewActivityId] = useState<string>();
 
   const visibleTabs = useMemo(() => (account ? TABS.filter((t) => hasPermission(account, t.perm)) : []), [account]);
   const canBilling = account ? hasPermission(account, "billing:manage") || isSolo(account) : false;
@@ -94,6 +97,33 @@ export function App() {
         hasMeasuredSweatRate: loadProfile().useSignals,
       }),
     [feedback, activities, connectionsCount],
+  );
+
+  /**
+   * Log a past session against the activity it belongs to.
+   *
+   * Kept here rather than inside Connect because the log feeds three surfaces —
+   * the debrief, the fuelling score and the planner's learned adaptation — and
+   * they must all move at once. Passing the activity id is what makes the log
+   * a debrief instead of an anonymous rating.
+   */
+  const logSession = useCallback(
+    async (
+      activityId: string,
+      entry: Pick<SessionFeedback, "gi" | "energy" | "actualCarbPerHourG"> & {
+        durationMin: number;
+        plannedCarbPerHourG: number;
+      },
+    ) => {
+      if (!account) return;
+      try {
+        setFeedback(await addFeedback(account.role, { ...entry, activityId }));
+        toast.success(t("toast.sessionLogged"));
+      } catch {
+        toast.error(t("toast.saveFailed"));
+      }
+    },
+    [account, t],
   );
 
   useEffect(() => {
@@ -266,8 +296,15 @@ export function App() {
             progress={progress}
             fuelling={fuelling}
             activities={activities}
+            feedback={feedback}
             hasSyncedData={hasSyncedData}
             onNavigate={setTab}
+            onReviewSession={(a) => {
+              // Straight to the debrief for that run, not to a generic screen
+              // the athlete then has to search through.
+              setReviewActivityId(a.id);
+              setTab("connect");
+            }}
             onFuelSession={(a) => {
               // Carry the session's own shape into the planner rather than
               // making the athlete retype it.
@@ -290,6 +327,9 @@ export function App() {
         {tab === "connect" && (
           <Dashboard
             tier={tier}
+            feedback={feedback}
+            onLogSession={logSession}
+            focusActivityId={reviewActivityId}
             onEditProfile={() => setTab("profile")}
             onPlanRoute={(prefill) => {
               setPlannerPrefill(prefill);

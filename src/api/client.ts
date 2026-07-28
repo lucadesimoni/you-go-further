@@ -121,6 +121,10 @@ export interface NewFeedback {
   energy: SessionFeedback["energy"];
   durationMin: number;
   plannedCarbPerHourG: number;
+  /** The synced session this log belongs to — what lets it be debriefed later. */
+  activityId?: string;
+  /** What the athlete actually took, when they know it. */
+  actualCarbPerHourG?: number;
 }
 
 export const api = {
@@ -157,7 +161,18 @@ export const api = {
   profileGet: () => call<{ profile: AthleteProfile }>("GET", "/api/profile"),
   profileSave: (patch: Partial<AthleteProfile>) => call<{ profile: AthleteProfile }>("POST", "/api/profile", { body: patch }),
   activities: (limit = 500) => call<{ count: number; activities: Activity[] }>("GET", `/api/activities?limit=${limit}`),
+  /**
+   * Start a provider connect. It is fetched (not navigated to) on purpose: this
+   * call carries the session, so the `state` it returns is bound to the athlete
+   * and whatever comes back from the provider lands on *their* account.
+   */
+  oauthAuthorizeUrl: (provider: string, returnTo: string) =>
+    call<{ authorizeUrl: string; configured: boolean; live: boolean; state: string }>(
+      "GET",
+      `/api/oauth/${provider}/authorize-url?return_to=${encodeURIComponent(returnTo)}`,
+    ),
   connections: () => call<{ connections: { provider: string }[] }>("GET", "/api/connections"),
+  connectionRemove: (provider: string) => call<{ connections: { provider: string }[] }>("DELETE", `/api/connections/${provider}`),
   emailLinkRequest: (email: string, returnTo: string) =>
     call<EmailRequestResponse>("POST", "/api/auth/email/request", { body: { email, returnTo } }),
   emailLinkVerify: (token: string) =>

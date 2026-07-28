@@ -85,8 +85,61 @@ I do today?* — and everything else on the page is context for that answer.
 | **Your next move** | The single most useful action, taken straight from the fuelling score's own ranking. Reusing that ranking is deliberate: Home and Insights can never give contradictory advice. |
 | Last 7 days | A rolling window, not a calendar week — on a Tuesday "this week: 2 sessions" is useless — with the change in hours against the previous seven days. |
 | Fuelling | The score and band at a glance, with a link into the full breakdown. |
-| Recent sessions | The last three, each able to jump straight into the planner pre-filled with that session's shape. |
+| Recent sessions | The last three. A run that has never been reviewed asks **"How did it go?"** and opens its debrief; a reviewed one is marked *Logged*. Either way it can also jump straight into the planner pre-filled with that session's shape. |
 | Your tools | Role-relevant shortcuts. Coaches get their squad; nutritionists also get the product library; admins and owners get the platform. Staff still see all the athlete cards above — coaches train too. |
 
 Nothing is invented: an athlete with no synced sessions is told so and offered
 the connect action, rather than shown zeros dressed up as achievement.
+
+## The past-run debrief
+
+The loop was only half closed: the platform could work out what a route demanded
+and where the feeds belonged, but session logs were an *unconnected dataset* —
+`SessionFeedback` had no link to an activity — so it could never answer the one
+question an athlete asks after a bad run: **what should I have done differently?**
+
+`SessionFeedback.activityId` joins the two, and `src/analysis/debrief.ts` reads
+them together. The flow is one line, not a new screen:
+
+1. **Home** counts the recent sessions with no log and asks about the oldest one
+   first ("How did it go?"). *Your next move* points at the same session when one
+   is waiting, so the headline advice and the mechanism agree.
+2. **Connect** opens on that exact session (the route picker marks unreviewed
+   ones with a quiet dot) and the debrief panel sits above the route's fuel plan.
+3. Unlogged, the panel **asks** — gut, energy, carbs actually taken — rather than
+   showing an empty state. The log is the missing input, so requesting it is the
+   most useful thing that surface can do.
+4. Logged, the same panel becomes the answer: what the route needed vs. what was
+   taken, the gap, and findings that name the climb where the gap bit.
+5. The route's own stop list below is **re-titled** "Where to take what, next
+   time" and each stop names a real product (`Winforce Carbo Load · 60 g in
+   500 ml`), chosen by the same `scoreForSlot` the planner uses. One list, not a
+   second copy for the athlete to reconcile.
+
+Two rules hold the reasoning honest:
+
+- **No log, no verdict.** An invented one would be acted on, so an unlogged
+  session reports *"Not enough to judge"* and no gap figure at all.
+- **The gut comes first.** A severe-GI session is *gut-limited*, never
+  *under-fuelled* — telling someone to eat more when their stomach was rejecting
+  what went in is the one piece of advice that actively hurts.
+
+## Sessions belong to one athlete
+
+The activity store had no user dimension: every athlete's imported sessions went
+into one pool and `GET /api/activities` returned all of them. It was invisible
+while everyone saw the same demo data, and it surfaced the moment Home started
+counting sessions — "29 sessions in the last 7 days" was several accounts' data
+added together.
+
+Activities are now keyed by **owner + activity id** (a provider id like
+`strava:123` is only unique inside one account), and every athlete-facing read is
+scoped to the signed-in principal. Platform-wide counts — health, admin overview
+— still read across everyone, deliberately.
+
+That exposed a second one: a provider's consent screen returns as a *top-level
+navigation*, which carries no `Authorization` header, so the callback filed the
+import under the demo persona instead of the athlete who started it. The OAuth
+`state` is now minted by an authenticated `authorize-url` call, bound server-side
+to that athlete, single-use and valid ten minutes — which is what `state` is for,
+and keeps the session token out of URLs and server logs.

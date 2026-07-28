@@ -95,6 +95,12 @@ await step("the next move matches what Insights recommends", async () => {
 await step("the week's figures are real, and the session list is the athlete's own", async () => {
   const week = await page.locator(".home .targets").innerText();
   if (!/Sessions/.test(week)) throw new Error(`week card missing: ${week}`);
+  // Sessions belong to one athlete. A shared store would show this account
+  // everyone else's training as its own — and 7 days can't hold 20 sessions.
+  const sessions = Number(/(\d+)\s*Sessions/.exec(week.replace(/\n/g, " "))?.[1]);
+  if (!(sessions >= 1 && sessions <= 14)) {
+    throw new Error(`implausible weekly session count (other athletes' data?): ${sessions}`);
+  }
   const rows = await page.locator(".home-session").count();
   if (rows === 0) throw new Error("no recent sessions listed after a sync");
   const first = await page.locator(".home-session").first().innerText();
@@ -179,6 +185,12 @@ await step("Swiss routes are drawn on the swisstopo national map", async () => {
     if (!labels.includes(want)) throw new Error(`missing swisstopo layer "${want}" (got ${labels.join(", ")})`);
   }
 });
+await step("the service connected during setup shows as connected", async () => {
+  // The connection belongs to the signed-in athlete, so Connect must read it
+  // with the session — not as an anonymous demo role.
+  const strava = await page.locator('.provider-card:has-text("Strava")').innerText();
+  if (!/Disconnect/.test(strava)) throw new Error(`Strava was connected in setup but reads: ${strava}`);
+});
 await step("a run can be chosen, not just the latest ride", async () => {
   const chips = await page.locator(".route-picker .chip").allInnerTexts();
   const run = chips.find((c) => /^Run|^Trail run/.test(c));
@@ -229,6 +241,83 @@ await step("the weather panel names its source instead of implying MeteoSwiss", 
   // "MeteoSwiss" over a number we guessed.
   if (/MeteoSwiss ·/.test(note)) return; // a real station reading
   if (!/estimate|ICON-CH/i.test(note)) throw new Error(`unlabelled weather source: ${note}`);
+});
+
+console.log("── past-run debrief ──");
+await step("the start screen asks about runs that were never reviewed", async () => {
+  await page.click('button.topnav-tab:has-text("Home")');
+  await page.waitForSelector(".home-greeting");
+  const pending = await page.locator(".pill-todo").count();
+  if (pending === 0) throw new Error("synced sessions but nothing offered for review");
+  const cta = await page.locator(".home-session-actions .link-strong").count();
+  if (cta === 0) throw new Error('no "How did it go?" on any recent session');
+});
+await step("it opens the debrief for that exact session, not the newest one", async () => {
+  // Deliberately take the *oldest* offered session: a handoff that always lands
+  // on the latest run would pass if we clicked the first.
+  const rows = page.locator(".home-session");
+  const n = await rows.count();
+  let target = null;
+  for (let i = n - 1; i >= 0 && !target; i--) {
+    if (await rows.nth(i).locator(".link-strong").count()) target = rows.nth(i);
+  }
+  const rowText = await target.innerText();
+  const km = /([\d.]+) km/.exec(rowText)?.[1];
+  await target.locator(".link-strong").click();
+  await page.waitForSelector(".debrief", { timeout: 20000 });
+  const chip = await page.locator(".route-picker .chip-active").innerText();
+  const chipKm = /(\d+) km/.exec(chip)?.[1];
+  if (km && chipKm && Math.abs(Number(km) - Number(chipKm)) > 1) {
+    throw new Error(`asked about a ${km} km session, opened a ${chipKm} km one`);
+  }
+});
+await step("an unlogged session is asked about, never given an invented verdict", async () => {
+  const verdict = await page.locator(".debrief-verdict").innerText();
+  if (!/Not enough to judge/.test(verdict)) throw new Error(`invented a verdict with no log: ${verdict}`);
+  await page.waitForSelector(".debrief-log");
+});
+await step("logging it turns the panel into the answer", async () => {
+  await page.locator(".debrief-log .segmented").nth(1).locator('button:has-text("Bonked")').click();
+  await page.locator("#debrief-actual").fill("0");
+  await page.click('.debrief-log button:has-text("Save and see the debrief")');
+  await page.waitForSelector(".debrief-compare", { timeout: 15000 });
+
+  const verdict = await page.locator(".debrief-verdict").innerText();
+  if (!/Under-fuelled/.test(verdict)) throw new Error(`bonking on nothing read as: ${verdict}`);
+  // The gap must agree with the two figures it sits between — a headline that
+  // contradicts its own numbers is worse than no headline.
+  const compare = (await page.locator(".debrief-compare").innerText()).replace(/\n/g, " ");
+  const [required, actual] = [...compare.matchAll(/(\d+) g\/h/g)].map((m) => Number(m[1]));
+  if (actual !== 0) throw new Error(`logged 0 g/h but the debrief says ${actual}: ${compare}`);
+  const shouldBeShort = required - actual >= 10;
+  if (shouldBeShort !== /g\/h short/.test(compare)) {
+    throw new Error(`gap label disagrees with the figures: ${compare}`);
+  }
+  const findings = await page.locator(".debrief-findings").innerText();
+  if (/finding\./.test(findings)) throw new Error(`untranslated finding key: ${findings}`);
+});
+await step("it says what to take, by name, and where — in one list, not two", async () => {
+  // The reviewed run re-titles the route's own stop list rather than printing a
+  // second copy: two lists of the same stops is two things to reconcile.
+  await page.waitForSelector(".route-fuel", { timeout: 10000 });
+  const title = await page.locator(".route-fuel .geo-title").innerText();
+  if (!/next time/i.test(title)) throw new Error(`plan not re-framed for the debrief: ${title}`);
+  if ((await page.locator(".debrief .elev-stop-row").count()) > 0) {
+    throw new Error("the debrief duplicates the route's stop list");
+  }
+  const rows = await page.locator(".route-fuel .elev-stop-row").count();
+  if (rows === 0) throw new Error("debrief gave a verdict but no next-time plan");
+  const first = await page.locator(".route-fuel .elev-stop-row").first().innerText();
+  if (!/\d+:\d\d/.test(first)) throw new Error(`no time on the stop: ${first}`);
+  if (!/km \d/.test(first)) throw new Error(`no place on the stop: ${first}`);
+  // A named product is the whole point — "25 g" is what the athlete already knew.
+  const product = await page.locator(".route-fuel .elev-stop-row").first().locator(".elev-stop-product").count();
+  if (product === 0) throw new Error(`no product named at the stop: ${first.replace(/\n/g, " | ")}`);
+});
+await step("the start screen shows it as reviewed afterwards", async () => {
+  await page.click('button.topnav-tab:has-text("Home")');
+  await page.waitForSelector(".home-greeting");
+  if ((await page.locator(".pill-done").count()) === 0) throw new Error("logged session is not marked as reviewed");
 });
 
 console.log("── appearance & language ──");

@@ -2696,6 +2696,8 @@ code {
 .elev-stop-when { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 .elev-stop-where { color: var(--muted); }
 .elev-stop-dose { font-weight: 700; color: var(--accent-ink); }
+.elev-stop-product { grid-column: 1 / -1; font-weight: 700; color: var(--text); font-size: var(--text-base); }
+.elev-stop-serving { font-weight: 500; color: var(--muted); }
 .elev-stop-why { grid-column: 1 / -1; color: var(--muted); font-size: var(--text-sm); }
 .elev-note { margin: var(--space-4) 0 0; }
 /* An estimated profile is drawn dashed, so it never passes for surveyed data. */
@@ -2705,6 +2707,97 @@ code {
 @media (max-width: 560px) {
   .elev-stop-row { grid-template-columns: 44px 1fr auto; }
   .elev-svg { height: 84px; }
+}
+
+/* --- Session debrief: what a past run actually asked for, and what happened ---
+   It sits above the route's fuel chart, so the answer to "how did that go?"
+   comes before the plan it justifies. */
+.debrief {
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+}
+.debrief .section-head { margin-bottom: var(--space-4); }
+.debrief-title { margin: 0; font-size: var(--text-lg); }
+.debrief-verdict {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.debrief-verdict-good { color: var(--post-ink); border-color: rgba(52, 201, 138, 0.4); }
+.debrief-verdict-warn { color: var(--warn-ink); border-color: rgba(230, 160, 60, 0.45); }
+.debrief-verdict-muted { color: var(--muted); }
+
+/* The ask: a short, low-friction form, not a questionnaire. */
+.debrief-log { display: flex; flex-direction: column; gap: var(--space-3); }
+.debrief-ask { margin: 0; font-size: var(--text-base); }
+.debrief-log .segmented { width: 100%; }
+.debrief-log .group-label { margin-top: var(--space-2); }
+.debrief-log label { font-size: var(--text-base); color: var(--muted); margin-top: var(--space-2); }
+.debrief-log label .value { color: var(--text); font-weight: 700; }
+.debrief-log input[type="range"] { width: 100%; }
+.debrief-log .btn { margin-top: var(--space-3); align-self: flex-start; }
+
+/* The answer: required vs. actual, side by side, with the gap named. */
+.debrief-compare {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  margin-bottom: var(--space-4);
+}
+.debrief-figure { display: flex; flex-direction: column; gap: 2px; }
+.debrief-figure-value { font-size: var(--text-xl); font-weight: 800; font-variant-numeric: tabular-nums; }
+.debrief-figure-label { font-size: var(--text-sm); color: var(--muted); }
+.debrief-gap {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--post-ink);
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+.debrief-gap-short { color: var(--warn-ink); border-color: rgba(230, 160, 60, 0.45); }
+
+.debrief-findings { margin: 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }
+.debrief-findings li { font-size: var(--text-base); }
+.debrief-lead { margin: var(--space-4) 0 0; color: var(--muted); font-size: var(--text-sm); }
+
+@media (max-width: 640px) {
+  .debrief { padding: var(--space-4); }
+  .debrief-compare { gap: var(--space-3) var(--space-5); }
+  .debrief-figure-value { font-size: var(--text-lg); }
+}
+
+/* An unreviewed session carries a quiet dot; nothing shouts. */
+.chip-todo { position: relative; }
+.chip-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--warn);
+}
+.pill-todo { color: var(--warn-ink); border-color: rgba(230, 160, 60, 0.45); }
+.pill-done { color: var(--post-ink); border-color: rgba(52, 201, 138, 0.4); }
+.link-strong { color: var(--text); }
+.home-session-actions {
+  justify-self: end;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  white-space: nowrap;
+}
+@media (max-width: 700px) {
+  .home-session-actions { grid-column: 1 / -1; justify-self: start; }
 }
 
 /* Language switch on the sign-in screen. */

@@ -91,6 +91,9 @@ describe("no dead keys", () => {
       // Engine-produced next actions: t(`action.${action.id}`).
       /^action\./,
       /^insights\.band/,
+      // Debrief ratings and findings: t(`debrief.gi.${g}`), t(`finding.${f.id}`).
+      /^debrief\.(gi|energy)\./,
+      /^finding\./,
     ];
     const unused = keys.filter(
       (k) => !k.endsWith("_one") && !body.includes(`"${k}"`) && !builtDynamically.some((r) => r.test(k)),

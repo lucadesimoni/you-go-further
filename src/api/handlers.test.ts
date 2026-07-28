@@ -563,3 +563,56 @@ describe("API router", () => {
     expect(d.disclaimer).toMatch(/not medical advice/i);
   });
 });
+
+describe("sessions and connections belong to the athlete who signed in", () => {
+  const other: Principal = { id: "a2", name: "B", role: "athlete", tier: "free" };
+  let route: ReturnType<typeof createApiRouter>;
+  beforeEach(() => {
+    route = createApiRouter(createRuntime({ ...getConfig(), enabledProviders: ["garmin", "strava"] }));
+  });
+
+  const list = async (principal: Principal) => {
+    const res = await route(req("GET", "/api/activities", { principal }));
+    return (res.data as { activities: { id: string }[] }).activities;
+  };
+
+  it("never shows one athlete another athlete's sessions", async () => {
+    await route(req("POST", "/api/ingest", { body: { provider: "strava" }, principal: athlete }));
+    expect((await list(athlete)).length).toBeGreaterThan(0);
+    expect(await list(other)).toEqual([]);
+  });
+
+  it("counts only the athlete's own training in insights", async () => {
+    await route(req("POST", "/api/ingest", { body: { provider: "strava" }, principal: athlete }));
+    const res = await route(req("GET", "/api/insights", { principal: other }));
+    expect((res.data as { hasData: boolean }).hasData).toBe(false);
+  });
+
+  it("files an OAuth connect under the athlete who started it, not the request's principal", async () => {
+    // The consent redirect comes back as a plain browser navigation: no session.
+    // Only the one-time `state` says who this is for.
+    const started = await route(req("GET", "/api/oauth/strava/authorize-url", { principal: other }));
+    const { state } = started.data as { state: string };
+    expect(state).toBeTruthy();
+
+    await route(
+      req("GET", "/api/oauth/strava/callback", { query: { code: "dev-code", state }, principal: athlete }),
+    );
+
+    expect((await list(other)).length).toBeGreaterThan(0);
+    expect(await list(athlete)).toEqual([]);
+    const conns = await route(req("GET", "/api/connections", { principal: other }));
+    expect((conns.data as { connections: unknown[] }).connections).toHaveLength(1);
+  });
+
+  it("refuses to reuse a state token", async () => {
+    const started = await route(req("GET", "/api/oauth/strava/authorize-url", { principal: other }));
+    const { state } = started.data as { state: string };
+    await route(req("GET", "/api/oauth/strava/callback", { query: { code: "dev-code", state } }));
+    const before = (await list(athlete)).length;
+    // A replayed state must not bind a second import to that athlete.
+    await route(req("GET", "/api/oauth/strava/callback", { query: { code: "dev-code", state } }));
+    expect((await list(other)).length).toBeGreaterThan(0);
+    expect((await list(athlete)).length).toBeGreaterThan(before);
+  });
+});

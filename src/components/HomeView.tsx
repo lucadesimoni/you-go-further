@@ -4,6 +4,8 @@ import type { Activity } from "../model";
 import type { FuellingScore, ProgressProfile } from "../progress";
 import { GREETING_KEY, dayPart, longestRecent, recentSessions, shortcutsFor, weekSummary } from "../home";
 import { formatClock } from "../engine";
+import { logForActivity } from "../analysis";
+import type { SessionFeedback } from "../feedback";
 import { loadProfile } from "../api/profileStore";
 import { useI18n, type TranslationKey } from "../i18n";
 import { actionText } from "../i18n/actions";
@@ -42,24 +44,35 @@ export function HomeView({
   progress,
   fuelling,
   activities,
+  feedback = [],
   hasSyncedData,
   onNavigate,
   onFuelSession,
+  onReviewSession,
 }: {
   account: Account;
   progress: ProgressProfile | null;
   fuelling: FuellingScore;
   activities: Activity[];
+  /** Logs, so a session that's already been reviewed doesn't ask again. */
+  feedback?: SessionFeedback[];
   hasSyncedData: boolean;
   onNavigate: (tab: string) => void;
   /** Plan for a specific past session — carries its shape into the planner. */
   onFuelSession?: (a: Activity) => void;
+  /** Open the debrief for a past session. */
+  onReviewSession?: (a: Activity) => void;
 }) {
   const { t, lang } = useI18n();
   const week = useMemo(() => weekSummary(activities), [activities]);
   const recent = useMemo(() => recentSessions(activities, 3), [activities]);
   const longest = useMemo(() => longestRecent(activities), [activities]);
   const shortcuts = useMemo(() => shortcutsFor(account.role), [account.role]);
+  // A session can only be debriefed if it has a track to place the fuelling on.
+  const reviewable = useMemo(
+    () => recent.filter((a) => a.route && a.route.length > 1 && !logForActivity(feedback, a.id)),
+    [recent, feedback],
+  );
   const bodyProfile = useMemo(() => loadProfile(), []);
 
   const firstName = account.name.split(/[\s@]/)[0];
@@ -99,9 +112,17 @@ export function HomeView({
             <button type="button" className="btn btn-primary" onClick={() => onNavigate("plan")}>
               {t("home.planSession")}
             </button>
-            <button type="button" className="btn btn-ghost" onClick={() => onNavigate("progress")}>
-              {t("home.logSession")}
-            </button>
+            {/* "Log a session" is only useful if it leads somewhere concrete.
+                When a real run is waiting to be reviewed, go straight to it. */}
+            {reviewable.length > 0 && onReviewSession ? (
+              <button type="button" className="btn btn-ghost" onClick={() => onReviewSession(reviewable[0])}>
+                {t("home.reviewIt")}
+              </button>
+            ) : (
+              <button type="button" className="btn btn-ghost" onClick={() => onNavigate("progress")}>
+                {t("home.logSession")}
+              </button>
+            )}
           </div>
         </section>
       )}
@@ -161,10 +182,16 @@ export function HomeView({
         <section className="panel">
           <div className="section-head">
             <h2>{t("home.recent")}</h2>
-            {longest && (
-              <span className="pill">
-                {t("home.longestRecent")} · {formatClock(Math.round(longest.durationSec / 60))}
-              </span>
+            {/* The nudge that actually closes the loop: how many of these still
+                have no debrief. Only shown when there is something to do. */}
+            {reviewable.length > 0 && onReviewSession ? (
+              <span className="pill pill-todo">{t("home.reviewPending", { count: reviewable.length })}</span>
+            ) : (
+              longest && (
+                <span className="pill">
+                  {t("home.longestRecent")} · {formatClock(Math.round(longest.durationSec / 60))}
+                </span>
+              )
             )}
           </div>
           <ul className="home-sessions">
@@ -177,11 +204,24 @@ export function HomeView({
                   {formatClock(Math.round(a.durationSec / 60))}
                   {a.elevationGainM ? ` · ↑ ${a.elevationGainM} m` : ""}
                 </span>
-                {onFuelSession && (
-                  <button type="button" className="link-btn home-session-plan" onClick={() => onFuelSession(a)}>
-                    {t("home.fuelIt")}
-                  </button>
-                )}
+                <span className="home-session-actions">
+                  {/* An unreviewed run gets the question first — the debrief is
+                      worth more than another plan, and it feeds the next one. */}
+                  {onReviewSession && a.route && a.route.length > 1 && (
+                    logForActivity(feedback, a.id) ? (
+                      <span className="pill pill-done">{t("home.logged")}</span>
+                    ) : (
+                      <button type="button" className="link-btn link-strong" onClick={() => onReviewSession(a)}>
+                        {t("home.reviewIt")}
+                      </button>
+                    )
+                  )}
+                  {onFuelSession && (
+                    <button type="button" className="link-btn home-session-plan" onClick={() => onFuelSession(a)}>
+                      {t("home.fuelIt")}
+                    </button>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

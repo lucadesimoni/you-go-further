@@ -4,7 +4,7 @@ import { SWEAT_LEVELS } from "../options";
 import { type AthleteProfile, loadProfile, saveProfile } from "../api/profileStore";
 import { HEALTH_PLATFORMS, syncHealthSignals } from "../api/healthSync";
 import { ALL_PROVIDER_IDS, DESCRIPTORS } from "../providers";
-import { isApiConfigured } from "../api/client";
+import { api, isApiConfigured } from "../api/client";
 import { getConfig } from "../config";
 import { setOnboardStep } from "../api/onboarding";
 
@@ -41,7 +41,14 @@ export function Onboarding({
     }
     setOnboardStep(2);
     const base = getConfig().apiBaseUrl;
-    window.location.href = `${base}/api/oauth/${id}/start?return_to=${encodeURIComponent(window.location.href)}`;
+    // Ask for the consent URL first: that request carries the session, so the
+    // sessions imported on the way back belong to this athlete.
+    void api
+      .oauthAuthorizeUrl(id, window.location.href)
+      .then(({ authorizeUrl }) => {
+        window.location.href = authorizeUrl.startsWith("http") ? authorizeUrl : `${base}${authorizeUrl}`;
+      })
+      .catch(() => setStep(2));
   };
 
   const syncFrom = (id: string) => {

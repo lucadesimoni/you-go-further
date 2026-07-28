@@ -22,15 +22,22 @@ import type { MagicLinkStore } from "../auth/magicLink";
 
 export async function migrate(pool: Pool): Promise<void> {
   await pool.query(`
+    -- Sessions belong to an athlete: a provider activity id is only unique
+    -- within one account, so ownership is part of the key.
     CREATE TABLE IF NOT EXISTS activities (
-      id          text PRIMARY KEY,
+      id          text NOT NULL,
+      user_id     text NOT NULL DEFAULT '',
       provider    text NOT NULL,
       sport       text NOT NULL,
       start_time  timestamptz NOT NULL,
-      data        jsonb NOT NULL
+      data        jsonb NOT NULL,
+      PRIMARY KEY (user_id, id)
     );
+    -- Databases created before ownership existed keep their old id-only key.
+    ALTER TABLE activities ADD COLUMN IF NOT EXISTS user_id text NOT NULL DEFAULT '';
     CREATE INDEX IF NOT EXISTS activities_start_idx ON activities (start_time DESC);
     CREATE INDEX IF NOT EXISTS activities_provider_idx ON activities (provider);
+    CREATE INDEX IF NOT EXISTS activities_user_idx ON activities (user_id);
 
     CREATE TABLE IF NOT EXISTS feedback (
       id       text PRIMARY KEY,
@@ -92,15 +99,15 @@ export async function migrate(pool: Pool): Promise<void> {
 export class PgActivityStore implements ActivityStore {
   constructor(private readonly pool: Pool) {}
 
-  async upsert(activities: Activity[]): Promise<number> {
+  async upsert(activities: Activity[], userId?: string): Promise<number> {
     let inserted = 0;
     for (const a of activities) {
       const res = await this.pool.query<{ inserted: boolean }>(
-        `INSERT INTO activities (id, provider, sport, start_time, data)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, start_time = EXCLUDED.start_time
+        `INSERT INTO activities (id, user_id, provider, sport, start_time, data)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (user_id, id) DO UPDATE SET data = EXCLUDED.data, start_time = EXCLUDED.start_time
          RETURNING (xmax = 0) AS inserted`,
-        [a.id, a.provider, a.sport, a.startTime, a],
+        [a.id, userId ?? "", a.provider, a.sport, a.startTime, a],
       );
       if (res.rows[0]?.inserted) inserted++;
     }
@@ -110,23 +117,27 @@ export class PgActivityStore implements ActivityStore {
   async query(q: ActivityQuery = {}): Promise<Activity[]> {
     const res = await this.pool.query<{ data: Activity }>(
       `SELECT data FROM activities
-       WHERE ($1::text IS NULL OR provider = $1)
-         AND ($2::text IS NULL OR sport = $2)
-         AND ($3::timestamptz IS NULL OR start_time >= $3)
-         AND ($4::timestamptz IS NULL OR start_time < $4)
+       WHERE ($1::text IS NULL OR user_id = $1)
+         AND ($2::text IS NULL OR provider = $2)
+         AND ($3::text IS NULL OR sport = $3)
+         AND ($4::timestamptz IS NULL OR start_time >= $4)
+         AND ($5::timestamptz IS NULL OR start_time < $5)
        ORDER BY start_time DESC`,
-      [q.provider ?? null, q.sport ?? null, q.after ?? null, q.before ?? null],
+      [q.userId ?? null, q.provider ?? null, q.sport ?? null, q.after ?? null, q.before ?? null],
     );
     return res.rows.map((r) => r.data);
   }
 
-  async count(): Promise<number> {
-    const res = await this.pool.query<{ count: string }>("SELECT count(*)::int AS count FROM activities");
+  async count(userId?: string): Promise<number> {
+    const res = await this.pool.query<{ count: string }>(
+      "SELECT count(*)::int AS count FROM activities WHERE ($1::text IS NULL OR user_id = $1)",
+      [userId ?? null],
+    );
     return Number(res.rows[0]?.count ?? 0);
   }
 
-  async clear(): Promise<void> {
-    await this.pool.query("DELETE FROM activities");
+  async clear(userId?: string): Promise<void> {
+    await this.pool.query("DELETE FROM activities WHERE ($1::text IS NULL OR user_id = $1)", [userId ?? null]);
   }
 }
 

@@ -1,5 +1,7 @@
 import type { ElevationSample } from "../geo/swisstopo";
-import type { Activity } from "./types";
+import type { Activity, AthleteInput, FuelingTarget, Product } from "./types";
+import { scoreForSlot } from "./offering";
+import { CATALOG } from "./catalog";
 
 /**
  * Fuelling placed by **where the energy is actually spent**, not by the clock.
@@ -98,6 +100,13 @@ export interface RouteFuelStop {
   kind: StopKind;
   /** Plain reason this stop is here, shown to the athlete. */
   reason: string;
+  /**
+   * What to actually take here. Grams alone leave the athlete to do the
+   * translation in their kitchen; naming the product is the difference between
+   * advice and an instruction. Chosen by the same scorer the planner uses, so
+   * the two can never recommend different things for one session.
+   */
+  product?: { id: string; brand: string; name: string; servingLabel: string };
 }
 
 export interface Climb {
@@ -243,6 +252,36 @@ export interface RouteFuelInput {
   durationMin?: number;
   /** The engine's carbohydrate target for this session. */
   carbPerHourG: number;
+  /**
+   * Session + target + catalog, so each stop can name a real product. Omit them
+   * and the plan still works — it just gives grams.
+   */
+  input?: AthleteInput;
+  target?: FuelingTarget;
+  catalog?: Product[];
+}
+
+/**
+ * The best product for a stop of this kind.
+ *
+ * A stop before a climb wants the fast carbohydrate of a gel or drink top-up;
+ * the routine ones sit on the main carrier. Both go through `scoreForSlot`, so
+ * the choice matches the planner's for the same session.
+ */
+function productForStop(
+  kind: StopKind,
+  input: AthleteInput,
+  target: FuelingTarget,
+  catalog: Product[],
+): RouteFuelStop["product"] {
+  const slot = kind === "climb-prep" ? "carb-topup" : "carb-carrier";
+  const best = catalog
+    .map((p) => scoreForSlot(p, slot, input, target))
+    .filter((s): s is NonNullable<typeof s> => s !== null)
+    .sort((a, b) => b.score - a.score)[0];
+  if (!best) return undefined;
+  const { id, brand, name, servingLabel } = best.product;
+  return { id, brand, name, servingLabel };
 }
 
 /**
@@ -254,7 +293,8 @@ export interface RouteFuelInput {
  * off steep descents where eating is impractical.
  */
 export function planRouteFuelling(input: RouteFuelInput): RouteFuelPlan {
-  const { samples, activity, durationMin, carbPerHourG } = input;
+  const { samples, activity, durationMin, carbPerHourG, target, catalog = CATALOG } = input;
+  const sessionInput = input.input;
   const kind = sportKind(activity);
   const { segments, totalMin } = buildSegments(samples, kind, durationMin);
   const notes: string[] = [];
@@ -321,6 +361,7 @@ export function planRouteFuelling(input: RouteFuelInput): RouteFuelPlan {
       carbG: doseG,
       kind: kindOfStop,
       reason,
+      product: sessionInput && target ? productForStop(kindOfStop, sessionInput, target, catalog) : undefined,
     });
   }
 
