@@ -87,6 +87,20 @@ export function ProfileView({ account }: { account: Account }) {
             />
           </div>
           <div className="field">
+            <label htmlFor="p-maxhr">
+              {t("profile.maxHr")} <span className="value">{profile.maxHrBpm} bpm</span>
+            </label>
+            <input
+              id="p-maxhr"
+              type="range"
+              min={140}
+              max={210}
+              step={1}
+              value={profile.maxHrBpm}
+              onChange={(e) => set("maxHrBpm", Number(e.target.value))}
+            />
+          </div>
+          <div className="field">
             <label htmlFor="p-sweat">{t("profile.sweatLevelShort")}</label>
             <select
               id="p-sweat"

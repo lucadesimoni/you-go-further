@@ -209,7 +209,8 @@ export const de: Dictionary = {
   "connect.terrain": "Gelände",
   "connect.weather": "Wetter",
   "connect.planRoute": "Für diese Route planen →",
-  "connect.athleteProfile": "Athletenprofil",
+  "connect.analysisSettings": "Auswertungs-Einstellungen",
+  "connect.usingProfile": "Aus Ihrem Profil: {weight} kg · max. HF {maxHr} bpm",
   "connect.bodySignals": "Körperwerte",
   "connect.trainingAnalysis": "Trainingsanalyse",
 
@@ -230,6 +231,7 @@ export const de: Dictionary = {
 
   // ---- Profile ------------------------------------------------------------
   "profile.bodyWeight": "Körpergewicht",
+  "profile.maxHr": "Maximale Herzfrequenz",
   "profile.sweatRate": "Schweissrate",
   "profile.sweatSodium": "Natrium im Schweiss",
   "profile.synced": "mit Ihrem Konto synchronisiert",

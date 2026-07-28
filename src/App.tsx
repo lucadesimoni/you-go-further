@@ -290,6 +290,7 @@ export function App() {
         {tab === "connect" && (
           <Dashboard
             tier={tier}
+            onEditProfile={() => setTab("profile")}
             onPlanRoute={(prefill) => {
               setPlannerPrefill(prefill);
               setTab("plan");

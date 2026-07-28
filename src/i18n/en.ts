@@ -199,7 +199,8 @@ export const en = {
   "connect.terrain": "Terrain",
   "connect.weather": "Weather",
   "connect.planRoute": "Plan for this route →",
-  "connect.athleteProfile": "Athlete profile",
+  "connect.analysisSettings": "Analysis settings",
+  "connect.usingProfile": "Using your profile: {weight} kg · max HR {maxHr} bpm",
   "connect.bodySignals": "Body signals",
   "connect.trainingAnalysis": "Training analysis",
 
@@ -220,6 +221,7 @@ export const en = {
 
   // ---- Profile ------------------------------------------------------------
   "profile.bodyWeight": "Body weight",
+  "profile.maxHr": "Max heart rate",
   "profile.sweatRate": "Sweat rate",
   "profile.sweatSodium": "Sweat sodium",
   "profile.synced": "synced to your account",

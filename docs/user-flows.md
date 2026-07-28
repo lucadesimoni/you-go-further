@@ -61,6 +61,19 @@ same check (`hasPermission` / `authorize`) guards actions server-side. Changing
 persona re-derives the visible tabs and resets to the first allowed view, so a
 user can never land on a page their role can't access.
 
+## One profile
+
+Body data lives in **exactly one place**: *Profile & health*, reached from the
+account menu, stored server-side so it follows the athlete across devices.
+
+Every other screen *shows* it and links back there rather than offering a second
+editor — the planner's "Tuned to 83 kg · average sweat", the Connect tab's "Using
+your profile: 83 kg · max HR 176 bpm". The Connect tab used to carry its own
+weight and max-HR sliders backed by local state that never persisted and never
+reached the plan, so an athlete could set 85 kg there and still be planned for
+70 kg. An e2e step now counts body-weight editors across every tab and fails if
+there is more than one.
+
 ## The start screen
 
 Signing in lands on **Home**, not a form. It answers one question — *what should

@@ -123,6 +123,39 @@ await step("profile opens from the account menu", async () => {
   await page.waitForSelector("text=synced to your account");
 });
 
+console.log("── one profile, not several ──");
+await step("body data is editable in exactly one place", async () => {
+  // Walk every tab and count controls that edit body weight. Two would mean an
+  // athlete can set a weight that silently doesn't reach the plan — which is
+  // precisely the bug this guards.
+  let editors = 0;
+  for (const tab of ["Home", "Plan", "Insights", "Connect", "Catalog"]) {
+    await page.click(`button.topnav-tab:has-text("${tab}")`);
+    await page.waitForTimeout(1200);
+    editors += await page.locator('input[type="range"]#bw, input[type="range"]#p-weight').count();
+    // And no tab besides the real one may head a panel "profile".
+    const heads = await page.locator("main h2").allInnerTexts();
+    const claims = heads.filter((h) => /athlete profile|your profile/i.test(h));
+    if (claims.length > 0) throw new Error(`${tab} also calls a panel "${claims.join(", ")}"`);
+  }
+  if (editors !== 0) throw new Error(`${editors} body-weight editors outside Profile & health`);
+});
+await step("a weight set in the profile reaches the plan and the analysis", async () => {
+  await page.click(".account-btn");
+  await page.click("text=Profile & health");
+  await page.waitForSelector("#p-weight");
+  await page.locator("#p-weight").fill("83");
+  await page.waitForTimeout(1000);
+  await page.click('button.topnav-tab:has-text("Connect")');
+  await page.waitForTimeout(2000);
+  const connect = await page.locator(".from-profile span").first().innerText();
+  if (!/83 kg/.test(connect)) throw new Error(`connect ignored the profile: ${connect}`);
+  await page.click('button.topnav-tab:has-text("Plan")');
+  await page.waitForTimeout(1200);
+  const plan = await page.locator(".from-profile span").first().innerText();
+  if (!/83 kg/.test(plan)) throw new Error(`planner ignored the profile: ${plan}`);
+});
+
 console.log("── commerce ──");
 await step("checkout the planned cart", async () => {
   await page.click('button.topnav-tab:has-text("Plan")');

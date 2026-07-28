@@ -10,6 +10,7 @@ import { can, limit, PLANS, requiredTierFor, type Tier } from "../subscription";
 import type { AthleteInput } from "../engine";
 import { isApiConfigured } from "../api/client";
 import { getConfig } from "../config";
+import { loadProfile } from "../api/profileStore";
 import { Stat } from "./Stat";
 import { useT } from "../i18n";
 import { RouteInsights } from "./RouteInsights";
@@ -34,7 +35,16 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 /** Connections + analysis workspace. Feature access is gated by the active tier. */
-export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (prefill: Partial<SessionInput>) => void }) {
+export function Dashboard({
+  tier,
+  onPlanRoute,
+  onEditProfile,
+}: {
+  tier: Tier;
+  onPlanRoute?: (prefill: Partial<SessionInput>) => void;
+  /** Opens the one place body data is edited. */
+  onEditProfile?: () => void;
+}) {
   const t = useT();
   const registry = useRef(new ProviderRegistry());
   const store = useRef(new InMemoryActivityStore());
@@ -43,8 +53,13 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
   const [connected, setConnected] = useState<Set<ProviderId>>(new Set());
   const [activities, setActivities] = useState<Activity[]>([]);
   const [busy, setBusy] = useState<ProviderId | "all" | null>(null);
-  const [bodyWeightKg, setBodyWeightKg] = useState(70);
-  const [maxHr, setMaxHr] = useState(190);
+  // Body data comes from the athlete's *one* profile, never a second copy kept
+  // here: a weight edited on this tab that silently didn't persist would make
+  // the analysis disagree with the plan.
+  const bodyProfile = useMemo(() => loadProfile(), []);
+  const bodyWeightKg = bodyProfile.bodyWeightKg;
+  const maxHr = bodyProfile.maxHrBpm;
+  // Goal is an analysis lens, not body data — it belongs to this screen.
   const [goal, setGoal] = useState<AthleteInput["goal"]>("endurance-performance");
   const [banner, setBanner] = useState<string | null>(null);
 
@@ -251,35 +266,30 @@ export function Dashboard({ tier, onPlanRoute }: { tier: Tier; onPlanRoute?: (pr
         )}
       </section>
 
-      {/* Profile controls */}
+      {/* How the analysis below is framed. Body data is shown, not re-edited:
+          there is one profile, and it lives in Profile & health. */}
       <section className="panel">
         <div className="section-head">
-          <h2>{t("connect.athleteProfile")}</h2>
+          <h2>{t("connect.analysisSettings")}</h2>
           <span className="pill">history: {historyDays >= 365 ? `${Math.round(historyDays / 365)} yr` : `${historyDays} d`}</span>
         </div>
-        <div className="profile-grid">
-          <div className="field">
-            <label htmlFor="bw">
-              Body weight <span className="value">{bodyWeightKg} kg</span>
-            </label>
-            <input id="bw" type="range" min={40} max={120} value={bodyWeightKg} onChange={(e) => setBodyWeightKg(Number(e.target.value))} />
-          </div>
-          <div className="field">
-            <label htmlFor="mhr">
-              Max HR <span className="value">{maxHr} bpm</span>
-            </label>
-            <input id="mhr" type="range" min={160} max={210} value={maxHr} onChange={(e) => setMaxHr(Number(e.target.value))} />
-          </div>
-          <div className="field">
-            <label htmlFor="dgoal">Goal</label>
-            <select id="dgoal" value={goal} onChange={(e) => setGoal(e.target.value as AthleteInput["goal"])}>
-              {GOALS.map((g) => (
-                <option key={g.value} value={g.value}>
-                  {g.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="field">
+          <label htmlFor="dgoal">{t("plan.goal")}</label>
+          <select id="dgoal" value={goal} onChange={(e) => setGoal(e.target.value as AthleteInput["goal"])}>
+            {GOALS.map((g) => (
+              <option key={g.value} value={g.value}>
+                {t(g.labelKey)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="from-profile">
+          <span>{t("connect.usingProfile", { weight: bodyWeightKg, maxHr })}</span>
+          {onEditProfile && (
+            <button type="button" className="link-btn" onClick={onEditProfile}>
+              {t("plan.editProfile")}
+            </button>
+          )}
         </div>
       </section>
 

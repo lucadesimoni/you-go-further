@@ -7,6 +7,8 @@ import type { SweatLevel } from "../engine";
  */
 export interface AthleteProfile {
   bodyWeightKg: number;
+  /** Max heart rate, used to infer session intensity from recorded HR. */
+  maxHrBpm: number;
   sweatLevel: SweatLevel;
   caffeineOk: boolean;
   useSignals: boolean;
@@ -18,6 +20,7 @@ export interface AthleteProfile {
 
 export const DEFAULT_PROFILE: AthleteProfile = {
   bodyWeightKg: 70,
+  maxHrBpm: 190,
   sweatLevel: "average",
   caffeineOk: false,
   useSignals: false,
@@ -38,6 +41,7 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
 export function normalizeProfile(input: Partial<AthleteProfile>): Partial<AthleteProfile> {
   const out: Partial<AthleteProfile> = {};
   if (typeof input.bodyWeightKg === "number") out.bodyWeightKg = clamp(Math.round(input.bodyWeightKg), 30, 200);
+  if (typeof input.maxHrBpm === "number") out.maxHrBpm = clamp(Math.round(input.maxHrBpm), 120, 230);
   if (input.sweatLevel && SWEAT.includes(input.sweatLevel)) out.sweatLevel = input.sweatLevel;
   if (typeof input.caffeineOk === "boolean") out.caffeineOk = input.caffeineOk;
   if (typeof input.useSignals === "boolean") out.useSignals = input.useSignals;
