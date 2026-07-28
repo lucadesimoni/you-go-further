@@ -9,6 +9,7 @@ import { ProgressView } from "./components/ProgressView";
 import { ProfileView } from "./components/ProfileView";
 import { SubscriptionView } from "./components/SubscriptionView";
 import { AccountMenu } from "./components/AccountMenu";
+import { HomeView } from "./components/HomeView";
 import { ToastHost } from "./components/ToastHost";
 import { ConfirmHost } from "./components/ConfirmHost";
 import { Onboarding } from "./components/Onboarding";
@@ -20,6 +21,7 @@ import { isSolo } from "./personas";
 import { getConfig } from "./config";
 import type { Activity } from "./model";
 import { computeProgress, fuellingScore } from "./progress";
+import { sportToActivity } from "./analysis";
 import { loadFeedback } from "./api/feedbackStore";
 import type { SessionFeedback } from "./feedback";
 import { syncProfile, loadProfile } from "./api/profileStore";
@@ -38,6 +40,7 @@ interface TabDef {
 // Primary navigation — the core work surfaces. Personal screens (Profile,
 // Subscription) live in the account menu, not here, so each is in one place.
 const TABS: TabDef[] = [
+  { id: "home", labelKey: "nav.home", perm: "plan:use" },
   { id: "plan", labelKey: "nav.plan", perm: "plan:use" },
   { id: "progress", labelKey: "nav.progress", perm: "plan:use" },
   { id: "connect", labelKey: "nav.connect", perm: "analysis:view_own" },
@@ -53,7 +56,7 @@ export function App() {
   const { choice: themeChoice, setChoice: setThemeChoice } = useTheme();
   const [account, setAccount] = useState<Account | null>(() => currentAccount());
   const [tier, setTier] = useState<Tier>(account?.tier ?? "free");
-  const [tab, setTab] = useState<string>("plan");
+  const [tab, setTab] = useState<string>("home");
   // One-shot planner prefill, e.g. from "Plan for this route" in Connect.
   const [plannerPrefill, setPlannerPrefill] = useState<Partial<SessionInput>>();
   const [onboarding, setOnboarding] = useState(false);
@@ -210,7 +213,7 @@ export function App() {
         onFinish={() => {
           setOnboarded();
           setOnboarding(false);
-          setTab("plan");
+          setTab("home");
         }}
       />
     );
@@ -257,6 +260,25 @@ export function App() {
       </header>
 
       <div className="app-body" id="main">
+        {tab === "home" && (
+          <HomeView
+            account={account}
+            progress={progress}
+            fuelling={fuelling}
+            activities={activities}
+            hasSyncedData={hasSyncedData}
+            onNavigate={setTab}
+            onFuelSession={(a) => {
+              // Carry the session's own shape into the planner rather than
+              // making the athlete retype it.
+              setPlannerPrefill({
+                activity: sportToActivity(a.sport),
+                durationMin: Math.round(a.durationSec / 60),
+              });
+              setTab("plan");
+            }}
+          />
+        )}
         {tab === "plan" && (
           <Planner initial={plannerPrefill} role={account.role} onEditProfile={() => setTab("profile")} />
         )}

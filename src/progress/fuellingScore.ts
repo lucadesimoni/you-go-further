@@ -21,9 +21,27 @@ export interface ScoreComponent {
 }
 
 export interface NextAction {
+  /** English text — the engine's own wording, and the fallback everywhere. */
   title: string;
   why: string;
+  /**
+   * Stable id for this action. The UI maps it to a translated string; keeping an
+   * id rather than translating here leaves the engine framework-free and lets
+   * the API return the same object to every client.
+   */
+  id: NextActionId;
+  /** Values interpolated into the translated text, e.g. how many more logs. */
+  vars?: Record<string, string | number>;
 }
+
+export type NextActionId =
+  | "logFirst"
+  | "lowerCarbRate"
+  | "addCarbs"
+  | "measureSweat"
+  | "connectService"
+  | "logMore"
+  | "rehearseRace";
 
 export type ScoreBand = "getting-started" | "building" | "solid" | "dialled-in";
 
@@ -163,42 +181,50 @@ export function fuellingScore(input: FuellingScoreInput): FuellingScore {
   const nextActions: NextAction[] = [];
   if (logged === 0) {
     nextActions.push({
+      id: "logFirst",
       title: "Log your next session",
       why: "One log tells the planner how the fuelling felt — it's what everything else here learns from.",
     });
   }
   if (gutScore > 0 && gutScore < 65) {
     nextActions.push({
+      id: "lowerCarbRate",
       title: "Lower your carb rate ~10 g/h and rebuild",
       why: "Gut distress is limiting you. The engine has already capped your ceiling; rebuild in small steps over a few weeks.",
     });
   }
   if (energyScore > 0 && energyScore < 70 && gutScore >= 65) {
     nextActions.push({
+      id: "addCarbs",
       title: "Add ~10 g/h of carbohydrate on sessions over 90 minutes",
       why: "You're fading with a settled gut — the clearest sign there's headroom to fuel more.",
     });
   }
   if (!hasMeasuredSweatRate) {
     nextActions.push({
+      id: "measureSweat",
       title: "Measure your sweat rate once",
       why: "It takes one 90-minute session and replaces a population estimate with your own number for fluid and sodium.",
     });
   }
   if (connectionsCount === 0) {
     nextActions.push({
+      id: "connectService",
       title: "Connect your training service",
       why: "Plans then use your real sessions and terrain instead of what you type in.",
     });
   }
   if (logged > 0 && logged < 5) {
     nextActions.push({
+      id: "logMore",
+      vars: { count: 5 - logged },
       title: `Log ${5 - logged} more session${5 - logged === 1 ? "" : "s"}`,
       why: "At five, the engine starts adapting your carb target to your own gut and energy.",
     });
   }
   if (nextActions.length === 0) {
     nextActions.push({
+      id: "rehearseRace",
       title: "Rehearse race fuelling on your next long session",
       why: "Your fuelling is working. The remaining gain is practising it at race rate so nothing is new on the day.",
     });

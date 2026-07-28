@@ -65,10 +65,46 @@ await step("welcome → connect → body (setup is never skipped)", async () => 
   await page.waitForLoadState("networkidle");
   await page.waitForSelector("text=Tune it to you", { timeout: 10000 });
 });
-await step("finish setup into the planner", async () => {
+await step("finish setup into the start screen", async () => {
   await page.click('button:has-text("Continue →")');
   await page.click("text=Build my first plan");
-  await page.waitForSelector("text=Carb / hour");
+  // Onboarding now hands over to Home rather than dropping the athlete into a
+  // form — the start screen tells them what to do next.
+  await page.waitForSelector(".home-greeting", { timeout: 15000 });
+});
+
+console.log("── start screen ──");
+await step("signing in lands on Home, not a form", async () => {
+  await page.waitForSelector(".home-greeting", { timeout: 10000 });
+  const greeting = await page.locator(".home-greeting").innerText();
+  if (!/Good (morning|afternoon|evening)/.test(greeting)) throw new Error(`unexpected greeting: ${greeting}`);
+  // The active tab must actually be Home.
+  const active = await page.locator("button.topnav-tab.active").innerText();
+  if (active !== "Home") throw new Error(`landed on "${active}"`);
+});
+await step("the next move matches what Insights recommends", async () => {
+  const home = await page.locator(".home-next-title").innerText();
+  await page.click('button.topnav-tab:has-text("Insights")');
+  await page.waitForSelector(".score-next-list", { timeout: 10000 });
+  const top = await page.locator(".score-next-list li strong").first().innerText();
+  // One ranking, two screens: they must never disagree.
+  if (home.trim() !== top.trim()) throw new Error(`home says "${home}" but insights says "${top}"`);
+  await page.click('button.topnav-tab:has-text("Home")');
+  await page.waitForSelector(".home-greeting");
+});
+await step("the week's figures are real, and the session list is the athlete's own", async () => {
+  const week = await page.locator(".home .targets").innerText();
+  if (!/Sessions/.test(week)) throw new Error(`week card missing: ${week}`);
+  const rows = await page.locator(".home-session").count();
+  if (rows === 0) throw new Error("no recent sessions listed after a sync");
+  const first = await page.locator(".home-session").first().innerText();
+  if (!/\d{1,2} \w{3}/.test(first)) throw new Error(`session row has no date: ${first}`);
+});
+await step("a session can be taken straight into the planner", async () => {
+  await page.locator(".home-session-plan").first().click();
+  await page.waitForSelector("text=Carb / hour", { timeout: 10000 });
+  await page.click('button.topnav-tab:has-text("Home")');
+  await page.waitForSelector(".home-greeting");
 });
 
 console.log("── insights show real data ──");

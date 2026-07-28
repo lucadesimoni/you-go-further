@@ -21,6 +21,40 @@ export const en = {
   "nav.admin": "Admin",
   "nav.more": "More",
 
+  // ---- Start screen -------------------------------------------------------
+  "nav.home": "Home",
+  "home.goodMorning": "Good morning, {name}",
+  "home.goodAfternoon": "Good afternoon, {name}",
+  "home.goodEvening": "Good evening, {name}",
+  "home.doNext": "Your next move",
+  "home.planSession": "Plan a session",
+  "home.logSession": "Log a session",
+  "home.thisWeek": "Last 7 days",
+  "home.sessions": "Sessions",
+  "home.hours": "Hours",
+  "home.distance": "Distance",
+  "home.climb": "Climbing",
+  "home.vsPrevious": "{delta} h vs the week before",
+  "home.firstWeek": "Your first week of data — nothing to compare against yet.",
+  "home.quietWeek": "A quiet week. Rest is training too, but if it wasn't planned, ease back in.",
+  "home.fuelling": "Fuelling",
+  "home.notScoredYet": "Not scored yet",
+  "home.recent": "Recent sessions",
+  "home.noSessions": "No sessions yet. Connect a service and your training appears here.",
+  "home.readiness": "Readiness",
+  "home.readinessMeasured": "from your devices",
+  "home.readinessSelf": "your own estimate",
+  "home.longestRecent": "Longest recently",
+  "home.fuelIt": "Fuel this one →",
+  "home.shortcuts": "Your tools",
+  "home.shortcutTeam": "Your squad",
+  "home.shortcutTeamWhy": "Load and fuelling across the athletes you look after.",
+  "home.shortcutCatalog": "Product library",
+  "home.shortcutCatalogWhy": "Review what the engine can recommend, and add house products.",
+  "home.shortcutAdmin": "Platform",
+  "home.shortcutAdminWhy": "Users, roles and platform settings.",
+  "home.openInsights": "See all insights →",
+
   // ---- Account menu -------------------------------------------------------
   "account.menu": "Account",
   "account.profile": "Profile & health",
@@ -130,6 +164,26 @@ export const en = {
   "insights.bandBuilding": "Building",
   "insights.bandSolid": "Solid",
   "insights.bandDialledIn": "Dialled in",
+
+  // ---- Fuelling next actions (ids come from the engine) -------------------
+  "action.logFirst": "Log your next session",
+  "action.logFirst.why": "One log tells the planner how the fuelling felt — it's what everything else here learns from.",
+  "action.lowerCarbRate": "Lower your carb rate ~10 g/h and rebuild",
+  "action.lowerCarbRate.why":
+    "Gut distress is limiting you. The engine has already capped your ceiling; rebuild in small steps over a few weeks.",
+  "action.addCarbs": "Add ~10 g/h of carbohydrate on sessions over 90 minutes",
+  "action.addCarbs.why": "You're fading with a settled gut — the clearest sign there's headroom to fuel more.",
+  "action.measureSweat": "Measure your sweat rate once",
+  "action.measureSweat.why":
+    "It takes one 90-minute session and replaces a population estimate with your own number for fluid and sodium.",
+  "action.connectService": "Connect your training service",
+  "action.connectService.why": "Plans then use your real sessions and terrain instead of what you type in.",
+  "action.logMore": "Log {count} more sessions",
+  "action.logMore_one": "Log {count} more session",
+  "action.logMore.why": "At five, the engine starts adapting your carb target to your own gut and energy.",
+  "action.rehearseRace": "Rehearse race fuelling on your next long session",
+  "action.rehearseRace.why":
+    "Your fuelling is working. The remaining gain is practising it at race rate so nothing is new on the day.",
 
   // ---- Connect ------------------------------------------------------------
   "connect.title": "Connections",

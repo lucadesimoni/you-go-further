@@ -60,3 +60,20 @@ Every tab is shown only if the principal holds the backing permission, and the
 same check (`hasPermission` / `authorize`) guards actions server-side. Changing
 persona re-derives the visible tabs and resets to the first allowed view, so a
 user can never land on a page their role can't access.
+
+## The start screen
+
+Signing in lands on **Home**, not a form. It answers one question — *what should
+I do today?* — and everything else on the page is context for that answer.
+
+| Block | What it is |
+| --- | --- |
+| Greeting + readiness | Time-of-day greeting, current streak, and today's readiness with its source (measured vs self-reported). |
+| **Your next move** | The single most useful action, taken straight from the fuelling score's own ranking. Reusing that ranking is deliberate: Home and Insights can never give contradictory advice. |
+| Last 7 days | A rolling window, not a calendar week — on a Tuesday "this week: 2 sessions" is useless — with the change in hours against the previous seven days. |
+| Fuelling | The score and band at a glance, with a link into the full breakdown. |
+| Recent sessions | The last three, each able to jump straight into the planner pre-filled with that session's shape. |
+| Your tools | Role-relevant shortcuts. Coaches get their squad; nutritionists also get the product library; admins and owners get the platform. Staff still see all the athlete cards above — coaches train too. |
+
+Nothing is invented: an athlete with no synced sessions is told so and offered
+the connect action, rather than shown zeros dressed up as achievement.

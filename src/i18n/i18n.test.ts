@@ -88,6 +88,8 @@ describe("no dead keys", () => {
       /^sweat\./,
       /^nav\./,
       /^plan\.phase/,
+      // Engine-produced next actions: t(`action.${action.id}`).
+      /^action\./,
       /^insights\.band/,
     ];
     const unused = keys.filter(

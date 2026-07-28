@@ -26,6 +26,40 @@ export const de: Dictionary = {
   "nav.admin": "Verwaltung",
   "nav.more": "Mehr",
 
+  // ---- Start screen -------------------------------------------------------
+  "nav.home": "Start",
+  "home.goodMorning": "Guten Morgen, {name}",
+  "home.goodAfternoon": "Guten Tag, {name}",
+  "home.goodEvening": "Guten Abend, {name}",
+  "home.doNext": "Ihr nächster Schritt",
+  "home.planSession": "Einheit planen",
+  "home.logSession": "Einheit erfassen",
+  "home.thisWeek": "Letzte 7 Tage",
+  "home.sessions": "Einheiten",
+  "home.hours": "Stunden",
+  "home.distance": "Distanz",
+  "home.climb": "Höhenmeter",
+  "home.vsPrevious": "{delta} h gegenüber der Vorwoche",
+  "home.firstWeek": "Ihre erste Woche mit Daten — noch kein Vergleich möglich.",
+  "home.quietWeek": "Eine ruhige Woche. Erholung gehört dazu — war sie ungeplant, steigen Sie behutsam wieder ein.",
+  "home.fuelling": "Verpflegung",
+  "home.notScoredYet": "Noch nicht bewertet",
+  "home.recent": "Letzte Einheiten",
+  "home.noSessions": "Noch keine Einheiten. Verbinden Sie einen Dienst, dann erscheint Ihr Training hier.",
+  "home.readiness": "Erholung",
+  "home.readinessMeasured": "von Ihren Geräten",
+  "home.readinessSelf": "Ihre eigene Einschätzung",
+  "home.longestRecent": "Längste zuletzt",
+  "home.fuelIt": "Diese verpflegen →",
+  "home.shortcuts": "Ihre Werkzeuge",
+  "home.shortcutTeam": "Ihr Kader",
+  "home.shortcutTeamWhy": "Belastung und Verpflegung der von Ihnen betreuten Athletinnen und Athleten.",
+  "home.shortcutCatalog": "Produktübersicht",
+  "home.shortcutCatalogWhy": "Prüfen, was der Algorithmus empfehlen kann, und Eigenmarken ergänzen.",
+  "home.shortcutAdmin": "Plattform",
+  "home.shortcutAdminWhy": "Benutzer, Rollen und Plattform-Einstellungen.",
+  "home.openInsights": "Alle Auswertungen →",
+
   // ---- Account menu -------------------------------------------------------
   "account.menu": "Konto",
   "account.profile": "Profil & Gesundheit",
@@ -136,6 +170,30 @@ export const de: Dictionary = {
   "insights.bandBuilding": "Im Aufbau",
   "insights.bandSolid": "Solide",
   "insights.bandDialledIn": "Bestens eingestellt",
+
+  // ---- Fuelling next actions (ids come from the engine) -------------------
+  "action.logFirst": "Erfassen Sie Ihre nächste Einheit",
+  "action.logFirst.why":
+    "Eine einzige Erfassung zeigt dem Planer, wie sich die Verpflegung angefühlt hat — daraus lernt alles Weitere hier.",
+  "action.lowerCarbRate": "Kohlenhydratrate um ~10 g/Std. senken und neu aufbauen",
+  "action.lowerCarbRate.why":
+    "Ihr Magen bremst Sie. Der Algorithmus hat Ihre Obergrenze bereits gesenkt; bauen Sie über einige Wochen in kleinen Schritten wieder auf.",
+  "action.addCarbs": "Bei Einheiten über 90 Minuten ~10 g/Std. mehr Kohlenhydrate",
+  "action.addCarbs.why":
+    "Ihnen geht die Energie aus, während der Magen ruhig bleibt — das deutlichste Zeichen, dass noch Luft nach oben ist.",
+  "action.measureSweat": "Messen Sie Ihre Schweissrate einmal",
+  "action.measureSweat.why":
+    "Eine 90-minütige Einheit genügt — danach ersetzt Ihr eigener Wert die Schätzung für Flüssigkeit und Natrium.",
+  "action.connectService": "Verbinden Sie Ihren Trainingsdienst",
+  "action.connectService.why":
+    "Die Pläne nutzen dann Ihre echten Einheiten und das Gelände statt Ihrer Eingaben.",
+  "action.logMore": "Erfassen Sie {count} weitere Einheiten",
+  "action.logMore_one": "Erfassen Sie {count} weitere Einheit",
+  "action.logMore.why":
+    "Ab fünf Einheiten passt der Algorithmus Ihr Kohlenhydratziel an Ihren Magen und Ihre Energie an.",
+  "action.rehearseRace": "Proben Sie die Wettkampfverpflegung in der nächsten langen Einheit",
+  "action.rehearseRace.why":
+    "Ihre Verpflegung funktioniert. Der verbleibende Gewinn liegt darin, sie im Wettkampftempo zu üben, damit am Tag nichts neu ist.",
 
   // ---- Connect ------------------------------------------------------------
   "connect.title": "Verbindungen",

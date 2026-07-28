@@ -1,5 +1,6 @@
 import { type FuellingScore } from "../progress";
 import { useT, type TranslationKey } from "../i18n";
+import { actionText } from "../i18n/actions";
 
 /** Band labels come from the engine; the UI translates them for display. */
 const BAND_KEY: Record<FuellingScore["band"], TranslationKey> = {
@@ -98,12 +99,15 @@ export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore
       <div className="score-next">
         <h4 className="score-next-title">{t("insights.doNext")}</h4>
         <ol className="score-next-list">
-          {score.nextActions.map((a, i) => (
-            <li key={i}>
-              <strong>{a.title}</strong>
-              <span>{a.why}</span>
-            </li>
-          ))}
+          {score.nextActions.map((a, i) => {
+            const text = actionText(a, t);
+            return (
+              <li key={i}>
+                <strong>{text.title}</strong>
+                <span>{text.why}</span>
+              </li>
+            );
+          })}
         </ol>
         {onLearnMore && (
           <button type="button" className="link-btn" onClick={onLearnMore}>
