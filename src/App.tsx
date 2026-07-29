@@ -281,7 +281,15 @@ export function App() {
           onLang={setLang}
           themeChoice={themeChoice}
           onTheme={setThemeChoice}
-          onSwitchDemo={(p) => setAccount(signInAsDemo(p))}
+          onSwitchDemo={(p) => {
+            // A demo persona is not the signed-in account. Leaving the real
+            // session token in place meant the server kept answering as the
+            // original athlete, so "switch to Org admin" landed on an admin
+            // screen full of permission errors. Drop the token and the client
+            // is genuinely in demo mode as that persona.
+            clearSessionToken();
+            setAccount(signInAsDemo(p));
+          }}
           onSignOut={() => {
             clearSessionToken();
             setAccount(signOut());

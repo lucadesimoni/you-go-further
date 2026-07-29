@@ -320,6 +320,53 @@ await step("the start screen shows it as reviewed afterwards", async () => {
   if ((await page.locator(".pill-done").count()) === 0) throw new Error("logged session is not marked as reviewed");
 });
 
+console.log("── controls ──");
+await step("settings that apply immediately are switches, and they flip", async () => {
+  await page.click(".account-btn");
+  await page.click("text=Profile & health");
+  await page.waitForSelector("text=Body & preferences");
+  const sw = page.locator('.switch-row input[role="switch"]').first();
+  if ((await sw.count()) === 0) throw new Error("no switch on the profile screen");
+  const before = await sw.isChecked();
+  // Click the label, as a person does — the visible track is not the input.
+  await page.locator(".switch-row").first().click();
+  if ((await sw.isChecked()) === before) throw new Error("switch did not flip");
+  // Keyboard: Space must work, which is why this is an input and not a button.
+  await sw.focus();
+  await page.keyboard.press(" ");
+  if ((await sw.isChecked()) !== before) throw new Error("Space did not toggle the switch");
+});
+await step("every dropdown is themed, on-screen and aligned with its label", async () => {
+  const bad = await page.evaluate(() => {
+    const out = [];
+    for (const el of document.querySelectorAll("select")) {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0) continue;
+      const cs = getComputedStyle(el);
+      if (cs.backgroundImage === "none") out.push(`${el.id || "select"}: native arrow, not the themed chevron`);
+      if (r.height < 36) out.push(`${el.id || "select"}: ${Math.round(r.height)}px tall`);
+      if (r.right > window.innerWidth + 1) out.push(`${el.id || "select"}: overflows the viewport`);
+      const lab = el.id ? document.querySelector(`label[for="${CSS.escape(el.id)}"]`) : null;
+      if (lab && Math.abs(lab.getBoundingClientRect().x - r.x) > 1) {
+        out.push(`${el.id}: not aligned with its label`);
+      }
+    }
+    return out;
+  });
+  if (bad.length) throw new Error(bad.join("; "));
+});
+await step("the account menu opens under its trigger and stays on screen", async () => {
+  await page.click(".account-btn");
+  await page.waitForSelector(".account-dropdown");
+  const menu = await page.locator(".account-dropdown").boundingBox();
+  const btn = await page.locator(".account-btn").boundingBox();
+  const vw = page.viewportSize().width;
+  if (menu.x < 0 || menu.x + menu.width > vw + 1) throw new Error(`menu runs off screen (x=${menu.x}, w=${menu.width})`);
+  if (Math.abs(menu.x + menu.width - (btn.x + btn.width)) > 1) throw new Error("menu is not aligned to its trigger");
+  if (menu.y < btn.y + btn.height - 1) throw new Error("menu overlaps its trigger");
+  await page.keyboard.press("Escape");
+});
+
 console.log("── appearance & language ──");
 await step("light and dark are switchable and stick to <html>", async () => {
   await page.locator(".account-btn").click();

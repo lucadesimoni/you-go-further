@@ -6,6 +6,7 @@ import { estimateSweatRateMlPerH } from "../analysis";
 import { type AthleteProfile, loadProfile, saveProfile, syncProfile, profilePersistence } from "../api/profileStore";
 import { HEALTH_PLATFORMS, syncHealthSignals } from "../api/healthSync";
 import { useT } from "../i18n";
+import { Switch } from "./Switch";
 
 /**
  * Profile settings — the athlete's body + health data, moved out of the planner
@@ -116,10 +117,13 @@ export function ProfileView({ account }: { account: Account }) {
           </div>
         </div>
 
-        <label className="checkbox" style={{ marginTop: "var(--space-6)" }}>
-          <input type="checkbox" checked={profile.caffeineOk} onChange={(e) => set("caffeineOk", e.target.checked)} />
-          <span>{t("profile.caffeineLong")}</span>
-        </label>
+        {/* A preference that persists the instant it changes — a switch, not a
+            checkbox waiting on a Save button that doesn't exist here. */}
+        <Switch
+          label={t("profile.caffeineLong")}
+          checked={profile.caffeineOk}
+          onChange={(on) => set("caffeineOk", on)}
+        />
       </section>
 
       <section className="panel">
@@ -153,20 +157,16 @@ export function ProfileView({ account }: { account: Account }) {
           </p>
         </div>
 
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={profile.useSignals}
-            onChange={(e) => {
-              const on = e.target.checked;
-              if (on && profile.sweatRateMlPerH === 1000) {
-                set("sweatRateMlPerH", estimateSweatRateMlPerH(profile.bodyWeightKg, "moderate", "temperate"));
-              }
-              set("useSignals", on);
-            }}
-          />
-          <span>{t("profile.useMeasuredSignals")}</span>
-        </label>
+        <Switch
+          label={t("profile.useMeasuredSignals")}
+          checked={profile.useSignals}
+          onChange={(on) => {
+            if (on && profile.sweatRateMlPerH === 1000) {
+              set("sweatRateMlPerH", estimateSweatRateMlPerH(profile.bodyWeightKg, "moderate", "temperate"));
+            }
+            set("useSignals", on);
+          }}
+        />
 
         {profile.useSignals && (
           <div className="signals-body">

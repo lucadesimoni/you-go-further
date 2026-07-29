@@ -100,6 +100,7 @@ borders and pills; use ink whenever the colour is the text.
 | `.detail` | muted supporting paragraph |
 | `.why` / `.offering` / `.usage` | disclosures (collapsible "show your working") |
 | `.field` / `.field-row` / `label` / `select` / `input` | form controls |
+| `<Switch>` / `.switch-row` | a setting that applies the moment it is flipped |
 
 ## Rules of thumb
 1. **Never hard-code a colour or radius** — reference a token. New surfaces pick
@@ -110,3 +111,21 @@ borders and pills; use ink whenever the colour is the text.
    shouldn't be used.
 4. Semantic colour by meaning: `--accent` = primary/danger, `--success/post` =
    good, `--warn/during` = caution, `--info/pre` = neutral-informational.
+5. **Switch vs. checkbox is about when it takes effect, not about looks.** A
+   switch *is* the action — flipping it writes immediately (platform settings
+   patch the server, profile preferences persist on change), so it should read
+   as a state. A checkbox states an intention that a Save button later commits,
+   which is why the product form keeps one. A set of options where several can
+   be picked (connectable providers, plan phases) stays checkboxes or chips: a
+   row of switches would imply each is an independent setting.
+   `<Switch>` wraps a real `input[type=checkbox][role=switch]` rather than a
+   styled `<button>`, so label association, Space, and the screen-reader
+   "on"/"off" announcement come from the browser. The mobile app already used
+   `react-native` `Switch` for the same two profile preferences; the web now
+   matches it.
+6. **Selects draw their own chevron.** `appearance: none` plus a per-theme
+   `--chevron` data URI, because the native arrow is painted by the OS and
+   ignores the theme — on dark it reads as a foreign control. The options list
+   itself is still the OS's; `select option` sets its palette. Compact variants
+   (admin rows) keep the right padding for the chevron and never drop below a
+   36px target — 44px on a phone.

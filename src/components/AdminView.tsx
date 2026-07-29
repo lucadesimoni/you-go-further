@@ -10,6 +10,7 @@ import { adminPersistence, createUser, deleteUser, loadSettings, loadUsers, save
 import { toast } from "../ui/toast";
 import { confirm } from "../ui/confirm";
 import { ServerStatus } from "./ServerStatus";
+import { Switch } from "./Switch";
 
 const FEATURE_ROWS: { key: keyof (typeof PLANS)["free"]["features"]; label: string }[] = [
   { key: "maxConnectedProviders", label: "Connected services" },
@@ -290,18 +291,14 @@ export function AdminView({ config, tier, orgId, role }: { config: AppConfig; ti
               ["maintenanceMode", "Maintenance mode", "Show a banner and freeze writes across the platform."],
             ] as const
           ).map(([key, label, hint]) => (
-            <label key={key} className="admin-toggle">
-              <input
-                type="checkbox"
-                checked={settings[key]}
-                disabled={busy}
-                onChange={(e) => patchSettings({ [key]: e.target.checked })}
-              />
-              <span>
-                <strong>{label}</strong>
-                <span className="admin-toggle-hint">{hint}</span>
-              </span>
-            </label>
+            <Switch
+              key={key}
+              label={label}
+              hint={hint}
+              checked={settings[key]}
+              disabled={busy}
+              onChange={(on) => patchSettings({ [key]: on })}
+            />
           ))}
         </section>
       )}

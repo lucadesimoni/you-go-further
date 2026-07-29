@@ -21,6 +21,9 @@
   --text: #e8eef1;
   --muted: #9fb0b8;
   --on-accent: #0f1417; /* text on a filled accent/phase colour */
+  /* Select chevron. Drawn per theme because `appearance: none` replaces the
+     native arrow, and a data URI cannot read a CSS colour token. */
+  --chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%239fb0b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   /* ---- Color · brand + semantic ---- */
   --accent: #e4002b; /* Swiss red — primary / danger */
@@ -118,6 +121,7 @@
   --text: #0e1519;
   --muted: #55666f;
   --on-accent: #ffffff;
+  --chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%2355666f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   --accent: #d4002a;
   --accent-soft: rgba(212, 0, 42, 0.10);
@@ -159,6 +163,7 @@
     --text: #0e1519;
     --muted: #55666f;
     --on-accent: #ffffff;
+    --chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%2355666f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     --accent: #d4002a;
     --accent-soft: rgba(212, 0, 42, 0.10);
     --info: #2f8ecb;
@@ -286,14 +291,27 @@ label,
 }
 
 select {
-  background: var(--panel-2);
+  /* The native arrow is drawn by the OS and ignores the theme, so it reads as
+     a foreign control on dark. Replace it with one chevron of our own. */
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--panel-2);
+  background-image: var(--chevron);
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 8px;
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: 10px 34px 10px 12px;
   font-size: var(--text-md);
   width: 100%;
+  cursor: pointer;
 }
+select:hover { border-color: var(--border-strong); }
+select:disabled { opacity: 0.55; cursor: not-allowed; }
+/* The options list is still the OS's; tell it which palette to paint. */
+select option { background: var(--panel); color: var(--text); }
 
 input[type="range"] {
   accent-color: var(--accent-ink);
@@ -2096,9 +2114,18 @@ code {
   color: var(--muted);
   border-bottom: 1px solid var(--border-strong);
 }
-.admin-user select {
-  padding: var(--space-2) var(--space-3);
+.admin-user select,
+.admin-add select {
+  /* Compact, but still leaving room for the chevron — and never below the
+     36px a finger needs. */
+  padding: var(--space-2) 28px var(--space-2) var(--space-3);
+  background-position: right 8px center;
   font-size: var(--text-base);
+  min-height: 36px;
+}
+@media (max-width: 640px) {
+  .admin-user select,
+  .admin-add select { min-height: 44px; }
 }
 .admin-user-id {
   display: flex;
@@ -2164,30 +2191,6 @@ code {
 .admin-provider.on {
   border-color: var(--post);
   color: var(--text);
-}
-.admin-toggle {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-  padding: var(--space-4) 0;
-  border-top: 1px solid var(--border);
-  cursor: pointer;
-}
-.admin-toggle input {
-  margin-top: 3px;
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent-ink);
-}
-.admin-toggle span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.admin-toggle-hint {
-  font-size: var(--text-sm);
-  color: var(--muted);
-  font-weight: 400;
 }
 @media (max-width: 640px) {
   .admin-user {
@@ -3092,7 +3095,6 @@ code {
   gap: var(--space-3);
   margin: var(--space-5) 0;
 }
-.onboard-check { margin: var(--space-5) 0; }
 .onboard-sync { margin: var(--space-6) 0; }
 .onboard-sync .group-label { display: block; margin-bottom: var(--space-3); }
 .onboard-skip {
@@ -3114,6 +3116,75 @@ code {
   margin: 0 0 var(--space-3);
 }
 .auth-sent strong { color: var(--text); }
+
+/* --- Switch: settings that apply the moment they are flipped ---------------
+   The native input stays in the DOM (label association, Space, screen-reader
+   "on"/"off") but is visually replaced by the track below it. */
+.switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  cursor: pointer;
+  color: var(--text);
+}
+.switch-block {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--border);
+}
+.switch-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.switch-label { font-weight: 600; }
+.switch-hint { font-size: var(--text-sm); color: var(--muted); font-weight: 400; }
+
+.switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 44px;
+  height: 26px;
+  margin: 0;
+  cursor: pointer;
+}
+.switch-track {
+  flex: 0 0 auto;
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-inset);
+  border: 1px solid var(--border-strong);
+  transition: background var(--motion-fast), border-color var(--motion-fast);
+}
+.switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--muted);
+  transition: transform var(--motion-fast), background var(--motion-fast);
+}
+.switch-input:checked + .switch-track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.switch-input:checked + .switch-track .switch-thumb {
+  transform: translateX(18px);
+  background: #fff;
+}
+.switch-input:focus-visible + .switch-track {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+.switch-disabled { opacity: 0.55; cursor: not-allowed; }
+.switch-disabled .switch-input { cursor: not-allowed; }
+/* Reduced motion: the state still changes, it just doesn't slide. */
+@media (prefers-reduced-motion: reduce) {
+  .switch-track,
+  .switch-thumb { transition: none; }
+}
 
 /* --- Accessibility: always-visible keyboard focus --- */
 :focus-visible {

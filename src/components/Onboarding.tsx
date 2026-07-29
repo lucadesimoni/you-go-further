@@ -7,6 +7,7 @@ import { ALL_PROVIDER_IDS, DESCRIPTORS } from "../providers";
 import { api, isApiConfigured } from "../api/client";
 import { getConfig } from "../config";
 import { setOnboardStep } from "../api/onboarding";
+import { Switch } from "./Switch";
 
 /**
  * First-run guided journey. Stitches the product story into one flow — the
@@ -153,10 +154,12 @@ export function Onboarding({
                 ))}
               </select>
             </div>
-            <label className="checkbox onboard-check">
-              <input type="checkbox" checked={profile.caffeineOk} onChange={(e) => set("caffeineOk", e.target.checked)} />
-              <span>I tolerate caffeine — suggest it for long / hard efforts</span>
-            </label>
+            <Switch
+              label="I tolerate caffeine"
+              hint="Suggest it for long or hard efforts."
+              checked={profile.caffeineOk}
+              onChange={(on) => set("caffeineOk", on)}
+            />
             <div className="onboard-sync">
               <span className="group-label">Sync body signals (optional)</span>
               <div className="health-platforms">
