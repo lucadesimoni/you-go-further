@@ -24,6 +24,7 @@ Scope: general endurance — running, trail running, cycling, triathlon, swimmin
 | **Languages** | `src/i18n/`, `docs/i18n.md` | English + Swiss German, with guard tests for parity, placeholders and ss-not-ß. |
 | **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fueling formulas. |
 | **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `user-flows.md`. |
+| **Vision & roadmap** | `docs/vision.md` | The seven phases, plus an honest read of where this code stands against Phase 1. |
 | **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |
 | **Tests** | `src/**/*.test.ts` | 46 Vitest cases across engine, analysis, data pipeline, subscription, RBAC, and runtime. |
 

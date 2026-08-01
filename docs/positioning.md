@@ -44,6 +44,9 @@ Swiss product our engine should be able to recommend when its electrolyte profil
 fits the athlete's sodium/hydration target. A recommendation layer *drives* product
 sales — we can be a demand channel for brands like MOOV, Sponser, and Winforce.
 
+> The seven-phase company roadmap lives in **`docs/vision.md`**; this page is the
+> competitive position that roadmap starts from.
+
 ## Where we must get stronger (mission-aligned roadmap)
 
 These are honest gaps between today's foundation and the purpose:
