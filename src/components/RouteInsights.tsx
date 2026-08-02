@@ -10,6 +10,7 @@ import { loadProfile } from "../api/profileStore";
 import { ElevationFuelChart } from "./ElevationFuelChart";
 import type { SessionInput } from "./Planner";
 import { useT } from "../i18n";
+import { Explain } from "./Explain";
 
 const TERRAIN_LABEL: Record<string, string> = {
   flat: "Flat",
@@ -207,7 +208,11 @@ export function RouteInsights({
             <span className="pill">{fuelPlan.climbs.length > 0 ? t("route.byTerrain") : t("route.evenSpacing")}</span>
           </div>
           <ElevationFuelChart plan={fuelPlan} estimated={terrain.source === "estimated"} />
-          <p className="detail elev-note">{t("route.explain")}</p>
+          {/* The physiology behind where the stops sit: worth being able to
+              read, not worth reading past every time. */}
+          <Explain>
+            <p>{t("route.explain")}</p>
+          </Explain>
         </div>
       )}
 

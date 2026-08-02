@@ -82,6 +82,7 @@ export const en = {
 
   // ---- Common -------------------------------------------------------------
   "common.of": "of",
+  "common.whyThis": "Why this",
 
   // ---- Domain option labels ----------------------------------------------
   "goal.general-fitness": "General fitness",
@@ -164,8 +165,7 @@ export const en = {
   "insights.noSessions": "No sessions synced yet — connect a service and your real training shows up here.",
   "insights.connectService": "Connect a service",
   "insights.streak": "{days}-day streak · best {best}",
-  "insights.notScored":
-    "Log a session and this starts tracking how well your fuelling is actually working — energy, gut, and whether the long ones are covered.",
+  "insights.notScored": "Log a session and this starts tracking how well your fuelling works.",
   "insights.bandGettingStarted": "Getting started",
   "insights.bandBuilding": "Building",
   "insights.bandSolid": "Solid",
@@ -198,8 +198,7 @@ export const en = {
   "connect.locked": "Locked",
   "connect.route": "Route & fuel stops",
   "connect.withGps": "{count} with GPS",
-  "connect.routeIntro":
-    "A recorded route with fuelling stops pinned along it — where to take carbs so you never run the tank down. Swiss routes use the official swisstopo national map, with terrain from swisstopo and conditions from the nearest MeteoSwiss station.",
+  "connect.routeIntro": "Where to take carbohydrate on this course, placed by its terrain.",
   "connect.chooseSession": "Choose a session",
   "connect.baseMap": "Base map",
   "connect.terrain": "Terrain",
@@ -226,16 +225,13 @@ export const en = {
   "shop.orderAt": "Order at {brand} →",
   "shop.noShop": "No shop is listed for these products yet.",
   "shop.needsApi": "Connect the app to its API to see where to order these.",
-  "shop.affiliateNote":
-    "You order directly from the brand. We earn a commission on partner orders — it costs you nothing extra, and it is what keeps this app free.",
-  "shop.noPartnerNote":
-    "You order directly from the brand. We have no partner agreement with them, so we earn nothing on this — the link is here because it is the right product.",
+  "shop.affiliateNote": "You order from the brand. Partner orders pay us a commission, never at your cost.",
+  "shop.noPartnerNote": "You order from the brand. We have no agreement with them and earn nothing here.",
   "shop.affiliateAmount": "About CHF {chf} on this basket.",
 
   // ---- Race / route import ------------------------------------------------
   "race.title": "Plan a race or route",
-  "race.intro":
-    "Drop in the GPX from the race organiser — or any route you have planned — and get the fuelling for that exact course: how much per hour, and where on the climbs to take it.",
+  "race.intro": "The organiser's GPX, turned into a fuelling plan for that exact course.",
   "race.drop": "Drop a .gpx file here",
   "race.choose": "Choose a file",
   "race.privacy": "The file is read on your device. Only the route line is sent on, for terrain and weather.",

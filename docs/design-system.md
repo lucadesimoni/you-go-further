@@ -101,6 +101,7 @@ borders and pills; use ink whenever the colour is the text.
 | `.why` / `.offering` / `.usage` | disclosures (collapsible "show your working") |
 | `.field` / `.field-row` / `label` / `select` / `input` | form controls |
 | `<Switch>` / `.switch-row` | a setting that applies the moment it is flipped |
+| `<Explain>` / `.explain` | the reasoning behind something, closed by default |
 
 ## Rules of thumb
 1. **Never hard-code a colour or radius** — reference a token. New surfaces pick
@@ -123,7 +124,17 @@ borders and pills; use ink whenever the colour is the text.
    "on"/"off" announcement come from the browser. The mobile app already used
    `react-native` `Switch` for the same two profile preferences; the web now
    matches it.
-6. **Selects draw their own chevron.** `appearance: none` plus a per-theme
+6. **A screen shows the answer, not an essay about the answer.** The lead under
+   a heading is one line — what this is, in the fewest words that are still
+   true. Anything longer is *reasoning*, and reasoning goes in `<Explain>`:
+   closed by default, one tap away, findable by the browser's own page search.
+   Hiding it entirely would be worse than the wall of text, because the
+   reasoning is what makes the recommendation worth trusting; making it the
+   first thing to read is worse than either. Two things never collapse:
+   safety wording and anything that says what we earn.
+7. **Every interactive target is at least 24×24 px** (WCAG 2.5.8), including
+   link-styled buttons. Padding, not font size, is what gets them there.
+8. **Selects draw their own chevron.** `appearance: none` plus a per-theme
    `--chevron` data URI, because the native arrow is painted by the OS and
    ignores the theme — on dark it reads as a foreign control. The options list
    itself is still the OS's; `select option` sets its palette. Compact variants

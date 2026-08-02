@@ -115,16 +115,15 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
           <span className="pill">{catalog.length} products</span>
         </div>
         <p className="detail">
-          {brands.join(" · ")} — the Swiss-only library that drives every recommendation. Each product
-          has a <strong>when-to-use</strong> guide (tap a card).{" "}
+          {brands.join(" · ")} — the library every recommendation draws from. Tap a card for when to
+          use it.{" "}
           {canEdit ? (
             <>
-              You can add your own products, override a built-in's values, and set shop links.{" "}
               <strong>{customCount}</strong> house product{customCount === 1 ? "" : "s"} ·{" "}
               {catalogPersistence.mode() === "server" ? "saved on the server" : "saved in this browser"}.
             </>
           ) : (
-            "Read-only — a nutritionist or admin curates this library."
+            <>Read-only — a nutritionist or admin curates it.</>
           )}
         </p>
 

@@ -13,7 +13,7 @@ import {
 } from "../auth";
 import { PERSONAS } from "../personas";
 import { api, isApiConfigured } from "../api/client";
-import { useI18n, LANGS } from "../i18n";
+import { useI18n, LANGS, type Lang } from "../i18n";
 
 /** Sign-in / register gate. Choose Apple, Google, or email — or a demo account. */
 export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account) => void; allowDemo: boolean }) {
@@ -81,19 +81,18 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
       <div className="auth-card">
         {/* Language is switchable before sign-in too — otherwise a German
             speaker whose browser reports English has no way to change it. */}
-        <div className="auth-lang" role="group" aria-label={t("language.title")}>
-          {LANGS.map((l) => (
-            <button
-              key={l}
-              type="button"
-              lang={l}
-              className={`auth-lang-btn${l === lang ? " active" : ""}`}
-              aria-pressed={l === lang}
-              onClick={() => setLang(l)}
-            >
-              {l.toUpperCase()}
-            </button>
-          ))}
+        <div className="auth-lang">
+          <select
+            aria-label={t("language.title")}
+            value={lang}
+            onChange={(e) => setLang(e.target.value as Lang)}
+          >
+            {LANGS.map((l) => (
+              <option key={l} value={l} lang={l}>
+                {t(`language.${l}` as "language.en")}
+              </option>
+            ))}
+          </select>
         </div>
         <p className="kicker">{t("app.brand")}</p>
         <h1 className="auth-title">{t("auth.headline")}</h1>

@@ -87,6 +87,7 @@ export const it: Dictionary = {
 
   // ---- Common -------------------------------------------------------------
   "common.of": "di",
+  "common.whyThis": "Perché",
 
   // ---- Domain option labels ----------------------------------------------
   "goal.general-fitness": "Forma generale",
@@ -171,7 +172,7 @@ export const it: Dictionary = {
   "insights.connectService": "Collegare un servizio",
   "insights.streak": "{days} giorni consecutivi · record {best}",
   "insights.notScored":
-    "Registri un allenamento e questo punteggio inizierà a misurare quanto funziona davvero la sua alimentazione — energia, stomaco e se gli allenamenti lunghi sono coperti.",
+    "Registri un allenamento e questo punteggio misurerà quanto funziona la sua alimentazione.",
   "insights.bandGettingStarted": "Primi passi",
   "insights.bandBuilding": "In crescita",
   "insights.bandSolid": "Solido",
@@ -208,8 +209,7 @@ export const it: Dictionary = {
   "connect.locked": "Bloccato",
   "connect.route": "Percorso e punti di rifornimento",
   "connect.withGps": "{count} con GPS",
-  "connect.routeIntro":
-    "Un percorso registrato con i rifornimenti collocati lungo di esso — dove prendere i carboidrati per non restare mai a secco. I percorsi svizzeri usano la carta nazionale ufficiale di swisstopo, con il rilievo di swisstopo e le condizioni della stazione MeteoSvizzera più vicina.",
+  "connect.routeIntro": "Dove prendere carboidrati su questo percorso, in base al suo terreno.",
   "connect.chooseSession": "Scegliere un allenamento",
   "connect.baseMap": "Sfondo cartografico",
   "connect.terrain": "Terreno",
@@ -237,15 +237,14 @@ export const it: Dictionary = {
   "shop.noShop": "Per questi prodotti non è ancora indicato alcun negozio.",
   "shop.needsApi": "Colleghi l'app alla sua API per vedere dove ordinarli.",
   "shop.affiliateNote":
-    "Ordina direttamente dal marchio. Sugli ordini presso i nostri partner riceviamo una provvigione — per lei senza alcun sovrapprezzo, ed è ciò che mantiene gratuita questa app.",
+    "Ordina dal marchio. Gli ordini presso i partner ci pagano una provvigione, mai a suo carico.",
   "shop.noPartnerNote":
-    "Ordina direttamente dal marchio. Con questo marchio non abbiamo un accordo di partnership, quindi non guadagniamo nulla — il link è qui perché è il prodotto giusto.",
+    "Ordina dal marchio. Con questo marchio non abbiamo accordi e qui non guadagniamo nulla.",
   "shop.affiliateAmount": "Circa CHF {chf} su questo carrello.",
 
   // ---- Race / route import ------------------------------------------------
   "race.title": "Pianificare una gara o un percorso",
-  "race.intro":
-    "Carichi il file GPX dell'organizzatore — o un percorso che ha preparato — e ottenga l'alimentazione per quel tracciato esatto: quanto all'ora e dove prenderla in salita.",
+  "race.intro": "Il GPX dell'organizzatore, trasformato in un piano di alimentazione per quel tracciato.",
   "race.drop": "Trascini qui un file .gpx",
   "race.choose": "Scegliere un file",
   "race.privacy": "Il file viene letto sul suo dispositivo. Viene trasmesso solo il tracciato, per terreno e meteo.",

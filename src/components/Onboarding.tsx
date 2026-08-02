@@ -75,8 +75,8 @@ export function Onboarding({
             <p className="kicker">Welcome, {firstName}</p>
             <h1 className="auth-title">Fuel your body to go further</h1>
             <p className="auth-sub">
-              The right nutrition <strong>before, during and after</strong> every session — optimised from your
-              training data, the day's forecast and current sports science, and it learns from every session you log.
+              The right nutrition <strong>before, during and after</strong> every session — from your own training
+              data.
             </p>
             <div className="onboard-promise">
               <div className="onboard-promise-item">
@@ -100,8 +100,7 @@ export function Onboarding({
             <p className="kicker">Step 2 · Connect</p>
             <h1 className="auth-title">Connect your training & health</h1>
             <p className="auth-sub">
-              Link Strava, Garmin, Polar or Suunto — and your health platform — so plans use your real sessions,
-              readiness and sweat data. You can always do this later.
+              So plans use your real sessions, not what you type in. You can do this later.
             </p>
             <div className="onboard-logos">
               {ALL_PROVIDER_IDS.map((id) => (
@@ -186,8 +185,7 @@ export function Onboarding({
             <p className="kicker">You're set</p>
             <h1 className="auth-title">Let's build your first plan</h1>
             <p className="auth-sub">
-              Tell us the session and we'll tailor before / during / after fuelling from Swiss products — then log how
-              it went so it learns and gets sharper each time.
+              Tell us the session; we'll tailor the fuelling from Swiss products.
             </p>
             <button type="button" className="auth-btn auth-primary" onClick={onFinish}>
               Build my first plan →

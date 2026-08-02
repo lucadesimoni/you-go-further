@@ -397,8 +397,11 @@ await step("buying means going to the brand, not our own checkout", async () => 
   const partners = await page.locator(".cart-partner").count();
   if (partners === 0) throw new Error("no partner shop offered for the plan");
   // With no signed programs, the app must say so rather than imply one.
+  // Say what we earn, either way — a commission, or nothing.
   const note = await page.locator(".cart .note-top").last().innerText();
-  if (!/partner|commission/i.test(note)) throw new Error(`how this is paid for is not stated: ${note}`);
+  if (!/commission|earn nothing|no agreement/i.test(note)) {
+    throw new Error(`how this is paid for is not stated: ${note}`);
+  }
 });
 
 console.log("── four Swiss languages ──");
@@ -409,7 +412,7 @@ await step("French and Italian are real, not a fallback to English", async () =>
     ["Deutsch", /Start|Planen/],
   ]) {
     await page.click(".account-btn");
-    await page.click(`.dropdown-choice-lang button:has-text("${label}")`);
+    await page.selectOption("#lang-select", { label });
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
     const nav = (await page.locator(".topnav-tab").allInnerTexts()).join(", ");
@@ -420,17 +423,18 @@ await step("French and Italian are real, not a fallback to English", async () =>
   }
   // Back to English for the steps that follow.
   await page.click(".account-btn");
-  await page.click('.dropdown-choice-lang button:has-text("English")');
+  await page.selectOption("#lang-select", { label: "English" });
   await page.keyboard.press("Escape");
 });
-await step("the language picker fits inside its menu", async () => {
+await step("the language picker is a dropdown, and it holds every language", async () => {
   await page.click(".account-btn");
-  await page.waitForSelector(".dropdown-choice-lang");
+  await page.waitForSelector("#lang-select");
+  const options = await page.locator("#lang-select option").allInnerTexts();
+  if (options.length < 4) throw new Error(`only ${options.length} languages offered: ${options.join(", ")}`);
+  // A select never clips its own options, but it can still overflow the menu.
   const menu = await page.locator(".account-dropdown").boundingBox();
-  for (const b of await page.locator(".dropdown-choice-lang button").all()) {
-    const r = await b.boundingBox();
-    if (r.x + r.width > menu.x + menu.width + 1) throw new Error("a language name is clipped by the menu");
-  }
+  const sel = await page.locator("#lang-select").boundingBox();
+  if (sel.x + sel.width > menu.x + menu.width + 1) throw new Error("the language select overflows the menu");
   await page.keyboard.press("Escape");
 });
 
@@ -497,7 +501,7 @@ await step("light and dark are switchable and stick to <html>", async () => {
   if (dark !== "dark") throw new Error(`expected dark, got ${dark}`);
 });
 await step("German switches the interface and the html lang", async () => {
-  await page.locator(".choice", { hasText: "Deutsch" }).click();
+  await page.selectOption("#lang-select", { label: "Deutsch" });
   await page.waitForTimeout(400);
   const lang = await page.evaluate(() => document.documentElement.lang);
   if (lang !== "de") throw new Error(`html lang is ${lang}`);

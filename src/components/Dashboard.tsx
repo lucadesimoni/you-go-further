@@ -15,6 +15,7 @@ import { loadProfile } from "../api/profileStore";
 import { Stat } from "./Stat";
 import { useI18n, type TranslationKey } from "../i18n";
 import { RouteInsights } from "./RouteInsights";
+import { Explain } from "./Explain";
 // Code-split: Leaflet (~150 KB) loads only when a route map is actually shown.
 const RouteMap = lazy(() => import("./RouteMap").then((m) => ({ default: m.RouteMap })));
 
@@ -254,9 +255,7 @@ export function Dashboard({
         </div>
         {banner && <p className="upgrade-note" style={{ borderColor: "var(--post)", marginTop: 0 }}>{banner}</p>}
         <p className="detail">
-          {oauthMode
-            ? "Connect signs you in on the provider (Strava OAuth) and imports your activities to your account."
-            : "Link your training services. Data is normalised into one model and fed to the analysis and fuelling engine."}
+          {oauthMode ? "Sign in on the provider; your sessions import to your account." : "Link your training services."}
         </p>
         <div className="providers">
           {ALL_PROVIDER_IDS.map((id) => {
@@ -349,11 +348,13 @@ export function Dashboard({
             <Stat label="Resting HR" value={physiology.restingHr ? `${physiology.restingHr} bpm` : "—"} />
             <Stat label="Sleep" value={physiology.sleepScore ? `${physiology.sleepScore}/100` : "—"} />
           </div>
-          <p className="detail note-top">
-            These personalise your fuelling — low readiness dials up recovery carbs, and a sweat test
-            (add it in the Fuel planner) sets hydration and sodium to your own chemistry instead of
-            population averages.
-          </p>
+          <Explain>
+            <p>
+              These personalise your fuelling — low readiness dials up recovery carbs, and a sweat
+              test (add it in the Fuel planner) sets hydration and sodium to your own chemistry
+              instead of population averages.
+            </p>
+          </Explain>
         </section>
       )}
 

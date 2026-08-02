@@ -87,6 +87,7 @@ export const de: Dictionary = {
 
   // ---- Common -------------------------------------------------------------
   "common.of": "von",
+  "common.whyThis": "Warum das",
 
   // ---- Domain option labels ----------------------------------------------
   "goal.general-fitness": "Allgemeine Fitness",
@@ -171,7 +172,7 @@ export const de: Dictionary = {
   "insights.connectService": "Dienst verbinden",
   "insights.streak": "{days} Tage in Folge · Bestwert {best}",
   "insights.notScored":
-    "Erfassen Sie eine Einheit, dann zeigt dieser Wert, wie gut Ihre Verpflegung wirklich funktioniert — Energie, Magen und ob die langen Einheiten abgedeckt sind.",
+    "Erfassen Sie eine Einheit — dann misst dieser Wert, wie gut Ihre Verpflegung wirkt.",
   "insights.bandGettingStarted": "Am Anfang",
   "insights.bandBuilding": "Im Aufbau",
   "insights.bandSolid": "Solide",
@@ -208,8 +209,7 @@ export const de: Dictionary = {
   "connect.locked": "Gesperrt",
   "connect.route": "Route & Verpflegungsstopps",
   "connect.withGps": "{count} mit GPS",
-  "connect.routeIntro":
-    "Eine aufgezeichnete Route mit eingezeichneten Verpflegungsstopps — wo Sie Kohlenhydrate nehmen, damit Ihnen nie der Treibstoff ausgeht. Schweizer Routen nutzen die offizielle Landeskarte von swisstopo, mit Gelände von swisstopo und Bedingungen der nächstgelegenen MeteoSchweiz-Station.",
+  "connect.routeIntro": "Wo Sie auf dieser Strecke Kohlenhydrate nehmen — nach ihrem Gelände gesetzt.",
   "connect.chooseSession": "Einheit auswählen",
   "connect.baseMap": "Kartenhintergrund",
   "connect.terrain": "Gelände",
@@ -238,15 +238,14 @@ export const de: Dictionary = {
   "shop.noShop": "Für diese Produkte ist noch kein Shop hinterlegt.",
   "shop.needsApi": "Verbinden Sie die App mit ihrer API, um zu sehen, wo Sie diese bestellen können.",
   "shop.affiliateNote":
-    "Sie bestellen direkt bei der Marke. Für Bestellungen bei Partnern erhalten wir eine Provision — für Sie ohne Aufpreis, und dadurch bleibt diese App kostenlos.",
+    "Sie bestellen bei der Marke. Partner-Bestellungen zahlen uns eine Provision — nie auf Ihre Kosten.",
   "shop.noPartnerNote":
-    "Sie bestellen direkt bei der Marke. Mit ihr besteht keine Partnerschaft, wir verdienen daran also nichts — der Link steht hier, weil es das richtige Produkt ist.",
+    "Sie bestellen bei der Marke. Mit ihr besteht keine Partnerschaft — wir verdienen hier nichts.",
   "shop.affiliateAmount": "Rund CHF {chf} bei diesem Warenkorb.",
 
   // ---- Wettkampf- / Routen-Import -----------------------------------------
   "race.title": "Wettkampf oder Route planen",
-  "race.intro":
-    "Laden Sie die GPX-Datei des Veranstalters — oder eine selbst geplante Route — und Sie erhalten die Verpflegung für genau diese Strecke: wie viel pro Stunde und wo an den Anstiegen.",
+  "race.intro": "Die GPX-Datei des Veranstalters — als Verpflegungsplan für genau diese Strecke.",
   "race.drop": "GPX-Datei hierher ziehen",
   "race.choose": "Datei auswählen",
   "race.privacy": "Die Datei wird auf Ihrem Gerät gelesen. Weitergegeben wird nur die Streckenlinie — für Gelände und Wetter.",

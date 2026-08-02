@@ -1588,7 +1588,8 @@ code {
   color: var(--muted);
   font-size: var(--text-base);
   cursor: pointer;
-  padding: 4px;
+  padding: var(--space-2) var(--space-3);
+  min-height: 24px;
 }
 
 .auth-legal {
@@ -1756,8 +1757,10 @@ code {
 }
 
 .product-shop {
-  display: inline-block;
-  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin-top: 4px;
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--accent-ink);
@@ -2236,7 +2239,12 @@ code {
   font-weight: 600;
   font-size: var(--text-base);
   cursor: pointer;
-  padding: 0;
+  /* A link-styled button is still a target: 24px is the accessible minimum,
+     and the negative margin keeps the text optically where it was. */
+  padding: var(--space-2) 0;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
 }
 .link-btn:hover { text-decoration: underline; }
 
@@ -2337,6 +2345,8 @@ code {
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
+  min-height: 24px;
+  padding: var(--space-1) 0;
   background: none;
   border: none;
   cursor: pointer;
@@ -2813,27 +2823,10 @@ code {
 /* Language switch on the sign-in screen. */
 .auth-lang {
   display: flex;
-  gap: var(--space-2);
   justify-content: flex-end;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
-.auth-lang-btn {
-  min-width: 40px;
-  min-height: 32px;
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-.auth-lang-btn.active { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
-@media (max-width: 640px) {
-  .auth-lang-btn { min-height: 44px; }
-}
+.auth-lang select { width: auto; min-width: 140px; }
 
 /* Segmented choice inside the account menu (appearance, language). */
 .dropdown-choice {
@@ -2841,12 +2834,14 @@ code {
   gap: var(--space-2);
   padding: var(--space-2) var(--space-5) var(--space-4);
 }
-/* Four language names do not fit across a 280px menu — two rows of two do,
-   and every name stays readable instead of being clipped. */
-.dropdown-choice-lang {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+/* Language is a select: four names never fit across a 280px menu, and the
+   list is meant to grow. */
+.dropdown-select {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
+.dropdown-select .dropdown-label { padding: 0; }
 .choice {
   flex: 1 1 0;
   min-height: 34px;
@@ -3113,6 +3108,8 @@ code {
 .onboard-skip {
   display: block;
   margin: var(--space-6) auto 0;
+  padding: var(--space-2) var(--space-4);
+  min-height: 24px;
   background: none;
   border: none;
   color: var(--muted);
@@ -3196,6 +3193,38 @@ code {
 @media (max-width: 640px) {
   .race-drop { padding: var(--space-5) var(--space-4); }
 }
+
+/* --- Explain: the reasoning, one tap away rather than in the way --------- */
+.explain {
+  margin-top: var(--space-4);
+  font-size: var(--text-base);
+}
+.explain > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+  list-style: none;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.explain > summary::-webkit-details-marker { display: none; }
+.explain > summary::before {
+  content: "▸";
+  color: var(--accent-ink);
+  transition: transform var(--motion-fast);
+}
+.explain[open] > summary::before { transform: rotate(90deg); }
+.explain > summary:hover { color: var(--text); }
+.explain-body {
+  margin-top: var(--space-3);
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 68ch;
+}
+.explain-body p { margin: 0 0 var(--space-3); }
+.explain-body p:last-child { margin-bottom: 0; }
 
 /* --- Switch: settings that apply the moment they are flipped ---------------
    The native input stays in the DOM (label association, Space, screen-reader

@@ -62,10 +62,7 @@ export function FeedbackPanel({
           )}
         </div>
       </div>
-      <p className="detail">
-        After a session, tell us how it went. We learn your gut tolerance and energy needs and tune
-        the plan above — it gets more <em>you</em> every time.
-      </p>
+      <p className="detail">Tell us how the session went — the plan above learns from it.</p>
 
       <div className="fb-row">
         <div className="field">

@@ -134,20 +134,19 @@ export function AccountMenu({
             ))}
           </div>
 
-          <div className="dropdown-label">{t("language.title")}</div>
-          <div className="dropdown-choice dropdown-choice-lang" role="group" aria-label={t("language.title")}>
-            {LANGS.map((l) => (
-              <button
-                key={l}
-                type="button"
-                className={`choice${l === lang ? " choice-active" : ""}`}
-                aria-pressed={l === lang}
-                lang={l}
-                onClick={() => onLang(l)}
-              >
-                {t(`language.${l}` as "language.en")}
-              </button>
-            ))}
+          {/* A dropdown, not a row of buttons: four language names never fit
+              across a menu, and the list is meant to grow. */}
+          <div className="dropdown-choice dropdown-select">
+            <label className="dropdown-label" htmlFor="lang-select">
+              {t("language.title")}
+            </label>
+            <select id="lang-select" value={lang} onChange={(e) => onLang(e.target.value as Lang)}>
+              {LANGS.map((l) => (
+                <option key={l} value={l} lang={l}>
+                  {t(`language.${l}` as "language.en")}
+                </option>
+              ))}
+            </select>
           </div>
 
           {allowRoleSwitching && (
