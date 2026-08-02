@@ -11,7 +11,7 @@ import type { TranslationKey } from "./i18n/en";
 export const GOALS: { value: Goal; label: string; blurb: string; labelKey: TranslationKey; blurbKey: TranslationKey }[] = [
   { value: "general-fitness", label: "General fitness", blurb: "Stay healthy and train comfortably", labelKey: "goal.general-fitness", blurbKey: "goal.general-fitness.blurb" },
   { value: "endurance-performance", label: "Endurance performance", blurb: "Go longer and faster", labelKey: "goal.endurance-performance", blurbKey: "goal.endurance-performance.blurb" },
-  { value: "race-preparation", label: "Race preparation", blurb: "Dial in and rehearse race-day fueling", labelKey: "goal.race-preparation", blurbKey: "goal.race-preparation.blurb" },
+  { value: "race-preparation", label: "Race preparation", blurb: "Dial in and rehearse race-day fuelling", labelKey: "goal.race-preparation", blurbKey: "goal.race-preparation.blurb" },
   { value: "weight-loss", label: "Weight loss", blurb: "Lose fat while protecting hard sessions", labelKey: "goal.weight-loss", blurbKey: "goal.weight-loss.blurb" },
   { value: "recovery-focus", label: "Recovery focus", blurb: "Bounce back between sessions", labelKey: "goal.recovery-focus", blurbKey: "goal.recovery-focus.blurb" },
 ];

@@ -13,7 +13,7 @@ export interface IngestResult {
 
 /**
  * Orchestrates fetch → normalize → store → export for one provider window.
- * The registry hands back an already-normalized {@link Activity} stream, so the
+ * The registry hands back an already-normalised {@link Activity} stream, so the
  * pipeline is provider-agnostic: it dedupes into the store and fans out to any
  * configured export sinks.
  */

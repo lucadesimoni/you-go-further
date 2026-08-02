@@ -19,7 +19,7 @@ switcher lets you walk each flow (disable it in production with
 
 ---
 
-## 1. Solo athlete — onboarding → fueling plan
+## 1. Solo athlete — onboarding → fuelling plan
 1. Land on **Fuel planner** (default).
 2. Set goal, activity, duration, intensity, body weight, conditions, sweat, caffeine.
 3. Read the before / during / after plan with Swiss product picks.

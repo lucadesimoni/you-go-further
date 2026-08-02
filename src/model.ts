@@ -58,7 +58,7 @@ export interface AthleteProfile {
 
 /**
  * A daily wellness snapshot from a wearable — the raw "body signals" that let us
- * personalize beyond population averages. Not every provider reports every field
+ * personalise beyond population averages. Not every provider reports every field
  * (e.g. Strava has no readiness/HRV).
  */
 export interface Wellness {

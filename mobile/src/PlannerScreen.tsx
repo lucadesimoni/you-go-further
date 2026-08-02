@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { api } from "./api";
 import { C, S } from "./theme";
-import type { AthleteInput, FuelingSchedule, Goal, Intensity, Recommendation } from "./types";
+import type { AthleteInput, FuellingSchedule, Goal, Intensity, Recommendation } from "./types";
 
 const GOALS: { value: Goal; label: string }[] = [
   { value: "endurance-performance", label: "Performance" },
@@ -42,7 +42,7 @@ export function PlannerScreen({
   onPlanned?: (carbPerHourG: number) => void;
 }) {
   const [rec, setRec] = useState<Recommendation | null>(null);
-  const [schedule, setSchedule] = useState<FuelingSchedule | null>(null);
+  const [schedule, setSchedule] = useState<FuellingSchedule | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

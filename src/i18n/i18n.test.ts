@@ -192,3 +192,46 @@ describe("detectLang", () => {
     expect(detectLang([])).toBe("en");
   });
 });
+
+describe("house style", () => {
+  /**
+   * The app is Swiss and writes Swiss/British English. Both spellings were in
+   * the codebase at once — `FuelingTarget` next to `fuellingScore`, "fueling
+   * plan" next to "fuelling score" — which is the kind of thing a reader
+   * notices even when they can't name it.
+   */
+  const sourceFiles = async () => {
+    const { readFileSync, readdirSync } = await import("node:fs");
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? walk(`${dir}/${e.name}`) : [`${dir}/${e.name}`],
+      );
+    return walk("src")
+      // This file names the wrong spellings in order to forbid them.
+      .filter((f) => /\.(ts|tsx|css)$/.test(f) && !f.endsWith("i18n.test.ts"))
+      .map((f) => [f, readFileSync(f, "utf8")] as const);
+  };
+
+  it("spells it fuelling, never fueling", async () => {
+    const offenders = (await sourceFiles())
+      .filter(([, body]) => /\bfuel(ing|ed)\b|Fuel(ing|ed)[A-Z]|\bunfueled\b/i.test(body))
+      .map(([file]) => file);
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps the -ise ending in the words the UI actually uses", async () => {
+    const offenders = (await sourceFiles())
+      .filter(([, body]) => /\b(personaliz|optimiz|emphasiz)[a-z]*\b/.test(body))
+      .map(([file]) => file);
+    expect(offenders).toEqual([]);
+  });
+
+  it("says 'session' to the athlete, not 'activity'", () => {
+    // `Activity` is the model type and stays. What must not happen is a *label*
+    // calling the same thing by the other name.
+    for (const [key, value] of Object.entries(en)) {
+      if (!/^(home|insights|debrief|race|connect)\./.test(key)) continue;
+      expect(value.toLowerCase(), `${key} says "activity" to the athlete`).not.toMatch(/\bactivit(y|ies)\b/);
+    }
+  });
+});

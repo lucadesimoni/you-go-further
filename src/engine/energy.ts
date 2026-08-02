@@ -2,7 +2,7 @@
  * Carbohydrate-availability model — the data behind the "energy profile" strip
  * (the Tesla trip-planner analogue: projected charge vs. distance, here glycogen
  * vs. time). It contrasts two curves: how the athlete's usable carbohydrate store
- * drains **unfueled** (heading for the fade/bonk) versus **with the planned
+ * drains **unfuelled** (heading for the fade/bonk) versus **with the planned
  * intake**, which offsets the burn and keeps the tank above the line.
  *
  * It is deliberately a simple, transparent illustration — population estimates of
@@ -11,15 +11,15 @@
  * you" visible, in line with the platform's explainability goal.
  */
 import { formatClock } from "./schedule";
-import type { AthleteInput, FuelingTarget, Intensity } from "./types";
+import type { AthleteInput, FuellingTarget, Intensity } from "./types";
 
 export interface EnergySample {
   /** Minutes from the start. */
   minute: number;
   /** Carbohydrate remaining with the plan, as % of the usable store. */
-  fueledPct: number;
+  fuelledPct: number;
   /** Carbohydrate remaining on water only, as % of the usable store. */
-  unfueledPct: number;
+  unfuelledPct: number;
 }
 
 export interface EnergyProfile {
@@ -34,10 +34,10 @@ export interface EnergyProfile {
   bonkPct: number;
   samples: EnergySample[];
   /** Store remaining at the finish, each scenario. */
-  fueledEndPct: number;
-  unfueledEndPct: number;
-  /** Minute the unfueled curve crosses the fade line, if within the session. */
-  unfueledFadeMin?: number;
+  fuelledEndPct: number;
+  unfuelledEndPct: number;
+  /** Minute the unfuelled curve crosses the fade line, if within the session. */
+  unfuelledFadeMin?: number;
   /** Plain-language takeaway. */
   headline: string;
 }
@@ -51,7 +51,7 @@ const clampPct = (n: number): number => Math.max(0, Math.min(100, n));
  * Build the carbohydrate-availability profile for a session. Pure and
  * framework-free; the SVG strip and any tests read from it.
  */
-export function energyProfile(input: AthleteInput, target: FuelingTarget): EnergyProfile {
+export function energyProfile(input: AthleteInput, target: FuellingTarget): EnergyProfile {
   const durationMin = Math.max(1, input.durationMin);
   // Usable endurance glycogen ≈ 6.5 g/kg (muscle + liver), scaled by body mass.
   const storeG = Math.round(input.bodyWeightKg * 6.5);
@@ -60,8 +60,8 @@ export function energyProfile(input: AthleteInput, target: FuelingTarget): Energ
   const intakePerHourG = target.carbPerHourG;
   const bonkPct = 18;
 
-  const netUnfueled = burnPerHourG; // no intake
-  const netFueled = Math.max(0, burnPerHourG - intakePerHourG);
+  const netUnfuelled = burnPerHourG; // no intake
+  const netFuelled = Math.max(0, burnPerHourG - intakePerHourG);
 
   const remainingPct = (netPerHourG: number, minute: number): number =>
     clampPct(((storeG - (netPerHourG * minute) / 60) / storeG) * 100);
@@ -72,27 +72,27 @@ export function energyProfile(input: AthleteInput, target: FuelingTarget): Energ
     const minute = (durationMin * i) / STEPS;
     samples.push({
       minute,
-      fueledPct: remainingPct(netFueled, minute),
-      unfueledPct: remainingPct(netUnfueled, minute),
+      fuelledPct: remainingPct(netFuelled, minute),
+      unfuelledPct: remainingPct(netUnfuelled, minute),
     });
   }
 
-  const fueledEndPct = Math.round(remainingPct(netFueled, durationMin));
-  const unfueledEndPct = Math.round(remainingPct(netUnfueled, durationMin));
+  const fuelledEndPct = Math.round(remainingPct(netFuelled, durationMin));
+  const unfuelledEndPct = Math.round(remainingPct(netUnfuelled, durationMin));
 
   // When does water-only cross the fade line?
-  const unfueledFadeMinRaw =
-    netUnfueled > 0 ? ((storeG * (1 - bonkPct / 100)) / netUnfueled) * 60 : Infinity;
-  const unfueledFadeMin =
-    unfueledFadeMinRaw <= durationMin ? Math.round(unfueledFadeMinRaw) : undefined;
+  const unfuelledFadeMinRaw =
+    netUnfuelled > 0 ? ((storeG * (1 - bonkPct / 100)) / netUnfuelled) * 60 : Infinity;
+  const unfuelledFadeMin =
+    unfuelledFadeMinRaw <= durationMin ? Math.round(unfuelledFadeMinRaw) : undefined;
 
   const headline = buildHeadline({
     durationMin,
     intakePerHourG,
     bonkPct,
-    fueledEndPct,
-    unfueledEndPct,
-    unfueledFadeMin,
+    fuelledEndPct,
+    unfuelledEndPct,
+    unfuelledFadeMin,
   });
 
   return {
@@ -102,9 +102,9 @@ export function energyProfile(input: AthleteInput, target: FuelingTarget): Energ
     durationMin,
     bonkPct,
     samples,
-    fueledEndPct,
-    unfueledEndPct,
-    unfueledFadeMin,
+    fuelledEndPct,
+    unfuelledEndPct,
+    unfuelledFadeMin,
     headline,
   };
 }
@@ -113,19 +113,19 @@ function buildHeadline(p: {
   durationMin: number;
   intakePerHourG: number;
   bonkPct: number;
-  fueledEndPct: number;
-  unfueledEndPct: number;
-  unfueledFadeMin?: number;
+  fuelledEndPct: number;
+  unfuelledEndPct: number;
+  unfuelledFadeMin?: number;
 }): string {
   if (p.intakePerHourG === 0) {
-    return p.unfueledEndPct <= p.bonkPct
+    return p.unfuelledEndPct <= p.bonkPct
       ? `Even this session dips toward the fade line — but it's short/easy enough that water is the sensible call.`
       : `Short and easy enough to run on your own stores — fuel here is about comfort, not avoiding a fade.`;
   }
-  if (p.unfueledFadeMin !== undefined) {
+  if (p.unfuelledFadeMin !== undefined) {
     return `On water alone you'd hit the fade line around ${formatClock(
-      p.unfueledFadeMin,
-    )} — the plan keeps you above it to the finish with ~${p.fueledEndPct}% in reserve.`;
+      p.unfuelledFadeMin,
+    )} — the plan keeps you above it to the finish with ~${p.fuelledEndPct}% in reserve.`;
   }
-  return `You'd finish either way, but the plan lands you at ~${p.fueledEndPct}% vs ~${p.unfueledEndPct}% — fresher legs and a faster recovery.`;
+  return `You'd finish either way, but the plan lands you at ~${p.fuelledEndPct}% vs ~${p.unfuelledEndPct}% — fresher legs and a faster recovery.`;
 }

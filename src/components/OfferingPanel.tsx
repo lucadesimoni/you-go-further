@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { idealOffering, type FuelingTarget, type AthleteInput, type Product } from "../engine";
+import { idealOffering, type FuellingTarget, type AthleteInput, type Product } from "../engine";
 
 /**
  * Slot-by-slot view of the "ideal offering" algorithm: for each functional slot
@@ -13,7 +13,7 @@ export function OfferingPanel({
   catalog,
 }: {
   input: AthleteInput;
-  target: FuelingTarget;
+  target: FuellingTarget;
   catalog: Product[];
 }) {
   const offering = useMemo(() => idealOffering(input, target, catalog), [input, target, catalog]);

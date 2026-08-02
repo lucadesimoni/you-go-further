@@ -22,7 +22,7 @@ export interface PlanFeatures {
   loadAnalytics: boolean;
   /** Raw data export to warehouse / NDJSON / CSV. */
   dataExport: boolean;
-  /** AI-generated training & fueling insights. */
+  /** AI-generated training & fuelling insights. */
   aiInsights: boolean;
 }
 
@@ -40,7 +40,7 @@ export const PLANS: Record<Tier, Plan> = {
     tier: "free",
     name: "Base",
     priceChfPerMonth: 0,
-    tagline: "Connect one service and get your fueling plan.",
+    tagline: "Connect one service and get your fuelling plan.",
     features: {
       maxConnectedProviders: 1,
       historyDays: 30,
@@ -100,7 +100,7 @@ export function limit(tier: Tier, feature: "maxConnectedProviders" | "historyDay
  *
  * Phase 1 ships a **free** Swiss app: the revenue is affiliate commission, not
  * subscriptions, so gating history depth and connected services behind a plan
- * would only make the first fueling plan feel thin — the exact moment we need
+ * would only make the first fuelling plan feel thin — the exact moment we need
  * to land. With `subscriptionsEnabled: false` everyone is served the top tier;
  * the plans themselves stay in the code because they are the B2B story later,
  * and switching them back on is one config flag.

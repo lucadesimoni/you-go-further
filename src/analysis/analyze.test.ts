@@ -91,7 +91,7 @@ describe("nutritionDemand", () => {
     ];
     const d = nutritionDemand(activities, profile, "endurance-performance", now);
     expect(d.totalSessions).toBe(2);
-    expect(d.fueledSessions).toBeGreaterThanOrEqual(1);
+    expect(d.fuelledSessions).toBeGreaterThanOrEqual(1);
     expect(d.weeklyDuringCarbG).toBeGreaterThan(0);
     expect(d.avgCarbPerHourG).toBeGreaterThan(0);
   });

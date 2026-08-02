@@ -11,7 +11,7 @@ import { Switch } from "./Switch";
 /**
  * Profile settings — the athlete's body + health data, moved out of the planner
  * so the planner stays session-focused. Changes save immediately; the planner
- * reads this profile to personalize every plan.
+ * reads this profile to personalise every plan.
  */
 export function ProfileView({ account }: { account: Account }) {
   const t = useT();
@@ -63,8 +63,8 @@ export function ProfileView({ account }: { account: Account }) {
           </div>
         </div>
         <p className="detail note-top">
-          Identity comes from your sign-in (Apple / Google / email). The body data below personalizes your
-          fueling{profilePersistence.mode() === "server" ? " and follows you across devices." : " and is stored in this browser."}
+          Identity comes from your sign-in (Apple / Google / email). The body data below personalises your
+          fuelling{profilePersistence.mode() === "server" ? " and follows you across devices." : " and is stored in this browser."}
         </p>
       </section>
 

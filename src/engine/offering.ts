@@ -1,7 +1,7 @@
 /**
  * The "ideal offering" algorithm — *which* product to use *when*.
  *
- * `computeTarget` (recommend.ts) decides the numeric fueling need for a session;
+ * `computeTarget` (recommend.ts) decides the numeric fuelling need for a session;
  * this module turns that need + the athlete's context into a concrete product
  * offering by scoring every catalogue item for the functional **slots** a plan
  * has to fill (primary carb carrier, on-the-move top-up, sodium, hydration,
@@ -13,7 +13,7 @@
  * guide ("best when / avoid when") that powers the catalogue's when-to-use view.
  */
 import { CATALOG } from "./catalog";
-import type { AthleteInput, FuelingTarget, Product } from "./types";
+import type { AthleteInput, FuellingTarget, Product } from "./types";
 
 export type OfferingSlot =
   | "carb-carrier"
@@ -80,7 +80,7 @@ export function scoreForSlot(
   product: Product,
   slot: OfferingSlot,
   input: AthleteInput,
-  target: FuelingTarget,
+  target: FuellingTarget,
 ): ScoredProduct | null {
   const reasons: string[] = [];
   const p = product;
@@ -203,7 +203,7 @@ const clampScore = (n: number): number => Math.max(0, Math.min(100, Math.round(n
 function rankSlot(
   slot: OfferingSlot,
   input: AthleteInput,
-  target: FuelingTarget,
+  target: FuellingTarget,
   catalog: Product[],
 ): ScoredProduct[] {
   return catalog
@@ -213,7 +213,7 @@ function rankSlot(
 }
 
 /** Whether a session needs a given slot filled at all. */
-function slotNeeded(slot: OfferingSlot, input: AthleteInput, target: FuelingTarget): boolean {
+function slotNeeded(slot: OfferingSlot, input: AthleteInput, target: FuellingTarget): boolean {
   switch (slot) {
     case "carb-carrier":
     case "carb-topup":
@@ -228,7 +228,7 @@ function slotNeeded(slot: OfferingSlot, input: AthleteInput, target: FuelingTarg
   }
 }
 
-function slotGuidance(slot: OfferingSlot, target: FuelingTarget): string {
+function slotGuidance(slot: OfferingSlot, target: FuellingTarget): string {
   switch (slot) {
     case "carb-carrier":
       return `Your base for ~${target.carbPerHourG} g/h — one bottle roughly per hour.`;
@@ -254,7 +254,7 @@ const ORDER: OfferingSlot[] = ["pre-fuel", "carb-carrier", "carb-topup", "hydrat
  */
 export function idealOffering(
   input: AthleteInput,
-  target: FuelingTarget,
+  target: FuellingTarget,
   catalog: Product[] = CATALOG,
 ): Offering {
   const slots = ORDER.map((slot): OfferingSlotResult => {

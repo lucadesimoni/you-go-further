@@ -19,7 +19,7 @@ export {
 } from "./offering";
 export { energyProfile, type EnergyProfile, type EnergySample } from "./energy";
 export { buildSchedule, formatClock } from "./schedule";
-export type { FuelingCue, FuelingSchedule, CueKind, ScheduleOptions } from "./schedule";
+export type { FuellingCue, FuellingSchedule, CueKind, ScheduleOptions } from "./schedule";
 export {
   planRouteFuelling,
   buildSegments,

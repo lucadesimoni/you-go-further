@@ -926,7 +926,7 @@ code {
   font-size: var(--text-sm);
 }
 
-/* ---- Body signals (personalization) ---- */
+/* ---- Body signals (personalisation) ---- */
 .stat-note {
   font-size: var(--text-2xs);
   font-weight: 700;
@@ -2020,8 +2020,8 @@ code {
   border-top-width: 2px;
   border-top-style: solid;
 }
-.lg-fueled::before { border-top-color: var(--post-ink); }
-.lg-unfueled::before { border-top-color: var(--muted); border-top-style: dashed; }
+.lg-fuelled::before { border-top-color: var(--post-ink); }
+.lg-unfuelled::before { border-top-color: var(--muted); border-top-style: dashed; }
 .lg-fade::before { border-top-color: var(--accent-ink); border-top-style: dashed; }
 
 .energy-headline {
@@ -2037,8 +2037,8 @@ code {
 .energy-fadezone { fill: var(--accent); opacity: 0.06; }
 .energy-fadeline { stroke: var(--accent); stroke-width: 1; opacity: 0.6; }
 .energy-fill { }
-.energy-fueled { stroke: var(--post); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
-.energy-unfueled { stroke: var(--muted); stroke-width: 2; opacity: 0.7; }
+.energy-fuelled { stroke: var(--post); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.energy-unfuelled { stroke: var(--muted); stroke-width: 2; opacity: 0.7; }
 .energy-cue { stroke: var(--border); stroke-width: 1; opacity: 0.7; }
 .energy-fademark { stroke: var(--accent); stroke-width: 1; opacity: 0.45; }
 .energy-fadetext { fill: var(--accent); font-size: var(--text-2xs); font-weight: 700; }

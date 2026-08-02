@@ -3,7 +3,7 @@ import type { ExportSink } from "./export";
 import { toColumnarRows } from "./export";
 
 /**
- * Databricks export sink — streams normalized activities into a Databricks table
+ * Databricks export sink — streams normalised activities into a Databricks table
  * via the SQL Statement Execution API (`POST /api/2.0/sql/statements`). This is a
  * real "big data" egress: the lakehouse becomes the analytics store of record.
  *

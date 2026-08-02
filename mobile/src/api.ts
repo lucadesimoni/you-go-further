@@ -4,7 +4,7 @@ import type {
   AthleteProfile,
   CartLine,
   EnergyRating,
-  FuelingSchedule,
+  FuellingSchedule,
   GiRating,
   GuideArticle,
   HealthSyncPayload,
@@ -74,7 +74,7 @@ interface FeedbackResponse {
 export const api = {
   health: () => call<Health>("GET", "/api/health"),
   recommend: (input: AthleteInput) => call<Recommendation>("POST", "/api/recommend", { body: input }),
-  schedule: (input: AthleteInput) => call<FuelingSchedule>("POST", "/api/schedule", { body: input }),
+  schedule: (input: AthleteInput) => call<FuellingSchedule>("POST", "/api/schedule", { body: input }),
   feedbackList: (role: Role = "athlete") => call<FeedbackResponse>("GET", "/api/feedback", { role }),
   feedbackAdd: (
     entry: { gi: GiRating; energy: EnergyRating; durationMin: number; plannedCarbPerHourG: number },

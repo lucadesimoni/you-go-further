@@ -133,11 +133,11 @@ export function acwr(activities: Activity[], profile: AthleteProfile, now = new 
 
 export interface NutritionDemand {
   /** Sessions in the last 7 days that need in-session carbohydrate. */
-  fueledSessions: number;
+  fuelledSessions: number;
   totalSessions: number;
   /** Sum of during-session carbohydrate across the last 7 days (g). */
   weeklyDuringCarbG: number;
-  /** Average carb/h across sessions that require fueling. */
+  /** Average carb/h across sessions that require fuelling. */
   avgCarbPerHourG: number;
 }
 
@@ -150,21 +150,21 @@ export function nutritionDemand(
 ): NutritionDemand {
   const week = activities.filter((a) => now.getTime() - Date.parse(a.startTime) <= 7 * 86_400_000);
   let weeklyDuringCarbG = 0;
-  let fueledSessions = 0;
+  let fuelledSessions = 0;
   let carbPerHourSum = 0;
   for (const a of week) {
     const rec = recommend(activityToAthleteInput(a, profile, goal));
     weeklyDuringCarbG += rec.target.carbTotalG;
     if (rec.target.carbPerHourG > 0) {
-      fueledSessions++;
+      fuelledSessions++;
       carbPerHourSum += rec.target.carbPerHourG;
     }
   }
   return {
-    fueledSessions,
+    fuelledSessions,
     totalSessions: week.length,
     weeklyDuringCarbG: Math.round(weeklyDuringCarbG),
-    avgCarbPerHourG: fueledSessions ? Math.round(carbPerHourSum / fueledSessions) : 0,
+    avgCarbPerHourG: fuelledSessions ? Math.round(carbPerHourSum / fuelledSessions) : 0,
   };
 }
 

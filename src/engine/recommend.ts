@@ -2,7 +2,7 @@ import { CATALOG } from "./catalog";
 import { idealOffering, type OfferingSlot, type OfferingSlotResult } from "./offering";
 import type {
   AthleteInput,
-  FuelingTarget,
+  FuellingTarget,
   Goal,
   Intensity,
   PhasePlan,
@@ -86,7 +86,7 @@ function sodiumPerLitre(input: AthleteInput): { mg: number; source: Provenance }
   return { mg: clamp(round5(mg), 300, 1100), source: "estimated" };
 }
 
-export function computeTarget(input: AthleteInput): FuelingTarget {
+export function computeTarget(input: AthleteInput): FuellingTarget {
   const carbPerHourG = carbPerHour(input);
   const hours = input.durationMin / 60;
   const fluid = fluidPerHour(input);
@@ -149,7 +149,7 @@ function reasonsFor(slot: OfferingSlotResult): string[] {
   return [`${pick.product.brand} ${pick.product.name} — ${first}`, ...rest];
 }
 
-function buildPhases(input: AthleteInput, target: FuelingTarget, catalog: Product[]): PhasePlan[] {
+function buildPhases(input: AthleteInput, target: FuellingTarget, catalog: Product[]): PhasePlan[] {
   // Product selection is delegated to the offering engine — the single source of
   // truth for which product fits which slot, and why.
   const offering = idealOffering(input, target, catalog);
@@ -221,27 +221,27 @@ function buildPhases(input: AthleteInput, target: FuelingTarget, catalog: Produc
   return phases;
 }
 
-function buildNotes(input: AthleteInput, target: FuelingTarget): string[] {
+function buildNotes(input: AthleteInput, target: FuellingTarget): string[] {
   const notes: string[] = [];
   switch (input.goal) {
     case "race-preparation":
       notes.push(
-        "Rehearse this exact fueling in training — 'nothing new on race day'. Train your gut to tolerate the higher carb rate over several weeks.",
+        "Rehearse this exact fuelling in training — 'nothing new on race day'. Train your gut to tolerate the higher carb rate over several weeks.",
       );
       break;
     case "weight-loss":
       notes.push(
-        "Carbohydrate is periodised down on easy sessions to support fat loss, but hard and long sessions are still fueled so training quality holds up.",
+        "Carbohydrate is periodised down on easy sessions to support fat loss, but hard and long sessions are still fuelled so training quality holds up.",
       );
       break;
     case "endurance-performance":
       notes.push("Progressively build carbohydrate tolerance toward the top of the range for your longest efforts.");
       break;
     case "recovery-focus":
-      notes.push("Post-session refueling is dialled up to speed recovery between sessions.");
+      notes.push("Post-session refuelling is dialled up to speed recovery between sessions.");
       break;
     case "general-fitness":
-      notes.push("Targets are kept moderate — enough to train comfortably without over-fueling.");
+      notes.push("Targets are kept moderate — enough to train comfortably without over-fuelling.");
       break;
   }
   if (target.requiresMultiTransportable) {
@@ -251,10 +251,10 @@ function buildNotes(input: AthleteInput, target: FuelingTarget): string[] {
     notes.push("In the heat, start hydrated, drink to thirst plus a bit, and don't skip sodium.");
   }
   if (input.activity === "swimming") {
-    notes.push("Fueling mid-swim is impractical — front-load carbs pre-session and refuel promptly after.");
+    notes.push("Fuelling mid-swim is impractical — front-load carbs pre-session and refuel promptly after.");
   }
 
-  // Physiology-driven, personalized notes — the "optimized for your body" layer.
+  // Physiology-driven, personalised notes — the "optimised for your body" layer.
   if (target.hydrationSource === "measured") {
     notes.push(
       `Hydration is set from your measured sweat rate (${input.physiology?.sweatRateMlPerH} ml/h), not a population estimate.`,
@@ -269,8 +269,8 @@ function buildNotes(input: AthleteInput, target: FuelingTarget): string[] {
   }
   const readiness = input.physiology?.readiness;
   if (readiness !== undefined) {
-    if (readiness < 45) notes.push(`Readiness is low (${readiness}/100) — recovery fueling is emphasized today.`);
-    else if (readiness >= 75) notes.push(`Readiness is high (${readiness}/100) — you're primed to absorb a harder, well-fueled session.`);
+    if (readiness < 45) notes.push(`Readiness is low (${readiness}/100) — recovery fuelling is emphasised today.`);
+    else if (readiness >= 75) notes.push(`Readiness is high (${readiness}/100) — you're primed to absorb a harder, well-fuelled session.`);
   }
   const hrv = hrvStatus(input);
   if (hrv === "suppressed") {
@@ -282,7 +282,7 @@ function buildNotes(input: AthleteInput, target: FuelingTarget): string[] {
     notes.push(`Carb rate is capped at ~${input.adaptation.carbCeilingG} g/h — learned from the gut-distress you logged.`);
   }
   if ((input.adaptation?.carbBiasG ?? 0) > 0 && target.carbPerHourG > 0) {
-    notes.push("Fueling nudged up from the low-energy sessions you logged — let's keep you from fading.");
+    notes.push("Fuelling nudged up from the low-energy sessions you logged — let's keep you from fading.");
   }
 
   notes.push("General guidance for healthy adults, not medical advice. Check current product labels before racing.");
@@ -290,7 +290,7 @@ function buildNotes(input: AthleteInput, target: FuelingTarget): string[] {
 }
 
 /**
- * Produce a full, personalized endurance-nutrition recommendation from an
+ * Produce a full, personalised endurance-nutrition recommendation from an
  * athlete's goal and planned session.
  */
 export function recommend(input: AthleteInput, catalog: Product[] = CATALOG): Recommendation {

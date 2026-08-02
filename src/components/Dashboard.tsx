@@ -256,7 +256,7 @@ export function Dashboard({
         <p className="detail">
           {oauthMode
             ? "Connect signs you in on the provider (Strava OAuth) and imports your activities to your account."
-            : "Link your training services. Data is normalized into one model and fed to the analysis and fueling engine."}
+            : "Link your training services. Data is normalised into one model and fed to the analysis and fuelling engine."}
         </p>
         <div className="providers">
           {ALL_PROVIDER_IDS.map((id) => {
@@ -336,7 +336,7 @@ export function Dashboard({
         </div>
       </section>
 
-      {/* Body signals — the "optimized for your body" layer */}
+      {/* Body signals — the "optimised for your body" layer */}
       {physiology.hasSignals && (
         <section className="panel">
           <div className="section-head">
@@ -350,7 +350,7 @@ export function Dashboard({
             <Stat label="Sleep" value={physiology.sleepScore ? `${physiology.sleepScore}/100` : "—"} />
           </div>
           <p className="detail note-top">
-            These personalize your fueling — low readiness dials up recovery carbs, and a sweat test
+            These personalise your fuelling — low readiness dials up recovery carbs, and a sweat test
             (add it in the Fuel planner) sets hydration and sodium to your own chemistry instead of
             population averages.
           </p>
@@ -430,10 +430,12 @@ export function Dashboard({
         ) : (
           <>
             <div className="targets plain-grid">
-              <Stat label="Activities" value={String(report.totalActivities)} />
-              <Stat label="Hours" value={`${report.totalHours}`} />
-              <Stat label="Distance" value={`${report.totalDistanceKm} km`} />
-              <Stat label="Weekly carbs" value={`${report.nutrition.weeklyDuringCarbG} g`} />
+              {/* Same words as everywhere else: the athlete does *sessions*.
+                  "Activity" stays a model term, not something a screen says. */}
+              <Stat label={t("insights.activities")} value={String(report.totalActivities)} />
+              <Stat label={t("insights.hours")} value={`${report.totalHours}`} />
+              <Stat label={t("home.distance")} value={`${report.totalDistanceKm} km`} />
+              <Stat label={t("connect.weeklyCarbs")} value={`${report.nutrition.weeklyDuringCarbG} g`} />
             </div>
 
             {loadAnalytics ? (
@@ -460,7 +462,7 @@ export function Dashboard({
                 </div>
 
                 <div className="nutrition-demand">
-                  This week: <strong>{report.nutrition.fueledSessions}</strong> of {report.nutrition.totalSessions} sessions
+                  This week: <strong>{report.nutrition.fuelledSessions}</strong> of {report.nutrition.totalSessions} sessions
                   need in-session fuel · avg <strong>{report.nutrition.avgCarbPerHourG} g/h</strong> · total{" "}
                   <strong>{report.nutrition.weeklyDuringCarbG} g</strong> carbohydrate on the bike/run.
                 </div>

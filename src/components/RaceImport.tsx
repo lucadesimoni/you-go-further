@@ -18,7 +18,7 @@ const KINDS: { value: Activity; paceMinPerKm: number }[] = [
 ];
 
 /**
- * Import a race or a planned route and get its fueling plan — before running it.
+ * Import a race or a planned route and get its fuelling plan — before running it.
  *
  * Until now every plan was derived from a session already in the past. That
  * covers training, but the moment an athlete actually needs this is the week

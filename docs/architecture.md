@@ -57,7 +57,7 @@ Set the `*_CLIENT_ID` / `*_CLIENT_SECRET` env vars.
 - `weeklyBuckets`, and `acwr` — the acute:chronic workload ratio with a
   status flag (detraining / optimal / caution / high-risk).
 - `nutritionDemand` — runs the nutrition engine over each session to aggregate
-  weekly carbohydrate needs. This is where analysis feeds fueling.
+  weekly carbohydrate needs. This is where analysis feeds fuelling.
 - `analyze` — one-shot report.
 
 ### `src/engine/` — nutrition recommendations

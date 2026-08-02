@@ -6,7 +6,7 @@
  * React or the DOM, so it can also run in Node, tests, or an edge function.
  */
 
-/** What the athlete is training for. Drives fueling aggressiveness and emphasis. */
+/** What the athlete is training for. Drives fuelling aggressiveness and emphasis. */
 export type Goal =
   | "general-fitness"
   | "endurance-performance"
@@ -38,7 +38,7 @@ export interface AthleteInput {
   sweatLevel?: SweatLevel;
   /** Whether the athlete tolerates caffeine and wants it suggested. */
   caffeineOk?: boolean;
-  /** Measured body signals from connected devices — used to personalize. */
+  /** Measured body signals from connected devices — used to personalise. */
   physiology?: PhysiologySignals;
   /** Learned adjustments from the athlete's own session feedback. */
   adaptation?: Adaptation;
@@ -117,7 +117,7 @@ export interface Product {
   notes?: string;
 }
 
-export interface FuelingTarget {
+export interface FuellingTarget {
   /** Carbohydrate grams per hour to consume during the session. */
   carbPerHourG: number;
   /** Total carbohydrate grams across the session. */
@@ -146,7 +146,7 @@ export interface PhasePlan {
 
 export interface Recommendation {
   input: AthleteInput;
-  target: FuelingTarget;
+  target: FuellingTarget;
   phases: PhasePlan[];
   /** Human-readable notes, caveats, and goal-specific guidance. */
   notes: string[];

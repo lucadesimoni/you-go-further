@@ -219,6 +219,7 @@ export const it: Dictionary = {
   "connect.usingProfile": "Dal suo profilo: {weight} kg · FC max {maxHr} bpm",
   "connect.bodySignals": "Segnali corporei",
   "connect.trainingAnalysis": "Analisi dell'allenamento",
+  "connect.weeklyCarbs": "Carboidrati a settimana",
 
   // ---- Route fuelling by terrain -----------------------------------------
   "route.fuelByTerrain": "Alimentazione su questo percorso",

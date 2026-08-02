@@ -1,5 +1,5 @@
 import type { ElevationSample } from "../geo/swisstopo";
-import type { Activity, AthleteInput, FuelingTarget, Product } from "./types";
+import type { Activity, AthleteInput, FuellingTarget, Product } from "./types";
 import { scoreForSlot } from "./offering";
 import { CATALOG } from "./catalog";
 
@@ -257,7 +257,7 @@ export interface RouteFuelInput {
    * and the plan still works — it just gives grams.
    */
   input?: AthleteInput;
-  target?: FuelingTarget;
+  target?: FuellingTarget;
   catalog?: Product[];
 }
 
@@ -271,7 +271,7 @@ export interface RouteFuelInput {
 function productForStop(
   kind: StopKind,
   input: AthleteInput,
-  target: FuelingTarget,
+  target: FuellingTarget,
   catalog: Product[],
 ): RouteFuelStop["product"] {
   const slot = kind === "climb-prep" ? "carb-topup" : "carb-carrier";

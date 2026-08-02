@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { energyProfile, formatClock, type AthleteInput, type FuelingTarget, type FuelingSchedule } from "../engine";
+import { energyProfile, formatClock, type AthleteInput, type FuellingTarget, type FuellingSchedule } from "../engine";
 
 const CUE_COLOR: Record<string, string> = {
   carb: "var(--during)",
@@ -17,7 +17,7 @@ const PLOT_H = H - PAD.t - PAD.b;
 /**
  * "Energy profile" strip — a Tesla trip-planner-style view of carbohydrate
  * availability across the session. The green curve is your store *with* the
- * fueling plan; the dim dashed curve is water only, sliding toward the fade
+ * fuelling plan; the dim dashed curve is water only, sliding toward the fade
  * line. Fuel cues are pinned along the top. Pure inline SVG — no map tiles, no
  * external deps, themes with the app.
  */
@@ -27,21 +27,21 @@ export function EnergyProfile({
   schedule,
 }: {
   input: AthleteInput;
-  target: FuelingTarget;
-  schedule: FuelingSchedule;
+  target: FuellingTarget;
+  schedule: FuellingSchedule;
 }) {
   const profile = useMemo(() => energyProfile(input, target), [input, target]);
 
   const x = (minute: number) => PAD.l + (minute / profile.durationMin) * PLOT_W;
   const y = (pct: number) => PAD.t + (1 - pct / 100) * PLOT_H;
 
-  const toPath = (key: "fueledPct" | "unfueledPct") =>
+  const toPath = (key: "fuelledPct" | "unfuelledPct") =>
     profile.samples.map((s, i) => `${i === 0 ? "M" : "L"}${x(s.minute).toFixed(1)},${y(s[key]).toFixed(1)}`).join(" ");
 
-  const fueledPath = toPath("fueledPct");
-  const unfueledPath = toPath("unfueledPct");
-  // Area under the fueled curve for the gradient fill.
-  const fueledArea = `${fueledPath} L${x(profile.durationMin).toFixed(1)},${y(0).toFixed(1)} L${x(0).toFixed(1)},${y(0).toFixed(1)} Z`;
+  const fuelledPath = toPath("fuelledPct");
+  const unfuelledPath = toPath("unfuelledPct");
+  // Area under the fuelled curve for the gradient fill.
+  const fuelledArea = `${fuelledPath} L${x(profile.durationMin).toFixed(1)},${y(0).toFixed(1)} L${x(0).toFixed(1)},${y(0).toFixed(1)} Z`;
 
   const fadeY = y(profile.bonkPct);
   const cues = schedule.cues.filter((c) => c.kind === "carb" || c.kind === "drink" || c.kind === "caffeine");
@@ -52,8 +52,8 @@ export function EnergyProfile({
       <div className="section-head">
         <h3>Energy profile</h3>
         <span className="energy-legend">
-          <span className="lg lg-fueled">With plan</span>
-          <span className="lg lg-unfueled">Water only</span>
+          <span className="lg lg-fuelled">With plan</span>
+          <span className="lg lg-unfuelled">Water only</span>
           <span className="lg lg-fade">Fade line</span>
         </span>
       </div>
@@ -82,16 +82,16 @@ export function EnergyProfile({
         <line className="energy-fadeline" x1={PAD.l} y1={fadeY} x2={W - PAD.r} y2={fadeY} strokeDasharray="4 4" />
 
         {/* curves */}
-        <path className="energy-fill" d={fueledArea} fill="url(#fuelFill)" />
-        <path className="energy-unfueled" d={unfueledPath} fill="none" strokeDasharray="5 5" />
-        <path className="energy-fueled" d={fueledPath} fill="none" />
+        <path className="energy-fill" d={fuelledArea} fill="url(#fuelFill)" />
+        <path className="energy-unfuelled" d={unfuelledPath} fill="none" strokeDasharray="5 5" />
+        <path className="energy-fuelled" d={fuelledPath} fill="none" />
 
-        {/* unfueled fade marker */}
-        {profile.unfueledFadeMin !== undefined && (
+        {/* unfuelled fade marker */}
+        {profile.unfuelledFadeMin !== undefined && (
           <g>
-            <line className="energy-fademark" x1={x(profile.unfueledFadeMin)} y1={PAD.t} x2={x(profile.unfueledFadeMin)} y2={y(0)} />
-            <text className="energy-fadetext" x={x(profile.unfueledFadeMin)} y={PAD.t - 4} textAnchor="middle">
-              fade ~{formatClock(profile.unfueledFadeMin)}
+            <line className="energy-fademark" x1={x(profile.unfuelledFadeMin)} y1={PAD.t} x2={x(profile.unfuelledFadeMin)} y2={y(0)} />
+            <text className="energy-fadetext" x={x(profile.unfuelledFadeMin)} y={PAD.t - 4} textAnchor="middle">
+              fade ~{formatClock(profile.unfuelledFadeMin)}
             </text>
           </g>
         )}
@@ -122,7 +122,7 @@ export function EnergyProfile({
         <span>Store ≈ {profile.storeG} g</span>
         <span>Burn ≈ {profile.burnPerHourG} g/h</span>
         <span>Intake {profile.intakePerHourG > 0 ? `≈ ${profile.intakePerHourG} g/h` : "— (water)"}</span>
-        <span className="energy-reserve">Finish ≈ {profile.fueledEndPct}% in reserve</span>
+        <span className="energy-reserve">Finish ≈ {profile.fuelledEndPct}% in reserve</span>
       </div>
       <p className="energy-note">Illustrative model from population estimates — not a measurement of your metabolism.</p>
     </div>

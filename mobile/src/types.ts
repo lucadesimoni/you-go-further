@@ -23,7 +23,7 @@ export interface AthleteInput {
   caffeineOk?: boolean;
 }
 
-export interface FuelingTarget {
+export interface FuellingTarget {
   carbPerHourG: number;
   carbTotalG: number;
   fluidPerHourMl: number;
@@ -40,21 +40,21 @@ export interface PhasePlan {
 }
 
 export interface Recommendation {
-  target: FuelingTarget;
+  target: FuellingTarget;
   phases: PhasePlan[];
   notes: string[];
 }
 
-export interface FuelingCue {
+export interface FuellingCue {
   atMin: number;
   kind: "start" | "carb" | "drink" | "caffeine" | "finish";
   label: string;
   sodiumMg?: number;
 }
 
-export interface FuelingSchedule {
+export interface FuellingSchedule {
   totalMin: number;
-  cues: FuelingCue[];
+  cues: FuellingCue[];
   totalCarbG: number;
   totalFluidMl: number;
 }

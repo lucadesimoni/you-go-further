@@ -21,7 +21,7 @@ const offeringFor = (over: Partial<AthleteInput> = {}) => {
 const pick = (o: ReturnType<typeof idealOffering>, slot: string) => o.slots.find((s) => s.slot === slot);
 
 describe("idealOffering — when to use what", () => {
-  it("picks a drink mix as the primary carb carrier for a fueled session", () => {
+  it("picks a drink mix as the primary carb carrier for a fuelled session", () => {
     const carrier = pick(offeringFor(), "carb-carrier");
     expect(carrier?.needed).toBe(true);
     expect(carrier?.pick?.product.category).toBe("drink-mix");

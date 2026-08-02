@@ -12,7 +12,7 @@ const base: AthleteInput = {
   sweatLevel: "average",
 };
 
-describe("physiology-driven personalization", () => {
+describe("physiology-driven personalisation", () => {
   it("defaults hydration and sodium to estimates without body signals", () => {
     const t = computeTarget(base);
     expect(t.hydrationSource).toBe("estimated");

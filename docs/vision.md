@@ -1,8 +1,13 @@
 # Fuel Labs — Vision & Roadmap
 
-> The vision below is kept **verbatim, in the founder's own words**. Translating
-> it would blunt it. The assessment that follows it is in English, like the rest
-> of these docs, and is written against what the code actually does today.
+> The vision below is kept **verbatim, in the founder's own words** — including
+> its spelling of *Fueling*. Translating or copy-editing it would blunt it. The
+> assessment that follows is in English, like the rest of these docs, follows the
+> house style (*fuelling*), and is written against what the code actually does.
+>
+> **Fuel Labs** is the company; **You Go Further** is the product. This is the one
+> document that speaks as the company — everywhere an athlete can see, the brand
+> is You Go Further.
 
 ---
 
@@ -113,7 +118,7 @@ revenue from affiliate commission.**
 | Phase-1 requirement | State |
 | --- | --- |
 | Connect Garmin or Strava | OAuth connect flow, state bound to the athlete; Strava, Garmin, Polar and Suunto adapters normalise into one activity model. |
-| Personalised fueling plan | `src/engine` — carb g/h, fluid ml/h, sodium mg/L from body weight, session, intensity, conditions, sweat data, readiness. |
+| Personalised fuelling plan | `src/engine` — carb g/h, fluid ml/h, sodium mg/L from body weight, session, intensity, conditions, sweat data, readiness. |
 | Terrain-aware plan for a route | swisstopo height profile + MeteoSwiss conditions place feeds where the energy actually goes (Minetti cost of running). |
 | Products from Swiss partners | Brand-neutral catalog (Sponser, Winforce, …) with a scoring engine that names a real product per slot. |
 | It learns | Session logs tune a carb ceiling/bias; the debrief holds a past run against what the route demanded. |

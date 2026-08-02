@@ -221,6 +221,7 @@ export const fr: Dictionary = {
   "connect.usingProfile": "D'après votre profil : {weight} kg · FC max {maxHr} bpm",
   "connect.bodySignals": "Signaux corporels",
   "connect.trainingAnalysis": "Analyse de l'entraînement",
+  "connect.weeklyCarbs": "Glucides par semaine",
 
   // ---- Route fuelling by terrain -----------------------------------------
   "route.fuelByTerrain": "Nutrition sur ce parcours",

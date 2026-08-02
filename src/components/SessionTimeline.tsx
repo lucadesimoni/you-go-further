@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatClock } from "../engine";
-import type { FuelingCue, FuelingSchedule } from "../engine";
+import type { FuellingCue, FuellingSchedule } from "../engine";
 import { useT } from "../i18n";
 
-const KIND_LABEL: Record<FuelingCue["kind"], string> = {
+const KIND_LABEL: Record<FuellingCue["kind"], string> = {
   start: "Start",
   carb: "Fuel",
   drink: "Drink",
@@ -15,11 +15,11 @@ const KIND_LABEL: Record<FuelingCue["kind"], string> = {
 const SIM_TICK_MS = 160;
 
 /**
- * Live in-session fueling timeline. Renders the schedule and can "play" the
+ * Live in-session fuelling timeline. Renders the schedule and can "play" the
  * session on an accelerated clock, highlighting the cue that's due now and the
  * one coming next — the same loop a watch data-field would drive in real time.
  */
-export function SessionTimeline({ schedule }: { schedule: FuelingSchedule }) {
+export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
   const t = useT();
   const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(false);

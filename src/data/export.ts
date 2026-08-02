@@ -1,7 +1,7 @@
 import type { Activity } from "../model";
 
 /**
- * A sink for streaming normalized activities out to an analytics backend — a
+ * A sink for streaming normalised activities out to an analytics backend — a
  * data warehouse, lake, or event bus. This is the seam for "big data": the app
  * writes to an {@link ExportSink} and the concrete implementation decides where
  * the rows land (BigQuery streaming insert, S3/Parquet, Kafka, …).

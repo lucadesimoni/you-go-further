@@ -12,8 +12,8 @@ and the formulas here are meant to be reviewed and tuned by a sports nutritionis
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `goal` | Goal | What the athlete is training for — drives fueling aggressiveness. |
-| `activity` | Activity | Session type. Mainly affects practicality of mid-session fueling. |
+| `goal` | Goal | What the athlete is training for — drives fuelling aggressiveness. |
+| `activity` | Activity | Session type. Mainly affects practicality of mid-session fuelling. |
 | `durationMin` | number | Planned session length in minutes. |
 | `intensity` | easy / moderate / hard / race | Perceived effort. |
 | `bodyWeightKg` | number | Used for pre/post carb and protein dosing (per-kg). |
@@ -27,7 +27,7 @@ and the formulas here are meant to be reviewed and tuned by a sports nutritionis
 | --- | --- | --- | --- |
 | `general-fitness` | Train comfortably, don't over-fuel | ×0.85 | 0.8 |
 | `endurance-performance` | Go longer/faster, build carb tolerance | ×1.1 | 1.0 |
-| `race-preparation` | Rehearse race-day fueling, train the gut | ×1.15 | 1.0 |
+| `race-preparation` | Rehearse race-day fuelling, train the gut | ×1.15 | 1.0 |
 | `weight-loss` | Fat loss while protecting hard sessions | ×0.6 (0 on short/easy) | 0.4 |
 | `recovery-focus` | Fast turnaround between sessions | ×1.0 | 1.2 |
 
@@ -45,7 +45,7 @@ Base target by duration and intensity, before the goal factor
 
 Then: `carbPerHour = round-to-5( base × goalFactor )`, clamped to **0–120 g/h**.
 
-- **Weight-loss override:** sessions under 90 min that aren't a race are fueled
+- **Weight-loss override:** sessions under 90 min that aren't a race are fuelled
   with water only (carb/h = 0) — carbohydrate is periodised to the sessions that
   need it.
 - **Multiple transportable carbohydrates:** any target above **60 g/h** requires
@@ -68,7 +68,7 @@ This mirrors mainstream guidance: ~30 g/h for 1–2 h efforts, 30–60 g/h up to
 
 - Base 500 · heavy sweat → 800 · light sweat → 350 · hot +150
 
-## 4b. Physiology-driven personalization ("optimized for your body")
+## 4b. Physiology-driven personalisation ("optimised for your body")
 
 When measured body signals are supplied (a sweat test, or a wearable via the
 connectors), they **override** the population estimates above and the output is
@@ -80,7 +80,7 @@ marked with its provenance (`hydrationSource` / `sodiumSource` = `measured` vs
 - **Measured sweat sodium** (mg/L) → used directly (clamped 300–1500). ≥ 900 mg/L
   flags a salty sweater and adds a standalone electrolyte.
 - **Training readiness** (0–100) → below 45 raises post-session recovery carbs
-  (×1.15) and emphasizes recovery; a note surfaces the reason.
+  (×1.15) and emphasises recovery; a note surfaces the reason.
 - **Overnight HRV vs. baseline** → below 0.9× baseline flags suppressed recovery.
 
 Device signals (readiness, HRV, resting HR, sleep) are derived from wellness data

@@ -2,12 +2,12 @@ import { computeTarget } from "./recommend";
 import type { AthleteInput } from "./types";
 
 /**
- * In-session fueling schedule.
+ * In-session fuelling schedule.
  *
  * The planner gives per-hour targets; this turns them into discrete, timed cues
  * an athlete (or a watch) can act on mid-session — "at 0:20, take 25 g carb +
  * 200 ml". This is the real-time "go further" layer: neither a device maker nor a
- * product brand delivers a personalized, timed fueling plan during the effort.
+ * product brand delivers a personalised, timed fuelling plan during the effort.
  */
 
 const round5 = (n: number) => Math.round(n / 5) * 5;
@@ -15,7 +15,7 @@ const round10 = (n: number) => Math.round(n / 10) * 10;
 
 export type CueKind = "start" | "carb" | "drink" | "caffeine" | "finish";
 
-export interface FuelingCue {
+export interface FuellingCue {
   /** Minutes from the start of the session. */
   atMin: number;
   kind: CueKind;
@@ -26,9 +26,9 @@ export interface FuelingCue {
   label: string;
 }
 
-export interface FuelingSchedule {
+export interface FuellingSchedule {
   totalMin: number;
-  cues: FuelingCue[];
+  cues: FuellingCue[];
   totalCarbG: number;
   totalFluidMl: number;
 }
@@ -58,8 +58,8 @@ export function formatClock(min: number): string {
   return h > 0 ? `${h}:${String(mm).padStart(2, "0")}` : `0:${String(mm).padStart(2, "0")}`;
 }
 
-/** Build a timed fueling schedule for a session. */
-export function buildSchedule(input: AthleteInput, opts: ScheduleOptions = {}): FuelingSchedule {
+/** Build a timed fuelling schedule for a session. */
+export function buildSchedule(input: AthleteInput, opts: ScheduleOptions = {}): FuellingSchedule {
   const target = computeTarget(input);
   const totalMin = input.durationMin;
   const carbEvery = opts.carbIntervalMin ?? 20;
@@ -98,7 +98,7 @@ export function buildSchedule(input: AthleteInput, opts: ScheduleOptions = {}): 
     bump(nearest, { caffeine: true });
   }
 
-  const cues: FuelingCue[] = [];
+  const cues: FuellingCue[] = [];
   cues.push({
     atMin: 0,
     kind: "start",

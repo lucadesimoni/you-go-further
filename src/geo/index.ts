@@ -39,12 +39,12 @@ export {
 export interface RouteConditions {
   terrain: TerrainProfile;
   weather: WeatherNow;
-  /** Plain-language fueling implications of the terrain + weather. */
+  /** Plain-language fuelling implications of the terrain + weather. */
   implications: string[];
 }
 
-/** How the terrain + weather change the fueling plan. */
-export function fuelingImplications(terrain: TerrainProfile, weather: WeatherNow): string[] {
+/** How the terrain + weather change the fuelling plan. */
+export function fuellingImplications(terrain: TerrainProfile, weather: WeatherNow): string[] {
   const out: string[] = [];
   if (weather.conditions === "hot") {
     out.push(`Hot (${weather.temperatureC}°C) — raise fluid intake and don't skip sodium.`);
@@ -64,7 +64,7 @@ export function fuelingImplications(terrain: TerrainProfile, weather: WeatherNow
 
 /**
  * Enrich a planned route with swisstopo terrain and current weather, plus the
- * fueling implications. Both sources degrade gracefully to an estimate offline.
+ * fuelling implications. Both sources degrade gracefully to an estimate offline.
  */
 export async function enrichRoute(
   route: LatLng[],
@@ -75,6 +75,6 @@ export async function enrichRoute(
     fetchTerrain(route, hintGainM, hintDistanceKm),
     fetchWeather(route[0][0], route[0][1]),
   ]);
-  return { terrain, weather, implications: fuelingImplications(terrain, weather) };
+  return { terrain, weather, implications: fuellingImplications(terrain, weather) };
 }
 export * from "./gpx";

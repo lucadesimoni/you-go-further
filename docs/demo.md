@@ -21,7 +21,7 @@ GET  /api/health         → { status:"ok", environment, version, storeBackend, 
 GET  /api/providers      → Strava/Garmin/Polar/Suunto descriptors + scopes
 POST /api/recommend      → full recommendation (accepts measured physiology + adaptation)
 POST /api/schedule       → timed in-session cue schedule
-POST /api/target         → fueling targets only
+POST /api/target         → fuelling targets only
 POST /api/cart           → priced, shoppable cart from a recommendation × sessions
 POST /api/adaptation     → learned carb ceiling/bias from logged session feedback
 GET  /api/feedback       → this user's stored session feedback + derived adaptation
@@ -50,7 +50,7 @@ POST /api/ingest suunto → {"totalStored":75}
 # data analysis over the 75 stored rows
 GET /api/analysis → { totalActivities:75, totalHours:107.5, weeks:[…], acwr:{…}, nutrition:{…} }
 
-# personalized recommendation from measured body signals
+# personalised recommendation from measured body signals
 POST /api/recommend {physiology:{sweatRateMlPerH:1500,sweatSodiumMgPerL:1100,readiness:35}}
   → carb/h 105 · fluid 1200 (measured) · sodium 1100 (measured)
   → note: "Hydration is set from your measured sweat rate (1500 ml/h)…"

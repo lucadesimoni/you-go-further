@@ -9,7 +9,7 @@ import {
   parseWeather,
   estimateWeather,
   fetchWeather,
-  fuelingImplications,
+  fuellingImplications,
   enrichRoute,
 } from "./index";
 import type { LatLng } from "../model";
@@ -109,9 +109,9 @@ describe("weather", () => {
   });
 });
 
-describe("fueling implications & enrichRoute", () => {
+describe("fuelling implications & enrichRoute", () => {
   it("flags heat and big climbs", () => {
-    const impl = fuelingImplications(
+    const impl = fuellingImplications(
       { distanceKm: 20, ascentM: 1200, descentM: 1200, minAltM: 600, maxAltM: 1800, terrain: "mountainous", samples: [], source: "swisstopo" },
       { temperatureC: 29, humidityPct: 50, windKmh: 5, conditions: "hot", source: "station", sourceLabel: "MeteoSwiss · Sion (3 km)" },
     );

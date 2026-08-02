@@ -15,7 +15,7 @@ surface stays harmonized and a theme change is a one-line edit.
 | `--panel` | card & panel surface |
 | `--surface-3` | alternate raised surface |
 | `--panel-2` | raised inner surface (chips, nested cards) |
-| `--border` / `--border-strong` | hairlines / emphasized borders |
+| `--border` / `--border-strong` | hairlines / emphasised borders |
 
 ### Colour — text & brand
 | Token | Use |

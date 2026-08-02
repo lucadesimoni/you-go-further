@@ -89,7 +89,7 @@ export const en = {
   "goal.endurance-performance": "Endurance performance",
   "goal.endurance-performance.blurb": "Go longer and faster",
   "goal.race-preparation": "Race preparation",
-  "goal.race-preparation.blurb": "Dial in and rehearse race-day fueling",
+  "goal.race-preparation.blurb": "Dial in and rehearse race-day fuelling",
   "goal.weight-loss": "Weight loss",
   "goal.weight-loss.blurb": "Lose fat while protecting hard sessions",
   "goal.recovery-focus": "Recovery focus",
@@ -156,7 +156,7 @@ export const en = {
   "insights.doNext": "Do this next",
   "insights.worthAttention": "Worth attention",
   "insights.yourTraining": "Your training",
-  "insights.activities": "Activities",
+  "insights.activities": "Sessions",
   "insights.hours": "Hours",
   "insights.longSessions": "Long sessions",
   "insights.logged": "Logged",
@@ -209,6 +209,7 @@ export const en = {
   "connect.usingProfile": "Using your profile: {weight} kg · max HR {maxHr} bpm",
   "connect.bodySignals": "Body signals",
   "connect.trainingAnalysis": "Training analysis",
+  "connect.weeklyCarbs": "Weekly carbs",
 
   // ---- Route fuelling by terrain -----------------------------------------
   "route.fuelByTerrain": "Fuelling on this route",
@@ -234,7 +235,7 @@ export const en = {
   // ---- Race / route import ------------------------------------------------
   "race.title": "Plan a race or route",
   "race.intro":
-    "Drop in the GPX from the race organiser — or any route you have planned — and get the fueling for that exact course: how much per hour, and where on the climbs to take it.",
+    "Drop in the GPX from the race organiser — or any route you have planned — and get the fuelling for that exact course: how much per hour, and where on the climbs to take it.",
   "race.drop": "Drop a .gpx file here",
   "race.choose": "Choose a file",
   "race.privacy": "The file is read on your device. Only the route line is sent on, for terrain and weather.",
@@ -305,7 +306,7 @@ export const en = {
   "auth.sendLink": "Email me a sign-in link",
   "auth.openDevLink": "Open the link (dev mailer)",
 
-  "auth.subtitle": "Sign in or create your account to sync your training and fueling.",
+  "auth.subtitle": "Sign in or create your account to sync your training and fuelling.",
   "auth.continueApple": "Continue with Apple",
   "auth.continueGoogle": "Continue with Google",
   "auth.signingIn": "Signing in…",

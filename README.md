@@ -1,11 +1,22 @@
 # You Go Further
 
+> **Naming.** **Fuel Labs** is the company; **You Go Further** is the product
+> athletes see — the brand in the app, the page title, and every string. The two
+> are never mixed on a user-facing surface. `docs/vision.md` is the one place
+> that speaks as the company, because it is the company's roadmap.
+
 A **Swiss endurance-nutrition platform**. Connect your training services
 (**Strava, Garmin, Polar, Suunto**), analyse your training load, and get
-personalized before / during / after fueling with Swiss products from **Sponser**
+personalised before / during / after fuelling with Swiss products from **Sponser**
 and **Winforce** — tailored to your goal and each session.
 
 Scope: general endurance — running, trail running, cycling, triathlon, swimming.
+The Phase-1 launch leads with running, trail running and triathlon.
+
+**House style.** Swiss/British English: *fuelling*, *fuelled*, *personalised*,
+*normalised*. The athlete does **sessions** — "activity" is a model term, not a
+word any screen says. Guard tests keep the four dictionaries in step; the
+spelling is a convention, kept by review.
 
 ## What's in here
 
@@ -24,7 +35,7 @@ Scope: general endurance — running, trail running, cycling, triathlon, swimmin
 | **Composition root** | `src/runtime.ts` | Wires store/providers/sinks from config — swap a backend without code changes. |
 | **Design system** | `src/styles.css`, `docs/design-system.md` | One token layer driving light + dark, with contrast-safe "ink" variants for text. |
 | **Languages** | `src/i18n/`, `docs/i18n.md` | Swiss German, French, Italian + English, with per-locale guard tests for parity, placeholders, accents and ss-not-ß. |
-| **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fueling formulas. |
+| **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fuelling formulas. |
 | **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `user-flows.md`. |
 | **Vision & roadmap** | `docs/vision.md` | The seven phases, plus an honest read of where this code stands against Phase 1. |
 | **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |

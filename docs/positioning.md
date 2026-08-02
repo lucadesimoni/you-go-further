@@ -1,14 +1,14 @@
 # Positioning — You Go Further vs. Garmin and MOOV
 
 > **Purpose:** enable people to go further by giving them **data-based nutrition,
-> optimized for their body and their training.**
+> optimised for their body and their training.**
 
 The fastest way to see where we fit is the endurance value chain:
 
 ```
    MEASURE the training  ─────►  DECIDE what to consume  ─────►  SUPPLY the fuel
         (Garmin)                   (You Go Further)                  (MOOV, Sponser, Winforce)
-     device / wearable          personalization engine            nutrition product brands
+     device / wearable          personalisation engine            nutrition product brands
 ```
 
 Garmin and MOOV are at the two ends. **We are the decision layer in the middle** —
@@ -21,13 +21,13 @@ data. That gap is our reason to exist.
 
 | | **Garmin** | **MOOV** | **You Go Further** |
 | --- | --- | --- | --- |
-| Primary role | Capture training & physiology | Sell hydration/electrolyte product | Turn data into a personalized fueling plan |
+| Primary role | Capture training & physiology | Sell hydration/electrolyte product | Turn data into a personalised fuelling plan |
 | Category | Wearables + Garmin Connect | Swiss DTC nutrition brand | SaaS decision/recommendation layer |
-| Owns | The device data (a *source* for us) | The consumable (an *output* we can recommend) | The personalization + product match |
-| Personalizes… | Training metrics (load, readiness, VO2max) | Little — one formula, flavors | **Fueling** to body + session + goal + load |
+| Owns | The device data (a *source* for us) | The consumable (an *output* we can recommend) | The personalisation + product match |
+| Personalizes… | Training metrics (load, readiness, VO2max) | Little — one formula, flavours | **Fuelling** to body + session + goal + load |
 | Nutrition output | Calorie/hydration *logging*; generic in-activity eat/drink reminders | A product to buy | Carb g/h, fluid ml/h, sodium mg/L, pre/during/post, **specific Swiss products** |
-| "Optimized for your body" | Partial (VO2max, HRV) — not fueling | No | Yes — weight, HR, sweat level, conditions |
-| "Optimized for your training" | Strong (Training Status/Readiness) | No | Yes — goal, session, and weekly load (ACWR) shape the plan |
+| "Optimised for your body" | Partial (VO2max, HRV) — not fuelling | No | Yes — weight, HR, sweat level, conditions |
+| "Optimised for your training" | Strong (Training Status/Readiness) | No | Yes — goal, session, and weekly load (ACWR) shape the plan |
 | Device coverage | Garmin only | n/a | **Garmin + Strava + Polar + Suunto** (vendor-neutral) |
 | Product stance | Locked to Garmin hardware | Single (own) brand | **Brand-neutral catalog**, nutritionist-editable |
 | Business model | Hardware + Connect+ subscription | Product sales | SaaS tiers + B2B (clubs, brands), multi-tenant |
@@ -36,8 +36,8 @@ data. That gap is our reason to exist.
 
 **Garmin is an input, not a competitor.** We already ingest via the Garmin Health
 API and *prefer* Garmin's own training-load value when present. We don't replace
-the watch — we make its data actionable for fueling. The more Garmin measures
-(sweat rate, thermal load, HRV), the sharper our "optimized for your body" gets.
+the watch — we make its data actionable for fuelling. The more Garmin measures
+(sweat rate, thermal load, HRV), the sharper our "optimised for your body" gets.
 
 **MOOV is a potential output, not a competitor.** MOOV is exactly the kind of
 Swiss product our engine should be able to recommend when its electrolyte profile
@@ -53,10 +53,10 @@ These are honest gaps between today's foundation and the purpose:
 
 1. **Deeper body signal.** ✅ *In progress.* Measured **sweat rate & sweat sodium**
    now override population hydration/sodium (with provenance badges), and
-   **training readiness + HRV** from the wearables adjust recovery fueling and
+   **training readiness + HRV** from the wearables adjust recovery fuelling and
    surface flags. Next: pull per-activity sweat-loss estimates and thermal load
    straight from the device instead of a modeled estimate.
-2. **Real-time, in-session fueling.** ✅ *In progress.* The planner now generates a
+2. **Real-time, in-session fuelling.** ✅ *In progress.* The planner now generates a
    **timed cue schedule** ("0:20 — 15 g carb + 140 ml") with a live simulate/replay
    clock that highlights the cue due now and the one coming next. Next: push it to
    the watch as a Garmin Connect IQ data field / notifications instead of on-screen.

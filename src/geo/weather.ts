@@ -34,7 +34,7 @@ export interface WeatherNow {
 
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 
-/** Bucket a temperature into the fueling-relevant conditions band. */
+/** Bucket a temperature into the fuelling-relevant conditions band. */
 export function conditionsForTemp(tempC: number): Conditions {
   if (tempC < 10) return "cool";
   if (tempC > 22) return "hot";

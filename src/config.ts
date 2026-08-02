@@ -31,7 +31,7 @@ export interface AppConfig {
   /** Postgres connection string (server-only; never sent to the client). */
   databaseUrl?: string;
   enabledProviders: ProviderId[];
-  /** Stream normalized activities to an export sink. */
+  /** Stream normalised activities to an export sink. */
   exportEnabled: boolean;
   defaultTier: Tier;
   /** Allow the in-app role/tier switcher (demo & staging; off in prod). */

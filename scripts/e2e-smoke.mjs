@@ -117,8 +117,9 @@ console.log("── insights show real data ──");
 await step("own synced sessions (never sample data)", async () => {
   await page.click('button.topnav-tab:has-text("Insights")');
   await page.waitForSelector("text=Your training");
-  const acts = await page.locator('.stat:has-text("Activities") .stat-value').first().textContent();
-  if (Number(acts) <= 0) throw new Error("no synced activities");
+  // "Sessions", not "Activities" — one word for the same thing, everywhere.
+  const acts = await page.locator('.stat:has-text("Sessions") .stat-value').first().textContent();
+  if (Number(acts) <= 0) throw new Error("no synced sessions");
 });
 
 console.log("── profile syncs to the account ──");

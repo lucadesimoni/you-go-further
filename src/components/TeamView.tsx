@@ -47,7 +47,7 @@ export function TeamView({ canExport }: { canExport: boolean }) {
           </span>
         </div>
         <p className="detail">
-          Load status and weekly fueling needs across your roster. Athletes whose acute:chronic ratio
+          Load status and weekly fuelling needs across your roster. Athletes whose acute:chronic ratio
           leaves the safe band are flagged for a check-in.
         </p>
 
@@ -86,7 +86,7 @@ export function TeamView({ canExport }: { canExport: boolean }) {
                       </div>
                     </div>
                     <p className="detail note-top">
-                      {r.report.nutrition.fueledSessions} of {r.report.nutrition.totalSessions} sessions this week need
+                      {r.report.nutrition.fuelledSessions} of {r.report.nutrition.totalSessions} sessions this week need
                       in-session fuel. Source: {r.provider}.
                     </p>
                   </div>
