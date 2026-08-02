@@ -2,6 +2,7 @@ import type { ProviderId } from "../model";
 import { ALL_PROVIDER_IDS } from "../providers";
 import type { Tier } from "../subscription";
 import type { AppConfig } from "../config";
+import { normalizeProgram, type PartnerProgram } from "../commerce/affiliate";
 
 /**
  * Platform settings an admin can change at **runtime** — the operational knobs
@@ -23,6 +24,14 @@ export interface PlatformSettings {
   registrationOpen: boolean;
   /** Freeze the platform for maintenance (banner + read-only). */
   maintenanceMode: boolean;
+  /**
+   * Affiliate partner programs, keyed by brand.
+   *
+   * Empty by default and on purpose: we ship no invented publisher ids. Until a
+   * brand agreement is signed the athlete still gets a link to that brand's
+   * shop, it simply carries no tracking — and the UI says so.
+   */
+  partners: PartnerProgram[];
 }
 
 export interface SettingsStore {
@@ -39,6 +48,7 @@ export function defaultSettings(config: AppConfig): PlatformSettings {
     exportEnabled: config.exportEnabled,
     registrationOpen: true,
     maintenanceMode: false,
+    partners: [],
   };
 }
 
@@ -55,6 +65,21 @@ export function normalizeSettingsPatch(input: Partial<PlatformSettings>): Partia
   if (input.defaultTier && TIERS.includes(input.defaultTier)) out.defaultTier = input.defaultTier;
   for (const k of ["allowRoleSwitching", "exportEnabled", "registrationOpen", "maintenanceMode"] as const) {
     if (typeof input[k] === "boolean") out[k] = input[k];
+  }
+  if (Array.isArray(input.partners)) {
+    // One program per brand, and nothing unusable: a bad URL here would become
+    // an outbound link from our own UI.
+    const seen = new Set<string>();
+    out.partners = input.partners
+      .map(normalizeProgram)
+      .filter((p): p is PartnerProgram => p !== null)
+      .filter((p) => {
+        const key = p.brand.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 50);
   }
   return out;
 }

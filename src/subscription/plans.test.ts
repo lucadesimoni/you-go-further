@@ -4,6 +4,7 @@ import {
   TIER_ORDER,
   assertFeature,
   can,
+  effectiveTier,
   FeatureLockedError,
   limit,
   requiredTierFor,
@@ -49,5 +50,21 @@ describe("subscription plans", () => {
     expect(PLANS.free.priceChfPerMonth).toBe(0);
     expect(PLANS.pro.priceChfPerMonth).toBeGreaterThan(PLANS.free.priceChfPerMonth);
     expect(PLANS.elite.priceChfPerMonth).toBeGreaterThan(PLANS.pro.priceChfPerMonth);
+  });
+});
+
+describe("free Phase-1 launch", () => {
+  it("serves everyone the full feature set when subscriptions are off", () => {
+    const served = effectiveTier("free", false);
+    expect(served).toBe("elite");
+    expect(limit(served, "maxConnectedProviders")).toBe(4);
+    expect(limit(served, "historyDays")).toBeGreaterThan(365);
+    expect(can(served, "loadAnalytics")).toBe(true);
+  });
+
+  it("leaves the plans untouched, so B2B can switch them back on", () => {
+    expect(effectiveTier("free", true)).toBe("free");
+    expect(limit("free", "maxConnectedProviders")).toBe(1);
+    expect(PLANS.pro.priceChfPerMonth).toBe(9);
   });
 });

@@ -95,6 +95,20 @@ export function limit(tier: Tier, feature: "maxConnectedProviders" | "historyDay
   return PLANS[tier].features[feature];
 }
 
+/**
+ * The tier an athlete is actually served.
+ *
+ * Phase 1 ships a **free** Swiss app: the revenue is affiliate commission, not
+ * subscriptions, so gating history depth and connected services behind a plan
+ * would only make the first fueling plan feel thin — the exact moment we need
+ * to land. With `subscriptionsEnabled: false` everyone is served the top tier;
+ * the plans themselves stay in the code because they are the B2B story later,
+ * and switching them back on is one config flag.
+ */
+export function effectiveTier(tier: Tier, subscriptionsEnabled: boolean): Tier {
+  return subscriptionsEnabled ? tier : "elite";
+}
+
 /** The cheapest tier that unlocks a given boolean feature, if any. */
 export function requiredTierFor(feature: keyof PlanFeatures): Tier | undefined {
   return TIER_ORDER.find((t) => Boolean(PLANS[t].features[feature]));

@@ -1,0 +1,359 @@
+import type { Dictionary } from "./en";
+
+/**
+ * Italian (Swiss usage) — Ticino and the Italian-speaking Grisons.
+ *
+ *  - **Lei** throughout, matching the formal address used in the German and
+ *    French dictionaries.
+ *  - Swiss institution names as they are used locally: swisstopo, MeteoSvizzera.
+ *
+ * Typed as `Dictionary`, so leaving a key out fails the build.
+ */
+export const it: Dictionary = {
+  // ---- App shell ----------------------------------------------------------
+  "app.skipToContent": "Vai al contenuto",
+  "app.brand": "You Go Further",
+  "app.nav": "Navigazione principale",
+  "app.disclaimer":
+    "Indicazioni generali per adulti sani — non è un parere medico. I collegamenti ai servizi usano le autorizzazioni OAuth ufficiali; finché non è collegato un account reale vengono mostrati dati di esempio.",
+
+  "nav.plan": "Pianifica",
+  "nav.progress": "Analisi",
+  "nav.connect": "Collegamenti",
+  "nav.team": "Squadra",
+  "nav.catalog": "Prodotti",
+  "nav.admin": "Amministrazione",
+  "nav.more": "Altro",
+
+  // ---- Start screen -------------------------------------------------------
+  "nav.home": "Inizio",
+  "home.goodMorning": "Buongiorno {name}",
+  "home.goodAfternoon": "Buon pomeriggio {name}",
+  "home.goodEvening": "Buonasera {name}",
+  "home.doNext": "Il suo prossimo passo",
+  "home.planSession": "Pianificare un allenamento",
+  "home.logSession": "Registrare un allenamento",
+  "home.thisWeek": "Ultimi 7 giorni",
+  "home.sessions": "Allenamenti",
+  "home.hours": "Ore",
+  "home.distance": "Distanza",
+  "home.climb": "Dislivello",
+  "home.vsPrevious": "{delta} h rispetto alla settimana precedente",
+  "home.firstWeek": "La sua prima settimana di dati — per ora non c'è nulla da confrontare.",
+  "home.quietWeek":
+    "Una settimana tranquilla. Anche il riposo è allenamento; se non era previsto, riprenda con gradualità.",
+  "home.fuelling": "Alimentazione",
+  "home.notScoredYet": "Non ancora valutato",
+  "home.recent": "Allenamenti recenti",
+  "home.noSessions": "Ancora nessun allenamento. Colleghi un servizio e i suoi allenamenti appariranno qui.",
+  "home.readiness": "Recupero",
+  "home.readinessMeasured": "dai suoi dispositivi",
+  "home.readinessSelf": "una sua stima",
+  "home.longestRecent": "Il più lungo di recente",
+  "home.fuelIt": "Alimentare questo →",
+  "home.reviewIt": "Com'è andata? →",
+  "home.logged": "Registrato",
+  "home.reviewPending": "{count} allenamenti ancora da analizzare",
+  "home.reviewPending_one": "{count} allenamento ancora da analizzare",
+  "home.shortcuts": "I suoi strumenti",
+  "home.shortcutTeam": "Il suo gruppo",
+  "home.shortcutTeamWhy": "Carico e alimentazione degli atleti che segue.",
+  "home.shortcutCatalog": "Catalogo prodotti",
+  "home.shortcutCatalogWhy": "Vedere cosa può consigliare l'algoritmo e aggiungere prodotti propri.",
+  "home.shortcutAdmin": "Piattaforma",
+  "home.shortcutAdminWhy": "Utenti, ruoli e impostazioni della piattaforma.",
+  "home.openInsights": "Tutte le analisi →",
+
+  // ---- Account menu -------------------------------------------------------
+  "account.menu": "Account",
+  "account.profile": "Profilo e salute",
+  "account.billing": "Abbonamento e fatturazione",
+  "account.connections": "Servizi collegati",
+  "account.switchDemo": "Cambiare account demo",
+  "account.signOut": "Esci",
+  "account.streak": "{days} giorni di allenamento consecutivi",
+  "account.insightsLink": "Analisi ›",
+
+  // ---- Appearance & language ---------------------------------------------
+  "appearance.title": "Aspetto",
+  "appearance.system": "Sistema",
+  "appearance.light": "Chiaro",
+  "appearance.dark": "Scuro",
+  "language.title": "Lingua",
+  "language.en": "English",
+  "language.de": "Deutsch",
+  "language.fr": "Français",
+  "language.it": "Italiano",
+
+  // ---- Common -------------------------------------------------------------
+  "common.of": "di",
+
+  // ---- Domain option labels ----------------------------------------------
+  "goal.general-fitness": "Forma generale",
+  "goal.general-fitness.blurb": "Restare in salute e allenarsi con piacere",
+  "goal.endurance-performance": "Prestazione di resistenza",
+  "goal.endurance-performance.blurb": "Andare più lontano e più veloce",
+  "goal.race-preparation": "Preparazione alla gara",
+  "goal.race-preparation.blurb": "Mettere a punto e provare l'alimentazione del giorno di gara",
+  "goal.weight-loss": "Perdita di peso",
+  "goal.weight-loss.blurb": "Perdere grasso senza compromettere gli allenamenti duri",
+  "goal.recovery-focus": "Recupero",
+  "goal.recovery-focus.blurb": "Recuperare più in fretta tra un allenamento e l'altro",
+
+  "activity.running": "Corsa",
+  "activity.trail-running": "Trail running",
+  "activity.cycling": "Ciclismo",
+  "activity.triathlon": "Triathlon",
+  "activity.swimming": "Nuoto",
+
+  "intensity.easy": "Facile",
+  "intensity.moderate": "Moderata",
+  "intensity.hard": "Intensa",
+  "intensity.race": "Gara",
+
+  "conditions.cool": "Fresco",
+  "conditions.temperate": "Temperato",
+  "conditions.hot": "Caldo",
+
+  "sweat.light": "Poca",
+  "sweat.average": "Media",
+  "sweat.heavy": "Molta",
+  "sweat.lightText": "suda poco",
+  "sweat.averageText": "suda in media",
+  "sweat.heavyText": "suda molto",
+
+  // ---- Planner ------------------------------------------------------------
+  "plan.goal": "Obiettivo",
+  "plan.activity": "Disciplina",
+  "plan.intensity": "Intensità",
+  "plan.duration": "Durata",
+  "plan.conditions": "Condizioni",
+  "plan.carbPerHour": "Carboidrati / ora",
+  "plan.fluidPerHour": "Liquidi / ora",
+  "plan.phasePre": "Prima",
+  "plan.phaseDuring": "Durante",
+  "plan.phasePost": "Dopo",
+
+  // ---- Planner (detail) ---------------------------------------------------
+  "plan.sessionDetails": "Dettagli dell'allenamento",
+  "plan.carbTotal": "Carboidrati totali",
+  "plan.sodiumPerLitreLong": "Sodio / litro",
+  "plan.measured": "misurato",
+  "plan.tunedTo": "Adattato a",
+  "plan.editProfile": "Modificare il profilo",
+  "plan.caffeineOk": "caffeina accettata",
+  "plan.measuredSignals": "valori misurati",
+  "plan.whyThese": "Perché questi — ingredienti e abbinamento",
+  "plan.notes": "Note e limiti",
+  "plan.house": "propria",
+  "plan.simulate": "Simulare",
+  "plan.reset": "Azzerare",
+  "plan.shopThisPlan": "Ordinare questo piano",
+
+  "plan.pause": "Pausa",
+  "plan.replay": "Riprodurre di nuovo",
+  "profile.savedLocally": "salvato su questo dispositivo",
+
+  // ---- Insights -----------------------------------------------------------
+  "insights.score": "Punteggio alimentazione",
+  "insights.sessionsLogged": "{count} allenamenti registrati",
+  "insights.sessionsLogged_one": "{count} allenamento registrato",
+  "insights.doNext": "Da fare adesso",
+  "insights.worthAttention": "Da tenere d'occhio",
+  "insights.yourTraining": "Il suo allenamento",
+  "insights.activities": "Allenamenti",
+  "insights.hours": "Ore",
+  "insights.longSessions": "Allenamenti lunghi",
+  "insights.logged": "Registrati",
+  "insights.milestones": "Traguardi",
+  "insights.noSessions":
+    "Nessun allenamento sincronizzato — colleghi un servizio e qui apparirà il suo allenamento reale.",
+  "insights.connectService": "Collegare un servizio",
+  "insights.streak": "{days} giorni consecutivi · record {best}",
+  "insights.notScored":
+    "Registri un allenamento e questo punteggio inizierà a misurare quanto funziona davvero la sua alimentazione — energia, stomaco e se gli allenamenti lunghi sono coperti.",
+  "insights.bandGettingStarted": "Primi passi",
+  "insights.bandBuilding": "In crescita",
+  "insights.bandSolid": "Solido",
+  "insights.bandDialledIn": "Perfettamente a punto",
+
+  // ---- Fuelling next actions (ids come from the engine) -------------------
+  "action.logFirst": "Registri il suo prossimo allenamento",
+  "action.logFirst.why":
+    "Una sola registrazione dice al pianificatore come è andata l'alimentazione — è da lì che tutto il resto impara.",
+  "action.lowerCarbRate": "Riduca i carboidrati di circa 10 g/h e risalga",
+  "action.lowerCarbRate.why":
+    "I disturbi gastrointestinali la stanno limitando. L'algoritmo ha già abbassato il suo massimo; risalga a piccoli passi nell'arco di qualche settimana.",
+  "action.addCarbs": "Aggiunga circa 10 g/h di carboidrati negli allenamenti oltre i 90 minuti",
+  "action.addCarbs.why":
+    "Cala di energia con lo stomaco a posto — il segnale più chiaro che c'è margine per alimentarsi di più.",
+  "action.measureSweat": "Misuri una volta il suo tasso di sudorazione",
+  "action.measureSweat.why":
+    "Basta un allenamento di 90 minuti e sostituisce una media di popolazione con il suo valore per liquidi e sodio.",
+  "action.connectService": "Colleghi il suo servizio di allenamento",
+  "action.connectService.why":
+    "I piani useranno allora i suoi allenamenti e il terreno reali, invece di quello che digita.",
+  "action.logMore": "Registri altri {count} allenamenti",
+  "action.logMore_one": "Registri ancora {count} allenamento",
+  "action.logMore.why":
+    "A partire da cinque, l'algoritmo adatta l'obiettivo di carboidrati al suo stomaco e alla sua energia.",
+  "action.rehearseRace": "Provi l'alimentazione da gara nel prossimo allenamento lungo",
+  "action.rehearseRace.why":
+    "La sua alimentazione funziona. Il guadagno che resta è provarla al ritmo gara, così il giorno della gara nulla sarà nuovo.",
+
+  // ---- Connect ------------------------------------------------------------
+  "connect.title": "Collegamenti",
+  "connect.connect": "Collegare",
+  "connect.disconnect": "Scollegare",
+  "connect.locked": "Bloccato",
+  "connect.route": "Percorso e punti di rifornimento",
+  "connect.withGps": "{count} con GPS",
+  "connect.routeIntro":
+    "Un percorso registrato con i rifornimenti collocati lungo di esso — dove prendere i carboidrati per non restare mai a secco. I percorsi svizzeri usano la carta nazionale ufficiale di swisstopo, con il rilievo di swisstopo e le condizioni della stazione MeteoSvizzera più vicina.",
+  "connect.chooseSession": "Scegliere un allenamento",
+  "connect.baseMap": "Sfondo cartografico",
+  "connect.terrain": "Terreno",
+  "connect.weather": "Meteo",
+  "connect.planRoute": "Pianificare questo percorso →",
+  "connect.analysisSettings": "Impostazioni di analisi",
+  "connect.usingProfile": "Dal suo profilo: {weight} kg · FC max {maxHr} bpm",
+  "connect.bodySignals": "Segnali corporei",
+  "connect.trainingAnalysis": "Analisi dell'allenamento",
+
+  // ---- Route fuelling by terrain -----------------------------------------
+  "route.fuelByTerrain": "Alimentazione su questo percorso",
+  "route.chartLabel": "Profilo altimetrico con {count} rifornimenti su {gain} m di dislivello",
+  "route.byTerrain": "collocati secondo il terreno",
+  "route.evenSpacing": "distanza regolare",
+  "route.explain":
+    "I rifornimenti sono collocati dove l'energia se ne va davvero: salire costa fino a 2,5× il piano per metro, quindi una presa cade all'inizio della salita e non dentro di essa, e mai in piena discesa dove mangiare è impraticabile.",
+
+  "route.estimatedProfile":
+    "Profilo altimetrico stimato — swisstopo non era raggiungibile, quindi la forma è indicativa e gli orari dei rifornimenti approssimativi.",
+
+  // ---- Shop / affiliate ---------------------------------------------------
+  "shop.orderAt": "Ordinare da {brand} →",
+  "shop.noShop": "Per questi prodotti non è ancora indicato alcun negozio.",
+  "shop.needsApi": "Colleghi l'app alla sua API per vedere dove ordinarli.",
+  "shop.affiliateNote":
+    "Ordina direttamente dal marchio. Sugli ordini presso i nostri partner riceviamo una provvigione — per lei senza alcun sovrapprezzo, ed è ciò che mantiene gratuita questa app.",
+  "shop.noPartnerNote":
+    "Ordina direttamente dal marchio. Con questo marchio non abbiamo un accordo di partnership, quindi non guadagniamo nulla — il link è qui perché è il prodotto giusto.",
+  "shop.affiliateAmount": "Circa CHF {chf} su questo carrello.",
+
+  // ---- Race / route import ------------------------------------------------
+  "race.title": "Pianificare una gara o un percorso",
+  "race.intro":
+    "Carichi il file GPX dell'organizzatore — o un percorso che ha preparato — e ottenga l'alimentazione per quel tracciato esatto: quanto all'ora e dove prenderla in salita.",
+  "race.drop": "Trascini qui un file .gpx",
+  "race.choose": "Scegliere un file",
+  "race.privacy": "Il file viene letto sul suo dispositivo. Viene trasmesso solo il tracciato, per terreno e meteo.",
+  "race.noRoute":
+    "In questo file non è stato trovato alcun percorso. Un GPX di un organizzatore, di Strava, Komoot o swisstopo funziona.",
+  "race.tooBig": "Questo file supera gli 8 MB — esporti il percorso senza i dati di frequenza cardiaca e cadenza.",
+  "race.another": "Importarne un altro",
+  "race.unnamed": "Percorso importato",
+  "race.finishTime": "Tempo previsto",
+  "race.estimateNote": "Stimato da distanza e dislivello. Indichi il suo obiettivo — il piano lo segue.",
+  "race.loadingMap": "Caricamento della mappa…",
+  "home.planRace": "Pianificare una gara",
+
+  // ---- Session debrief ----------------------------------------------------
+  "debrief.title": "Com'è andato questo allenamento",
+  "debrief.needed": "Questo percorso richiedeva",
+  "debrief.youTook": "Lei ha preso",
+  "debrief.short": "{gap} g/h in meno",
+  "debrief.onTarget": "In linea",
+  "debrief.notLogged": "Non ancora registrato",
+  "debrief.howWasIt": "Com'è andata?",
+  "debrief.gut": "Stomaco",
+  "debrief.energy": "Energia",
+  "debrief.actualCarbs": "Carboidrati presi",
+  "debrief.save": "Salvare e vedere l'analisi",
+  "debrief.whereToTake": "Cosa prendere e dove, la prossima volta",
+  "debrief.leadToPlan": "Ecco lo stesso percorso con l'alimentazione che richiedeva — cosa prendere e dove.",
+  "debrief.verdictUnderFuelled": "Alimentazione insufficiente",
+  "debrief.verdictAboutRight": "Ben alimentato",
+  "debrief.verdictOverGut": "Limitato dallo stomaco",
+  "debrief.verdictUnknown": "Elementi insufficienti",
+  "debrief.gi.none": "Bene",
+  "debrief.gi.mild": "Un po' disturbato",
+  "debrief.gi.severe": "Male",
+  "debrief.energy.bonked": "Crisi",
+  "debrief.energy.faded": "In calo",
+  "debrief.energy.steady": "Costante",
+  "debrief.energy.strong": "Forte",
+  "finding.underFuelled":
+    "Ha preso circa {actual} g/h; le salite di questo percorso richiedevano {required} g/h — circa {gap} g/h in meno.",
+  "finding.aboutRight": "L'alimentazione corrispondeva a quanto richiedeva il percorso — la ripeta.",
+  "finding.gutLimited":
+    "Qui il limite è stato lo stomaco, non la quantità. Abbassi il ritmo di assunzione e lo ricostruisca prima di aggiungerne.",
+  "finding.startedLate": "Cominci anche prima: la prima presa deve cadere entro i primi 30–40 minuti, non a {atMin}.",
+  "finding.climbUnfuelled":
+    "La salita di {gain} m dal km {km} è il punto in cui quella mancanza si fa sentire — la prossima volta prenda i carboidrati già in avvicinamento.",
+  "finding.noLog": "Ci dica com'è andata e le mostreremo esattamente dove l'alimentazione è mancata.",
+  "finding.shortSession":
+    "Meno di un'ora — non sono i carboidrati durante l'attività ad aver deciso come si è sentito.",
+
+  // ---- Catalog & shop -----------------------------------------------------
+  "catalog.title": "Catalogo prodotti",
+  "catalog.bestWhen": "Ideale quando",
+
+  // ---- Profile ------------------------------------------------------------
+  "profile.bodyWeight": "Peso corporeo",
+  "profile.maxHr": "Frequenza cardiaca massima",
+  "profile.sweatRate": "Tasso di sudorazione",
+  "profile.sweatSodium": "Sodio nel sudore",
+  "profile.synced": "sincronizzato con il suo account",
+
+  "profile.yourProfile": "Il suo profilo",
+  "profile.bodyPrefs": "Corpo e preferenze",
+  "profile.sweatLevelShort": "Livello di sudorazione",
+  "profile.caffeineLong": "Tollero la caffeina — la proponga per sforzi lunghi o intensi",
+  "profile.measuredSignals": "Valori corporei misurati",
+  "profile.syncPlatform": "Sincronizzare dalla sua piattaforma salute",
+  "profile.useMeasuredSignals": "Usare i miei valori misurati",
+
+  // ---- Auth ---------------------------------------------------------------
+  "auth.headline": "Alimentarsi meglio, andare più lontano",
+  "auth.continueEmail": "Continuare con l'e-mail",
+  "auth.sendLink": "Inviatemi un link di accesso",
+  "auth.openDevLink": "Aprire il link (mailer di sviluppo)",
+
+  "auth.subtitle": "Acceda o crei il suo account per sincronizzare allenamento e alimentazione.",
+  "auth.continueApple": "Continuare con Apple",
+  "auth.continueGoogle": "Continuare con Google",
+  "auth.signingIn": "Accesso in corso…",
+  "auth.sending": "Invio…",
+  "auth.createOrSignIn": "Creare un account / accedere",
+  "auth.sentTo":
+    "Controlli la sua casella — abbiamo inviato un link di accesso a {email}. Funziona una sola volta e scade tra 15 minuti.",
+  "auth.differentAddress": "← usare un altro indirizzo",
+  "auth.otherOptions": "← altre opzioni",
+  "auth.namePlaceholder": "Il suo nome (facoltativo)",
+  "auth.emailPlaceholder": "lei@esempio.ch",
+  "auth.terms": "Continuando accetta le nostre condizioni.",
+  "auth.termsLive":
+    "L'accesso è verificato lato server — i token social presso il fornitore, l'e-mail tramite un link monouso.",
+  "auth.termsDemo": "Senza server: l'accesso è simulato per la demo.",
+  "auth.exploreDemo": "Provare un account dimostrativo",
+
+  "toast.paymentReceived": "Pagamento ricevuto — grazie!",
+  "toast.planActive": "Il suo abbonamento {tier} è attivo.",
+  "toast.connected": "{provider} collegato — i suoi allenamenti si stanno sincronizzando.",
+  "toast.planningRoute": "Pianificazione del suo percorso — condizioni applicate",
+  "toast.sessionLogged": "Registrato — ecco cosa ci dice.",
+  "toast.saveFailed": "Salvataggio non riuscito. Riprovi.",
+
+  // ---- Nutrition guide ----------------------------------------------------
+  "guide.title": "Guida all'alimentazione",
+  "guide.inPractice": "In pratica",
+  "guide.pitfalls": "Errori frequenti",
+  "guide.readMinutes": "{count} min di lettura",
+  "guide.englishOnly": "Gli articoli della guida sono per ora disponibili solo in inglese.",
+  "guide.articles": "{count} articoli",
+  "guide.intro":
+    "Le prove dietro ogni piano — cosa fare, quanto e perché. Redatto secondo il consenso scientifico in nutrizione sportiva.",
+
+
+};

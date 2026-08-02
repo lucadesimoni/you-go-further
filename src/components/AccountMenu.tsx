@@ -135,7 +135,7 @@ export function AccountMenu({
           </div>
 
           <div className="dropdown-label">{t("language.title")}</div>
-          <div className="dropdown-choice" role="group" aria-label={t("language.title")}>
+          <div className="dropdown-choice dropdown-choice-lang" role="group" aria-label={t("language.title")}>
             {LANGS.map((l) => (
               <button
                 key={l}

@@ -77,3 +77,4 @@ export async function enrichRoute(
   ]);
   return { terrain, weather, implications: fuelingImplications(terrain, weather) };
 }
+export * from "./gpx";

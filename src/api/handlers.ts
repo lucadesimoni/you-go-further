@@ -18,7 +18,16 @@ import {
   CATALOG,
 } from "../engine";
 import type { AthleteInput, Product } from "../engine";
-import { buildCart, newProductOrder, newSubscriptionOrder, type CartLine, type Order } from "../commerce";
+import {
+  buildCart,
+  newProductOrder,
+  newSubscriptionOrder,
+  outboundLinks,
+  summarise,
+  type AffiliateClick,
+  type CartLine,
+  type Order,
+} from "../commerce";
 import { deriveAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
 import { analyze, derivePhysiology } from "../analysis";
 import { generateSampleWellness } from "../providers";
@@ -76,7 +85,7 @@ const GI_RATINGS: GiRating[] = ["none", "mild", "severe"];
 const ENERGY_RATINGS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
 
 export function createApiRouter(runtime: Runtime = createRuntime()) {
-  const { config, store, pipeline, feedback, registry, connections, products, users, settings, orders, magicLinks, profiles, payments, mailer } = runtime;
+  const { config, store, pipeline, feedback, registry, connections, products, users, settings, orders, affiliate, magicLinks, profiles, payments, mailer } = runtime;
 
   const isProvider = (v: string): v is ProviderId => (ALL_PROVIDER_IDS as string[]).includes(v);
 
@@ -221,6 +230,44 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           return ok({ connected: true, provider, imported: activities.length, inserted });
         }
         return notFound();
+      }
+
+      // --- Affiliate: hand the athlete to a partner shop, and keep the trail ---
+      if (key === "POST /api/affiliate/links") {
+        // Turn cart lines into outbound links. Done server-side because the
+        // partner programs (and our publisher ids) live in platform settings,
+        // which the browser has no business holding.
+        const b = (body ?? {}) as { lines?: CartLine[] };
+        const lines = Array.isArray(b.lines) ? b.lines.slice(0, 60) : [];
+        const catalog = mergeCatalog(await products.list());
+        const byId = new Map(catalog.map((p) => [p.id, p]));
+        const { partners } = await settings.get();
+        const links = outboundLinks(lines, byId, partners, `${principal.id}-${Date.now().toString(36)}`);
+        return ok({ links, partnered: partners.length > 0 });
+      }
+
+      if (key === "POST /api/affiliate/click") {
+        const b = (body ?? {}) as Partial<AffiliateClick>;
+        if (typeof b.productId !== "string" || typeof b.brand !== "string") return bad("productId and brand required");
+        const { partners } = await settings.get();
+        const click: AffiliateClick = {
+          id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+          userId: principal.id,
+          productId: b.productId.slice(0, 120),
+          brand: b.brand.slice(0, 80),
+          // Whether this can earn is ours to decide, never the client's.
+          tracked: partners.some((p) => p.brand.toLowerCase() === String(b.brand).toLowerCase()),
+          valueChf: typeof b.valueChf === "number" && Number.isFinite(b.valueChf) ? Math.max(0, Math.round(b.valueChf * 100) / 100) : 0,
+          at: new Date().toISOString(),
+        };
+        await affiliate.record(click);
+        return ok({ recorded: true, tracked: click.tracked });
+      }
+
+      if (key === "GET /api/affiliate/summary") {
+        authorize(principal, "org:configure");
+        const { partners } = await settings.get();
+        return ok({ summary: summarise(await affiliate.list(), partners), partners });
       }
 
       // --- Product library: browse (merged) + admin CRUD of custom products ---

@@ -1,22 +1,69 @@
 import { useEffect, useMemo, useState } from "react";
-import { buildCart } from "../commerce";
+import { buildCart, byPartner, estimatedCommissionChf, type OutboundLink } from "../commerce";
 import type { Recommendation } from "../engine";
 import { api, isApiConfigured } from "../api/client";
+import { getConfig } from "../config";
 import { toast } from "../ui/toast";
 import { useT } from "../i18n";
 
-/** "Shop this plan" — turns the recommendation into a priced, shoppable cart. */
+/**
+ * "Shop this plan" — the plan turned into something the athlete can actually buy.
+ *
+ * Two modes, one panel:
+ *
+ * - **Affiliate (the Phase-1 default).** We are not the merchant. The athlete is
+ *   handed to the brand's own shop — no stock, no fulfilment, no returns desk —
+ *   and the brand pays commission. Links are built server-side because the
+ *   publisher ids live in platform settings, not in the browser.
+ * - **Own checkout**, kept for when the platform does sell directly (B2B, a
+ *   house brand). Same cart; only the action at the bottom differs.
+ */
 export function CartPanel({ rec }: { rec: Recommendation }) {
   const t = useT();
+  const config = useMemo(() => getConfig(), []);
   const [sessions, setSessions] = useState(1);
   const [ordered, setOrdered] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [links, setLinks] = useState<OutboundLink[] | null>(null);
   const cart = useMemo(() => buildCart(rec, sessions), [rec, sessions]);
   const live = isApiConfigured();
+  const affiliate = !config.sellDirect;
 
   useEffect(() => setOrdered(false), [rec, sessions]);
 
-  // Real checkout: the server creates a pending order and hands back the payment
+  // Ask the server which shops these products can be bought from, and which of
+  // those we actually have an agreement with.
+  const lineKey = cart.lines.map((l) => `${l.productId}x${l.qty}`).join("|");
+  useEffect(() => {
+    if (!affiliate || !live || cart.lines.length === 0) {
+      setLinks(null);
+      return;
+    }
+    let alive = true;
+    api
+      .affiliateLinks(cart.lines)
+      .then((r) => alive && setLinks(r.links))
+      .catch(() => alive && setLinks([]));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [affiliate, live, lineKey]);
+
+  const groups = useMemo(() => byPartner(links ?? []), [links]);
+  const anyTracked = (links ?? []).some((l) => l.tracked);
+  const commission = estimatedCommissionChf(links ?? []);
+
+  /** Record the hand-off, then send them on. */
+  const go = (link: OutboundLink) => {
+    const line = cart.lines.find((l) => l.productId === link.productId);
+    void api
+      .affiliateClick({ productId: link.productId, brand: link.brand, valueChf: line?.lineTotalChf ?? 0 })
+      .catch(() => undefined);
+    window.open(link.url, "_blank", "noopener,noreferrer");
+  };
+
+  // Direct sale: the server creates a pending order and hands back the payment
   // provider's URL. The order only becomes paid on the signed webhook.
   const checkout = async () => {
     if (!live) return setOrdered(true); // client-only build: nothing to charge
@@ -64,20 +111,46 @@ export function CartPanel({ rec }: { rec: Recommendation }) {
         <span className="cart-subtotal">CHF {cart.subtotalChf.toFixed(2)}</span>
       </div>
 
-      <button
-        type="button"
-        className={`btn btn-primary cart-checkout${ordered ? " done" : ""}`}
-        onClick={checkout}
-        disabled={ordered || busy || cart.lines.length === 0}
-      >
-        {ordered ? "✓ Added (demo)" : busy ? "Starting checkout…" : `Checkout · CHF ${cart.subtotalChf.toFixed(2)}`}
-      </button>
-      <p className="detail note-top">
-        Fulfilled by our Swiss partners (Sponser, Winforce).{" "}
-        {live
-          ? "Payment is handled by our payment provider; your order is confirmed once payment clears."
-          : "Connect the app to its API to enable real checkout."}
-      </p>
+      {affiliate ? (
+        <>
+          {groups.length > 0 ? (
+            <div className="cart-partners">
+              {groups.map((g) => (
+                <button key={g.brand} type="button" className="btn btn-primary cart-partner" onClick={() => go(g.links[0])}>
+                  {t("shop.orderAt", { brand: g.brand })}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="detail note-top">{live ? t("shop.noShop") : t("shop.needsApi")}</p>
+          )}
+          {/* Say plainly how this is paid for. An athlete weighing a
+              recommendation deserves to know what we earn from it. */}
+          {groups.length > 0 && (
+            <p className="detail note-top">
+              {anyTracked ? t("shop.affiliateNote") : t("shop.noPartnerNote")}
+              {anyTracked && commission > 0 ? ` ${t("shop.affiliateAmount", { chf: commission.toFixed(2) })}` : ""}
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            className={`btn btn-primary cart-checkout${ordered ? " done" : ""}`}
+            onClick={checkout}
+            disabled={ordered || busy || cart.lines.length === 0}
+          >
+            {ordered ? "✓ Added (demo)" : busy ? "Starting checkout…" : `Checkout · CHF ${cart.subtotalChf.toFixed(2)}`}
+          </button>
+          <p className="detail note-top">
+            Fulfilled by our Swiss partners (Sponser, Winforce).{" "}
+            {live
+              ? "Payment is handled by our payment provider; your order is confirmed once payment clears."
+              : "Connect the app to its API to enable real checkout."}
+          </p>
+        </>
+      )}
     </div>
   );
 }

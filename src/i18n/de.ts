@@ -82,6 +82,8 @@ export const de: Dictionary = {
   "language.title": "Sprache",
   "language.en": "English",
   "language.de": "Deutsch",
+  "language.fr": "Français",
+  "language.it": "Italiano",
 
   // ---- Common -------------------------------------------------------------
   "common.of": "von",
@@ -230,6 +232,32 @@ export const de: Dictionary = {
     "Höhenprofil geschätzt — swisstopo war nicht erreichbar. Der Verlauf ist ungefähr, die Zeitpunkte entsprechend grob.",
 
   // ---- Session debrief ----------------------------------------------------
+  // ---- Shop / Affiliate ---------------------------------------------------
+  "shop.orderAt": "Bei {brand} bestellen →",
+  "shop.noShop": "Für diese Produkte ist noch kein Shop hinterlegt.",
+  "shop.needsApi": "Verbinden Sie die App mit ihrer API, um zu sehen, wo Sie diese bestellen können.",
+  "shop.affiliateNote":
+    "Sie bestellen direkt bei der Marke. Für Bestellungen bei Partnern erhalten wir eine Provision — für Sie ohne Aufpreis, und dadurch bleibt diese App kostenlos.",
+  "shop.noPartnerNote":
+    "Sie bestellen direkt bei der Marke. Mit ihr besteht keine Partnerschaft, wir verdienen daran also nichts — der Link steht hier, weil es das richtige Produkt ist.",
+  "shop.affiliateAmount": "Rund CHF {chf} bei diesem Warenkorb.",
+
+  // ---- Wettkampf- / Routen-Import -----------------------------------------
+  "race.title": "Wettkampf oder Route planen",
+  "race.intro":
+    "Laden Sie die GPX-Datei des Veranstalters — oder eine selbst geplante Route — und Sie erhalten die Verpflegung für genau diese Strecke: wie viel pro Stunde und wo an den Anstiegen.",
+  "race.drop": "GPX-Datei hierher ziehen",
+  "race.choose": "Datei auswählen",
+  "race.privacy": "Die Datei wird auf Ihrem Gerät gelesen. Weitergegeben wird nur die Streckenlinie — für Gelände und Wetter.",
+  "race.noRoute": "In dieser Datei ist keine Route enthalten. GPX-Dateien von Veranstaltern, Strava, Komoot oder swisstopo funktionieren.",
+  "race.tooBig": "Diese Datei ist grösser als 8 MB — exportieren Sie die Route ohne Herzfrequenz- und Trittfrequenzdaten.",
+  "race.another": "Weitere importieren",
+  "race.unnamed": "Importierte Route",
+  "race.finishTime": "Angestrebte Zielzeit",
+  "race.estimateNote": "Geschätzt aus Distanz und Höhenmetern. Setzen Sie Ihre eigene Zielzeit — der Plan folgt ihr.",
+  "race.loadingMap": "Karte wird geladen…",
+  "home.planRace": "Wettkampf planen",
+
   "debrief.title": "Wie diese Einheit lief",
   "debrief.needed": "Diese Route brauchte",
   "debrief.youTook": "Sie nahmen",

@@ -1,60 +1,93 @@
 import { describe, it, expect } from "vitest";
-import { de, en, detectLang, translate, LANGS } from "./index";
-import type { TranslationKey } from "./en";
+// `it` is vitest's test function here, so the Italian dictionary is aliased.
+import { de, en, fr, it as itDict, detectLang, translate, LANGS, type Lang } from "./index";
+import type { Dictionary, TranslationKey } from "./en";
 
 const keys = Object.keys(en) as TranslationKey[];
 
+const LOCALES: { lang: Lang; dict: Dictionary; name: string }[] = [
+  { lang: "de", dict: de, name: "German" },
+  { lang: "fr", dict: fr, name: "French" },
+  { lang: "it", dict: itDict, name: "Italian" },
+];
+
 describe("dictionary parity", () => {
-  it("German covers every English key", () => {
-    const missing = keys.filter((k) => !(k in de));
-    expect(missing).toEqual([]);
+  for (const { dict, name } of LOCALES) {
+    it(`${name} covers every English key`, () => {
+      expect(keys.filter((k) => !(k in dict))).toEqual([]);
+    });
+
+    it(`${name} adds no keys English doesn't have — a typo would silently never render`, () => {
+      expect(Object.keys(dict).filter((k) => !(k in en))).toEqual([]);
+    });
+
+    it(`${name} leaves no string untranslated by accident`, () => {
+      // Brand and language names are intentionally identical; everything else
+      // being identical usually means a forgotten translation.
+      const allowedIdentical = new Set<string>([
+        "app.brand",
+        "language.en",
+        "language.de",
+        "language.fr",
+        "language.it",
+        "nav.team",
+        "appearance.system",
+        "activity.triathlon",
+        "plan.pause", // the same word in German, French and Italian
+        "plan.sodiumPerLitreLong",
+        "plan.conditions",
+        "route.byTerrain",
+        "connect.title",
+        "connect.weather",
+        "debrief.energy",
+        "auth.continueApple",
+        "auth.continueGoogle",
+        "activity.trail-running",
+        "nav.admin",
+        "insights.hours",
+        "home.hours",
+        "home.distance",
+        "guide.articles", // "articles" is the same word in French
+        "account.menu", // Italian uses the English "Account"
+      ]);
+      const identical = keys.filter((k) => !allowedIdentical.has(k) && dict[k] === en[k]);
+      expect(identical).toEqual([]);
+    });
+
+    it(`${name} keeps every placeholder, so no value goes missing`, () => {
+      const placeholders = (s: string) => (s.match(/\{(\w+)\}/g) ?? []).sort();
+      for (const k of keys) {
+        expect(placeholders(dict[k]), `placeholders differ for "${k}"`).toEqual(placeholders(en[k]));
+      }
+    });
+
+    it(`${name} contains no stray non-Latin characters`, () => {
+      // A Cyrillic lookalike pasted into a string renders but is wrong.
+      expect(keys.filter((k) => /[\u0400-\u04ff\u0370-\u03ff]/.test(dict[k]))).toEqual([]);
+    });
+  }
+
+  it("German uses Swiss orthography — ss, never ß", () => {
+    expect(keys.filter((k) => de[k].includes("ß"))).toEqual([]);
   });
 
-  it("German adds no keys English doesn't have — a typo would silently never render", () => {
-    const extra = Object.keys(de).filter((k) => !(k in en));
-    expect(extra).toEqual([]);
-  });
-
-  it("no string is left untranslated by accident", () => {
-    // Brand and language names are intentionally identical; everything else
-    // being identical usually means a forgotten translation.
-    // Words that are genuinely the same in both languages.
-    const allowedIdentical = new Set<string>([
-      "app.brand",
-      "language.en",
-      "language.de",
-      "nav.team",
-      "appearance.system",
-      "activity.triathlon",
-      "plan.pause", // "Pause" is the same word in German
-    ]);
-    const identical = keys.filter((k) => !allowedIdentical.has(k) && de[k] === en[k]);
-    expect(identical).toEqual([]);
-  });
-
-  it("placeholders match between languages, so no value goes missing", () => {
-    const placeholders = (s: string) => (s.match(/\{(\w+)\}/g) ?? []).sort();
-    for (const k of keys) {
-      expect(placeholders(de[k]), `placeholders differ for "${k}"`).toEqual(placeholders(en[k]));
-    }
-  });
-
-  it("uses Swiss orthography — ss, never ß", () => {
-    const withEszett = keys.filter((k) => de[k].includes("ß"));
-    expect(withEszett).toEqual([]);
-  });
-
-  it("contains no stray non-Latin characters", () => {
-    // A Cyrillic lookalike pasted into a German string renders but is wrong.
-    const suspicious = keys.filter((k) => /[Ѐ-ӿͰ-Ͽ]/.test(de[k]));
-    expect(suspicious).toEqual([]);
+  it("French and Italian actually carry their accents", () => {
+    // A dictionary stripped of accents usually means it was machine-mangled
+    // somewhere between the translator and the repo. The thresholds differ
+    // because Italian simply accents far fewer words than French.
+    expect(keys.filter((k) => /[àâçéèêëîïôùûüœ]/i.test(fr[k])).length).toBeGreaterThan(60);
+    expect(keys.filter((k) => /[àèéìòù]/i.test(itDict[k])).length).toBeGreaterThan(25);
   });
 
   it("has no empty translations", () => {
-    for (const lang of LANGS) {
-      const dict = lang === "de" ? de : en;
+    for (const { lang, dict } of [...LOCALES, { lang: "en" as Lang, dict: en }]) {
       for (const k of keys) expect(dict[k].trim().length, `${lang}.${k} is empty`).toBeGreaterThan(0);
     }
+  });
+
+  it("offers every dictionary in the language picker", () => {
+    for (const { lang } of LOCALES) expect(LANGS).toContain(lang);
+    expect(LANGS).toContain("en");
   });
 });
 
@@ -139,11 +172,23 @@ describe("detectLang", () => {
   });
 
   it("gives an English browser English", () => {
-    expect(detectLang(["en-GB", "fr"])).toBe("en");
+    expect(detectLang(["en-GB"])).toBe("en");
+  });
+
+  it("serves Romandie and Ticino their own language, not English", () => {
+    expect(detectLang(["fr-CH", "de-CH"])).toBe("fr");
+    expect(detectLang(["it-CH"])).toBe("it");
+  });
+
+  it("takes the first language the browser actually prefers", () => {
+    // A Genevois whose browser lists French first must not get German just
+    // because German is the biggest Swiss market.
+    expect(detectLang(["fr-CH", "de-CH", "en"])).toBe("fr");
+    expect(detectLang(["de-CH", "fr-CH"])).toBe("de");
   });
 
   it("defaults to English for anything else", () => {
-    expect(detectLang(["fr-CH", "it-CH"])).toBe("en");
+    expect(detectLang(["es-ES", "ja"])).toBe("en");
     expect(detectLang([])).toBe("en");
   });
 });

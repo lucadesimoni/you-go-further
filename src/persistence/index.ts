@@ -9,6 +9,7 @@ export {
   FileOrderStore,
   FileMagicLinkStore,
   FileProfileStore,
+  FileAffiliateStore,
 } from "./fileStores";
 export {
   createPgStores,
@@ -20,6 +21,7 @@ export {
   PgUserStore,
   PgSettingsStore,
   PgOrderStore,
+  PgAffiliateStore,
   PgMagicLinkStore,
   PgProfileStore,
   type PgStores,

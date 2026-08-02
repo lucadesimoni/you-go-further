@@ -80,7 +80,7 @@ import type { SessionFeedback } from "../feedback";
 import type { Product } from "../engine";
 import type { User, NewUser, UserPatch, AthleteProfile } from "../users";
 import type { PlatformSettings } from "../settings";
-import type { CartLine, Order } from "../commerce";
+import type { AffiliateSummary, CartLine, Order, OutboundLink, PartnerProgram } from "../commerce";
 import type { Activity } from "../model";
 import type { Tier } from "../subscription";
 
@@ -172,6 +172,14 @@ export const api = {
       `/api/oauth/${provider}/authorize-url?return_to=${encodeURIComponent(returnTo)}`,
     ),
   connections: () => call<{ connections: { provider: string }[] }>("GET", "/api/connections"),
+  /** Outbound partner links for a cart — built server-side, where the ids live. */
+  affiliateLinks: (lines: CartLine[]) =>
+    call<{ links: OutboundLink[]; partnered: boolean }>("POST", "/api/affiliate/links", { body: { lines } }),
+  /** Record a hand-off to a partner shop, so commission can be reconciled. */
+  affiliateClick: (body: { productId: string; brand: string; valueChf: number }) =>
+    call<{ recorded: boolean; tracked: boolean }>("POST", "/api/affiliate/click", { body }),
+  affiliateSummary: (role: Role) =>
+    call<{ summary: AffiliateSummary; partners: PartnerProgram[] }>("GET", "/api/affiliate/summary", { role }),
   connectionRemove: (provider: string) => call<{ connections: { provider: string }[] }>("DELETE", `/api/connections/${provider}`),
   emailLinkRequest: (email: string, returnTo: string) =>
     call<EmailRequestResponse>("POST", "/api/auth/email/request", { body: { email, returnTo } }),

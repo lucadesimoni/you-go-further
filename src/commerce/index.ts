@@ -8,3 +8,5 @@ export {
   newProductOrder,
   newSubscriptionOrder,
 } from "./orders";
+export * from "./affiliate";
+export * from "./affiliateStore";

@@ -163,11 +163,27 @@ await step("a weight set in the profile reaches the plan and the analysis", asyn
 });
 
 console.log("── commerce ──");
-await step("checkout the planned cart", async () => {
+await step("a hand-off to a partner shop is recorded, so commission can be reconciled", async () => {
   await page.click('button.topnav-tab:has-text("Plan")');
   await page.waitForSelector("text=Shop this plan");
-  await page.click('button:has-text("Checkout · CHF")');
-  await page.waitForSelector("text=Payment received", { timeout: 10000 });
+  await page.waitForSelector(".cart-partner", { timeout: 15000 });
+
+  // The click POSTs the hand-off and opens the brand's site in a new tab.
+  const recorded = page.waitForResponse(
+    (r) => r.url().includes("/api/affiliate/click") && r.request().method() === "POST",
+    { timeout: 15000 },
+  );
+  const [popup] = await Promise.all([
+    page.waitForEvent("popup", { timeout: 15000 }).catch(() => null),
+    page.locator(".cart-partner").first().click(),
+  ]);
+  const res = await recorded;
+  const body = await res.json();
+  if (body.recorded !== true) throw new Error(`click was not recorded: ${JSON.stringify(body)}`);
+  // No partner agreement is configured in a fresh deployment, so it must not
+  // claim the click can earn.
+  if (body.tracked !== false) throw new Error("an unsigned brand was marked as tracked");
+  if (popup) await popup.close();
 });
 
 console.log("── route, terrain & weather ──");
@@ -297,16 +313,26 @@ await step("logging it turns the panel into the answer", async () => {
   if (/finding\./.test(findings)) throw new Error(`untranslated finding key: ${findings}`);
 });
 await step("it says what to take, by name, and where — in one list, not two", async () => {
-  // The reviewed run re-titles the route's own stop list rather than printing a
-  // second copy: two lists of the same stops is two things to reconcile.
-  await page.waitForSelector(".route-fuel", { timeout: 10000 });
-  const title = await page.locator(".route-fuel .geo-title").innerText();
-  if (!/next time/i.test(title)) throw new Error(`plan not re-framed for the debrief: ${title}`);
+  // The debrief must never print its own copy of the stops — one list, re-titled.
   if ((await page.locator(".debrief .elev-stop-row").count()) > 0) {
     throw new Error("the debrief duplicates the route's stop list");
   }
+
+  // A short or flat session legitimately needs no on-route feeding. The contract
+  // is that the debrief only promises a plan when there is one, so check which
+  // case this session is and hold it to the matching promise.
+  const hasPlan = (await page.locator(".route-fuel").count()) > 0;
+  if (!hasPlan) {
+    if ((await page.locator(".debrief-lead").count()) > 0) {
+      throw new Error("the debrief points at a fuelling plan that isn't there");
+    }
+    return;
+  }
+
+  const title = await page.locator(".route-fuel .geo-title").innerText();
+  if (!/next time/i.test(title)) throw new Error(`plan not re-framed for the debrief: ${title}`);
   const rows = await page.locator(".route-fuel .elev-stop-row").count();
-  if (rows === 0) throw new Error("debrief gave a verdict but no next-time plan");
+  if (rows === 0) throw new Error("a fuelling section with no stops in it");
   const first = await page.locator(".route-fuel .elev-stop-row").first().innerText();
   if (!/\d+:\d\d/.test(first)) throw new Error(`no time on the stop: ${first}`);
   if (!/km \d/.test(first)) throw new Error(`no place on the stop: ${first}`);
@@ -318,6 +344,93 @@ await step("the start screen shows it as reviewed afterwards", async () => {
   await page.click('button.topnav-tab:has-text("Home")');
   await page.waitForSelector(".home-greeting");
   if ((await page.locator(".pill-done").count()) === 0) throw new Error("logged session is not marked as reviewed");
+});
+
+console.log("── phase 1: free, race-first, affiliate ──");
+await step("nothing is behind a paywall", async () => {
+  await page.click(".account-btn");
+  const menu = await page.locator(".account-dropdown").innerText();
+  if (/Subscription/.test(menu)) throw new Error("billing is offered on a free app");
+  await page.keyboard.press("Escape");
+  await page.click('button.topnav-tab:has-text("Insights")');
+  await page.waitForTimeout(600);
+  const insights = await page.locator(".dash").innerText();
+  if (/Available on Pro/i.test(insights)) throw new Error("upsell shown on a free app");
+});
+await step("a race GPX becomes a fuelling plan for that exact course", async () => {
+  const { writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  // A climbing Swiss course, so the plan has to place feeds by terrain.
+  const pts = Array.from({ length: 120 }, (_, i) => {
+    const f = i / 119;
+    return `<trkpt lat="${(46.686 + f * 0.09).toFixed(5)}" lon="${(7.863 + Math.sin(f * Math.PI) * 0.05).toFixed(5)}"><ele>${(570 + Math.sin(f * Math.PI) * 1250).toFixed(1)}</ele></trkpt>`;
+  }).join("");
+  const file = join(tmpdir(), `e2e-race-${Date.now()}.gpx`);
+  writeFileSync(file, `<?xml version="1.0"?><gpx version="1.1"><trk><name>Jungfrau Marathon</name><trkseg>${pts}</trkseg></trk></gpx>`);
+
+  await page.click('button.topnav-tab:has-text("Plan")');
+  await page.waitForSelector(".race", { timeout: 15000 });
+  await page.locator(".race input[type=file]").setInputFiles(file);
+  await page.waitForSelector(".race-head", { timeout: 20000 });
+
+  const head = await page.locator(".race-head").innerText();
+  if (!/Jungfrau Marathon/.test(head)) throw new Error(`route name lost: ${head}`);
+  if (!/↑ \d{3,}/.test(head)) throw new Error(`no climbing read from the GPX: ${head}`);
+  // The point of the whole feature: a plan for a course never run before.
+  await page.waitForSelector(".race .route-fuel", { timeout: 30000 });
+  const stops = await page.locator(".race .route-fuel .elev-stop-row").count();
+  if (stops === 0) throw new Error("imported a course but placed no fuelling");
+  const first = await page.locator(".race .route-fuel .elev-stop-row").first().innerText();
+  if (!/km \d/.test(first)) throw new Error(`stop has no place on the course: ${first}`);
+  if ((await page.locator(".race .elev-stop-product").count()) === 0) {
+    throw new Error("no product named on the imported course");
+  }
+});
+await step("buying means going to the brand, not our own checkout", async () => {
+  await page.locator(".geo-plan").first().click();
+  await page.waitForSelector(".cart", { timeout: 20000 });
+  await page.locator(".cart").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(1200);
+  if ((await page.locator(".cart-checkout").count()) > 0) throw new Error("still selling directly");
+  const partners = await page.locator(".cart-partner").count();
+  if (partners === 0) throw new Error("no partner shop offered for the plan");
+  // With no signed programs, the app must say so rather than imply one.
+  const note = await page.locator(".cart .note-top").last().innerText();
+  if (!/partner|commission/i.test(note)) throw new Error(`how this is paid for is not stated: ${note}`);
+});
+
+console.log("── four Swiss languages ──");
+await step("French and Italian are real, not a fallback to English", async () => {
+  for (const [label, expect] of [
+    ["Français", /Accueil|Planifier/],
+    ["Italiano", /Inizio|Pianifica/],
+    ["Deutsch", /Start|Planen/],
+  ]) {
+    await page.click(".account-btn");
+    await page.click(`.dropdown-choice-lang button:has-text("${label}")`);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    const nav = (await page.locator(".topnav-tab").allInnerTexts()).join(", ");
+    if (!expect.test(nav)) throw new Error(`${label} did not switch the interface: ${nav}`);
+    const code = label === "Français" ? "fr" : label === "Italiano" ? "it" : "de";
+    const htmlLang = await page.getAttribute("html", "lang");
+    if (htmlLang !== code) throw new Error(`html lang is "${htmlLang}", expected "${code}"`);
+  }
+  // Back to English for the steps that follow.
+  await page.click(".account-btn");
+  await page.click('.dropdown-choice-lang button:has-text("English")');
+  await page.keyboard.press("Escape");
+});
+await step("the language picker fits inside its menu", async () => {
+  await page.click(".account-btn");
+  await page.waitForSelector(".dropdown-choice-lang");
+  const menu = await page.locator(".account-dropdown").boundingBox();
+  for (const b of await page.locator(".dropdown-choice-lang button").all()) {
+    const r = await b.boundingBox();
+    if (r.x + r.width > menu.x + menu.width + 1) throw new Error("a language name is clipped by the menu");
+  }
+  await page.keyboard.press("Escape");
 });
 
 console.log("── controls ──");

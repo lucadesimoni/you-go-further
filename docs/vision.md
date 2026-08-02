@@ -104,6 +104,10 @@ An honest read, not a status report. Phase 1 is **a free Swiss app, three sports
 connect Garmin or Strava, import a race or a route, get a plan, order from partners,
 revenue from affiliate commission.**
 
+> **Status:** the four gaps this document originally named are closed. What
+> remains before a launch is commercial rather than technical — signing the brand
+> agreements that turn the outbound links from untracked into earning.
+
 ## Already there
 
 | Phase-1 requirement | State |
@@ -113,45 +117,60 @@ revenue from affiliate commission.**
 | Terrain-aware plan for a route | swisstopo height profile + MeteoSwiss conditions place feeds where the energy actually goes (Minetti cost of running). |
 | Products from Swiss partners | Brand-neutral catalog (Sponser, Winforce, …) with a scoring engine that names a real product per slot. |
 | It learns | Session logs tune a carb ceiling/bias; the debrief holds a past run against what the route demanded. |
-| Swiss market | German + English, Swiss usage (ss, Sie), CHF, swisstopo, MeteoSwiss. |
+| Swiss market | German, French, Italian + English; Swiss usage (ss, Sie/vous/Lei), CHF, swisstopo, MeteoSwiss. |
 
-## Four places the build and the vision disagree
+## The four gaps — now closed
 
-These are decisions to make, not bugs. Each is cheap to change now and expensive later.
+All four were addressed; each stayed a **switch**, not a rewrite, so the old
+behaviour is still there for the phases that need it.
 
-**1. The app is not free — it has three subscription tiers.**
-`src/subscription` gates history depth, connected-provider count, load analytics
-and export behind Base (CHF 0) / Pro (CHF 9) / Elite (CHF 19), with live Stripe
-checkout for subscriptions. Phase 1 says free app, revenue from affiliate. Today a
-Swiss runner on the free tier is capped at one connected service and 30 days of
-history — precisely the limits that make the first plan feel thin. If Phase 1 holds,
-the tiers should be switched off (not deleted — they are the Phase-6 B2B story) and
-the gates opened.
+**1. The app is free.** `subscriptionsEnabled` defaults to `false`, and
+`effectiveTier()` then serves every athlete the full feature set: four connected
+services, five years of history, load analytics, export. The billing screen and
+its menu entry disappear rather than sitting there unreachable. The plans, the
+gating and the Stripe subscription flow are all untouched in the code — Phase 6
+turns them back on with one flag.
 
-**2. We are the merchant, not an affiliate.**
-`src/commerce` builds our own cart and our own orders, and takes payment through our
-own Stripe account. That means inventory questions, VAT, returns and support — the
-"ohne Lager, Produktion oder Logistik" the vision explicitly rules out. Affiliate
-needs the opposite: a partner link per product with attribution (`?ref=`), click
-tracking, and a commission ledger. **None of that exists today.** The cart is the
-single biggest piece of Phase-1 work still outstanding.
+**2. We are an affiliate, not the merchant.** `src/commerce/affiliate.ts` builds
+outbound links to the brand's own shop with attribution (`?ref=…&subid=…`), and
+every hand-off is recorded in an `AffiliateStore` so a partner's commission
+statement can be reconciled against what we actually sent. Three rules keep it
+honest:
 
-**3. There is no way to import a race or a planned route.**
-Everything the platform reasons about is a *past, synced activity*. There is no GPX
-or TCX upload, no route-URL import, no race entry. The vision's core Phase-1 moment
-— *"importiert einen Wettkampf … und erhält sofort seinen Fueling-Plan"* — cannot
-happen yet. The engine is ready for it (`planRouteFuelling` takes elevation samples,
-not an activity), so this is an import path plus a screen, not new science.
+- **No invented publisher ids.** Programs are admin-configured and empty by
+  default. A brand with no agreement still gets a link — the athlete is sent to
+  the right product either way — marked untracked, earning nothing.
+- **The server decides what can earn.** A client claiming a click is tracked is
+  ignored; only a configured program makes it so.
+- **We say what we earn.** The cart states plainly that partner orders pay us a
+  commission at no extra cost, or that this particular brand pays us nothing.
 
-**4. Swiss, but only two of four languages.**
-German and English ship. Romandie and Ticino are roughly a quarter of the Swiss
-market and get an English app. FR and IT are pure translation work — the i18n layer
-already enforces key parity, placeholders and plurals.
+The direct-sale cart and Stripe checkout remain behind `sellDirect`, for B2B and
+an eventual house brand.
+
+**3. A race can be imported before it is run.** `src/geo/gpx.ts` parses the GPX
+every organiser publishes — tolerant of namespaces, attribute order, CRLF,
+self-closing points and missing elevation — and `RaceImport` turns it into the
+course map, the swisstopo terrain, the weather, and the height-profile fuelling
+plan with a real product named at each stop. Duration starts from distance and
+climbing (a flat pace plus ~10 s per 10 m of ascent) and the athlete corrects it;
+the plan follows their target, not our model. The file never leaves the device —
+only the route line is sent on, for terrain and weather.
+
+**4. Swiss means four languages.** French and Italian ship alongside German and
+English, formal address throughout to match, with `detectLang` serving Romandie
+and Ticino their own language instead of English. The guard tests now run per
+locale: key parity, placeholder parity, no accidental copies of the English
+string, no stray non-Latin characters, no empty values, plus accent checks that
+catch a machine-mangled dictionary. Romanche is deliberately out: ~40 000
+speakers who all also read German, and a half-maintained translation is worse
+than none.
 
 ## Scope the vision says to cut, that the build carries
 
 - **Cycling and swimming** are first-class in the engine; Phase 1 says running, trail
-  running, triathlon. (Triathlon needs both anyway — this may be deliberate.)
+  running, triathlon. (Triathlon needs both anyway — this may be deliberate.) The
+  race importer offers running, trail and triathlon first, with cycling available.
 - **Team, coach, nutritionist and admin surfaces** with multi-tenant roles are built
   and maintained. Nothing in Phase 1 needs them; they are the Phase-6 B2B asset
   arriving five phases early, and every screen is a screen to keep working.

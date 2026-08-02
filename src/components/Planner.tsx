@@ -14,6 +14,7 @@ import { FeedbackPanel } from "./FeedbackPanel";
 import { OfferingPanel } from "./OfferingPanel";
 import { EnergyProfile } from "./EnergyProfile";
 import { useT } from "../i18n";
+import { BuyLink } from "./BuyLink";
 
 /** Only session-specific fields live in the planner now; body data comes from the profile. */
 export type SessionInput = Pick<AthleteInput, "goal" | "activity" | "durationMin" | "intensity" | "conditions">;
@@ -231,11 +232,7 @@ export function Planner({
                       {p.multiTransportable && <span className="tag">2:1 carbs</span>}
                     </div>
                     {p.notes && <p className="product-note">{p.notes}</p>}
-                    {p.shopUrl && (
-                      <a className="product-shop" href={p.shopUrl} target="_blank" rel="noreferrer noopener">
-                        Buy at {p.brand} ↗
-                      </a>
-                    )}
+                    <BuyLink product={p} />
                   </li>
                 ))}
               </ul>

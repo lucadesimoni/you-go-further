@@ -77,6 +77,8 @@ export const en = {
   "language.title": "Language",
   "language.en": "English",
   "language.de": "Deutsch",
+  "language.fr": "Français",
+  "language.it": "Italiano",
 
   // ---- Common -------------------------------------------------------------
   "common.of": "of",
@@ -218,6 +220,32 @@ export const en = {
 
   "route.estimatedProfile":
     "Height profile estimated — swisstopo was unreachable, so the shape is indicative and the stop times are approximate.",
+
+  // ---- Shop / affiliate ---------------------------------------------------
+  "shop.orderAt": "Order at {brand} →",
+  "shop.noShop": "No shop is listed for these products yet.",
+  "shop.needsApi": "Connect the app to its API to see where to order these.",
+  "shop.affiliateNote":
+    "You order directly from the brand. We earn a commission on partner orders — it costs you nothing extra, and it is what keeps this app free.",
+  "shop.noPartnerNote":
+    "You order directly from the brand. We have no partner agreement with them, so we earn nothing on this — the link is here because it is the right product.",
+  "shop.affiliateAmount": "About CHF {chf} on this basket.",
+
+  // ---- Race / route import ------------------------------------------------
+  "race.title": "Plan a race or route",
+  "race.intro":
+    "Drop in the GPX from the race organiser — or any route you have planned — and get the fueling for that exact course: how much per hour, and where on the climbs to take it.",
+  "race.drop": "Drop a .gpx file here",
+  "race.choose": "Choose a file",
+  "race.privacy": "The file is read on your device. Only the route line is sent on, for terrain and weather.",
+  "race.noRoute": "No route found in that file. A GPX from a race organiser, Strava, Komoot or swisstopo will work.",
+  "race.tooBig": "That file is larger than 8 MB — export the route without heart-rate and cadence data.",
+  "race.another": "Import another",
+  "race.unnamed": "Imported route",
+  "race.finishTime": "Target finish time",
+  "race.estimateNote": "Estimated from distance and climbing. Set your own target — the plan follows it.",
+  "race.loadingMap": "Loading map…",
+  "home.planRace": "Plan a race",
 
   // ---- Session debrief ----------------------------------------------------
   "debrief.title": "How this one went",

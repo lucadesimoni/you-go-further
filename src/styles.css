@@ -1762,6 +1762,13 @@ code {
   font-weight: 600;
   color: var(--accent-ink);
   text-decoration: none;
+  /* It is a <button> when the hand-off is recorded server-side and an <a>
+     otherwise; both must look like the same link. */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 .product-shop:hover {
   text-decoration: underline;
@@ -2834,6 +2841,12 @@ code {
   gap: var(--space-2);
   padding: var(--space-2) var(--space-5) var(--space-4);
 }
+/* Four language names do not fit across a 280px menu — two rows of two do,
+   and every name stays readable instead of being clipped. */
+.dropdown-choice-lang {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
 .choice {
   flex: 1 1 0;
   min-height: 34px;
@@ -3116,6 +3129,73 @@ code {
   margin: 0 0 var(--space-3);
 }
 .auth-sent strong { color: var(--text); }
+
+/* --- Affiliate hand-off: one button per shop ----------------------------- */
+.cart-partners {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.cart-partner { width: 100%; }
+
+/* Admin: partner programs */
+.partner-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 90px auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+.partner-row input { min-height: 36px; }
+.partner-untracked { color: var(--warn-ink); font-size: var(--text-sm); }
+@media (max-width: 800px) {
+  .partner-row { grid-template-columns: 1fr 1fr; }
+}
+
+/* --- Race / route import: the Phase-1 entry point ------------------------- */
+.race { margin-bottom: var(--space-6); }
+.race-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-5);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+  text-align: center;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
+}
+.race-drop-over { border-color: var(--accent); background: var(--accent-soft); }
+.race-drop-title { margin: 0; font-weight: 700; }
+.race-privacy { margin: 0; max-width: 46ch; }
+.race-file { display: none; }
+.race-error {
+  margin: var(--space-4) 0 0;
+  color: var(--warn-ink);
+  font-size: var(--text-base);
+}
+.race-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.race-name { margin: 0; font-size: var(--text-lg); }
+.race-figs { color: var(--muted); font-variant-numeric: tabular-nums; }
+.race-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+@media (max-width: 640px) {
+  .race-drop { padding: var(--space-5) var(--space-4); }
+}
 
 /* --- Switch: settings that apply the moment they are flipped ---------------
    The native input stays in the DOM (label association, Space, screen-reader

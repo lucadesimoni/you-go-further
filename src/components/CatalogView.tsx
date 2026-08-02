@@ -6,6 +6,7 @@ import { toast } from "../ui/toast";
 import { confirm } from "../ui/confirm";
 import { useFocusTrap } from "../ui/useFocusTrap";
 import { useT } from "../i18n";
+import { BuyLink } from "./BuyLink";
 
 const CATEGORY_LABELS: Record<ProductCategory, string> = {
   "drink-mix": "Drink mix",
@@ -196,11 +197,7 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                   </details>
                 );
               })()}
-              {p.shopUrl && (
-                <a className="product-shop" href={p.shopUrl} target="_blank" rel="noreferrer noopener">
-                  Buy at {p.brand} ↗
-                </a>
-              )}
+              <BuyLink product={p} />
               {canEdit && (
                 <div className="catalog-row-actions">
                   <button

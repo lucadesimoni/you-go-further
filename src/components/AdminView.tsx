@@ -6,6 +6,7 @@ import { ALL_PROVIDER_IDS, DESCRIPTORS } from "../providers";
 import type { ProviderId } from "../model";
 import type { User } from "../users";
 import type { PlatformSettings } from "../settings";
+import type { PartnerProgram } from "../commerce";
 import { adminPersistence, createUser, deleteUser, loadSettings, loadUsers, saveSettings, updateUser } from "../api/adminClient";
 import { toast } from "../ui/toast";
 import { confirm } from "../ui/confirm";
@@ -89,6 +90,17 @@ export function AdminView({ config, tier, orgId, role }: { config: AppConfig; ti
       setDraft({ name: "", email: "", role: "athlete", tier: "free" });
       toast.success(`Invitation sent to ${name || "new user"}`);
     });
+  /**
+   * Edit one partner row. Rows are only *validated* on save (an in-progress
+   * brand name is not yet a valid program), so the local list is the draft and
+   * the server normalises what it is given.
+   */
+  const patchPartner = (index: number, patch: Partial<PartnerProgram>) => {
+    if (!settings) return;
+    const next = settings.partners.map((p, i) => (i === index ? { ...p, ...patch } : p));
+    patchSettings({ partners: next });
+  };
+
   const patchSettings = (patch: Partial<PlatformSettings>) =>
     run(async () => {
       setSettings(await saveSettings(role, patch));
@@ -300,6 +312,79 @@ export function AdminView({ config, tier, orgId, role }: { config: AppConfig; ti
               onChange={(on) => patchSettings({ [key]: on })}
             />
           ))}
+
+          {/* Affiliate programs — the Phase-1 revenue model. Deliberately empty
+              until a brand agreement exists: an invented publisher id would look
+              like a partnership we do not have. */}
+          <div className="admin-setting">
+            <span className="group-label admin-group-label">Affiliate partners</span>
+            <p className="detail">
+              A brand listed here earns us commission on orders we send it. Brands not listed still get a plain link to
+              their shop — the athlete is sent to the right product either way, we simply are not paid for it.
+            </p>
+            {settings.partners.map((p, i) => (
+              <div className="partner-row" key={`${p.brand}-${i}`}>
+                <input
+                  aria-label="Brand"
+                  placeholder="Brand"
+                  value={p.brand}
+                  disabled={busy}
+                  onChange={(e) => patchPartner(i, { brand: e.target.value })}
+                />
+                <input
+                  aria-label="Shop URL"
+                  placeholder="https://brand.ch"
+                  value={p.shopUrl}
+                  disabled={busy}
+                  onChange={(e) => patchPartner(i, { shopUrl: e.target.value })}
+                />
+                <input
+                  aria-label="Publisher id"
+                  placeholder="publisher id"
+                  value={p.refValue}
+                  disabled={busy}
+                  onChange={(e) => patchPartner(i, { refValue: e.target.value })}
+                />
+                <input
+                  aria-label="Commission %"
+                  type="number"
+                  min={0}
+                  max={50}
+                  value={Math.round(p.commissionRate * 100)}
+                  disabled={busy}
+                  onChange={(e) => patchPartner(i, { commissionRate: Number(e.target.value) / 100 })}
+                />
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={busy}
+                  onClick={() => patchSettings({ partners: settings.partners.filter((_, j) => j !== i) })}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            {settings.partners.length === 0 && (
+              <p className="partner-untracked">
+                No partner agreements yet — every outbound link is untracked and earns nothing.
+              </p>
+            )}
+            <button
+              type="button"
+              className="btn btn-ghost mt-5"
+              disabled={busy}
+              onClick={() =>
+                patchSettings({
+                  partners: [
+                    ...settings.partners,
+                    { brand: "", shopUrl: "", refParam: "ref", refValue: "", commissionRate: 0.08, cookieDays: 30 },
+                  ],
+                })
+              }
+            >
+              Add a partner
+            </button>
+          </div>
         </section>
       )}
 

@@ -9,7 +9,7 @@ import type { User, UserStore, UserPatch, AthleteProfile, ProfileStore } from ".
 import { normalizeUserPatch, normalizeProfile, DEFAULT_PROFILE } from "../users";
 import type { PlatformSettings, SettingsStore } from "../settings";
 import { normalizeSettingsPatch } from "../settings";
-import type { Order, OrderStore } from "../commerce";
+import type { AffiliateClick, AffiliateStore, Order, OrderStore } from "../commerce";
 import type { MagicLinkStore } from "../auth/magicLink";
 
 /**
@@ -38,6 +38,15 @@ export async function migrate(pool: Pool): Promise<void> {
     CREATE INDEX IF NOT EXISTS activities_start_idx ON activities (start_time DESC);
     CREATE INDEX IF NOT EXISTS activities_provider_idx ON activities (provider);
     CREATE INDEX IF NOT EXISTS activities_user_idx ON activities (user_id);
+
+    -- The affiliate ledger: what we handed off, for reconciling statements.
+    CREATE TABLE IF NOT EXISTS affiliate_clicks (
+      id       text PRIMARY KEY,
+      user_id  text NOT NULL,
+      at       timestamptz NOT NULL,
+      data     jsonb NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS affiliate_user_idx ON affiliate_clicks (user_id, at DESC);
 
     CREATE TABLE IF NOT EXISTS feedback (
       id       text PRIMARY KEY,
@@ -138,6 +147,26 @@ export class PgActivityStore implements ActivityStore {
 
   async clear(userId?: string): Promise<void> {
     await this.pool.query("DELETE FROM activities WHERE ($1::text IS NULL OR user_id = $1)", [userId ?? null]);
+  }
+}
+
+export class PgAffiliateStore implements AffiliateStore {
+  constructor(private readonly pool: Pool) {}
+
+  async record(click: AffiliateClick): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO affiliate_clicks (id, user_id, at, data) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO NOTHING`,
+      [click.id, click.userId, click.at, click],
+    );
+  }
+
+  async list(userId?: string): Promise<AffiliateClick[]> {
+    const res = await this.pool.query<{ data: AffiliateClick }>(
+      "SELECT data FROM affiliate_clicks WHERE ($1::text IS NULL OR user_id = $1) ORDER BY at DESC",
+      [userId ?? null],
+    );
+    return res.rows.map((r) => r.data);
   }
 }
 
@@ -386,6 +415,7 @@ export interface PgStores {
   users: PgUserStore;
   settings: PgSettingsStore;
   orders: PgOrderStore;
+  affiliate: PgAffiliateStore;
   magicLinks: PgMagicLinkStore;
   profiles: PgProfileStore;
   init(): Promise<void>;
@@ -403,6 +433,7 @@ export function createPgStores(databaseUrl: string, seed: PgSeed = {}): PgStores
     users: new PgUserStore(pool, seed.users),
     settings: new PgSettingsStore(pool, seed.settings ?? DEFAULT_SETTINGS_FALLBACK),
     orders: new PgOrderStore(pool),
+    affiliate: new PgAffiliateStore(pool),
     magicLinks: new PgMagicLinkStore(pool),
     profiles: new PgProfileStore(pool),
     init: () => migrate(pool),
@@ -423,4 +454,5 @@ const DEFAULT_SETTINGS_FALLBACK: PlatformSettings = {
   exportEnabled: false,
   registrationOpen: true,
   maintenanceMode: false,
+  partners: [],
 };

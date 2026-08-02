@@ -616,3 +616,78 @@ describe("sessions and connections belong to the athlete who signed in", () => {
     expect((await list(athlete)).length).toBeGreaterThan(before);
   });
 });
+
+describe("affiliate — the Phase-1 revenue path", () => {
+  let route: ReturnType<typeof createApiRouter>;
+  beforeEach(() => {
+    route = createApiRouter(createRuntime({ ...getConfig(), enabledProviders: ["garmin", "strava"] }));
+  });
+
+  const lines = [
+    { productId: "sponser-liquid-energy-plus", name: "Liquid Energy Plus", brand: "Sponser", qty: 2, unitPriceChf: 2.8, lineTotalChf: 5.6 },
+    { productId: "winforce-carbo-load", name: "Carbo Load", brand: "Winforce", qty: 1, unitPriceChf: 2.4, lineTotalChf: 2.4 },
+  ];
+
+  const signPartner = () =>
+    route(
+      req("POST", "/api/admin/settings", {
+        principal: admin,
+        body: {
+          partners: [
+            { brand: "Sponser", shopUrl: "https://sponser.ch", refParam: "aff", refValue: "fuellabs", commissionRate: 0.09, cookieDays: 45 },
+          ],
+        },
+      }),
+    );
+
+  it("still sends the athlete to the shop when nothing is signed, and earns nothing", async () => {
+    const res = await route(req("POST", "/api/affiliate/links", { body: { lines } }));
+    const { links, partnered } = res.data as { links: { url: string; tracked: boolean }[]; partnered: boolean };
+    expect(partnered).toBe(false);
+    expect(links.length).toBeGreaterThan(0);
+    for (const l of links) {
+      expect(l.tracked).toBe(false);
+      expect(l.url).not.toContain("aff=");
+    }
+  });
+
+  it("attaches attribution once a brand is signed — and only for that brand", async () => {
+    await signPartner();
+    const res = await route(req("POST", "/api/affiliate/links", { body: { lines } }));
+    const { links } = res.data as { links: { brand: string; url: string; tracked: boolean; commissionChf?: number }[] };
+    const sponser = links.find((l) => l.brand === "Sponser")!;
+    const winforce = links.find((l) => l.brand === "Winforce")!;
+    expect(sponser.tracked).toBe(true);
+    expect(sponser.url).toContain("aff=fuellabs");
+    expect(sponser.url).toContain("subid=");
+    expect(sponser.commissionChf).toBe(0.5);
+    expect(winforce.tracked).toBe(false);
+    expect(winforce.url).not.toContain("aff=");
+  });
+
+  it("decides for itself whether a click can earn — the client does not get to say", async () => {
+    // A client claiming `tracked: true` for an unsigned brand must be ignored.
+    const res = await route(
+      req("POST", "/api/affiliate/click", {
+        body: { productId: "winforce-carbo-load", brand: "Winforce", valueChf: 2.4, tracked: true },
+      }),
+    );
+    expect((res.data as { tracked: boolean }).tracked).toBe(false);
+  });
+
+  it("reports potential commission to an admin, never revenue we were not paid", async () => {
+    await signPartner();
+    await route(req("POST", "/api/affiliate/click", { body: { productId: "p", brand: "Sponser", valueChf: 100 } }));
+    await route(req("POST", "/api/affiliate/click", { body: { productId: "p", brand: "Winforce", valueChf: 100 } }));
+    const res = await route(req("GET", "/api/affiliate/summary", { principal: admin }));
+    const { summary } = res.data as { summary: { clicks: number; trackedClicks: number; potentialCommissionChf: number } };
+    expect(summary.clicks).toBe(2);
+    expect(summary.trackedClicks).toBe(1);
+    expect(summary.potentialCommissionChf).toBe(9);
+  });
+
+  it("keeps the ledger away from athletes", async () => {
+    const res = await route(req("GET", "/api/affiliate/summary"));
+    expect(res.status).toBe(403);
+  });
+});

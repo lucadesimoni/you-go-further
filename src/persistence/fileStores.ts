@@ -9,7 +9,7 @@ import type { Product, ProductStore } from "../engine";
 import type { User, UserStore, UserPatch, AthleteProfile, ProfileStore } from "../users";
 import { normalizeUserPatch, normalizeProfile, DEFAULT_PROFILE } from "../users";
 import type { PlatformSettings, SettingsStore } from "../settings";
-import type { Order, OrderStore } from "../commerce";
+import type { AffiliateClick, AffiliateStore, Order, OrderStore } from "../commerce";
 import type { MagicLinkStore } from "../auth/magicLink";
 import { normalizeSettingsPatch } from "../settings";
 import { JsonFile } from "./jsonFile";
@@ -301,5 +301,24 @@ export class FileProfileStore implements ProfileStore {
     this.data[userId] = next;
     this.file.write(this.data);
     return next;
+  }
+}
+
+export class FileAffiliateStore implements AffiliateStore {
+  private readonly file: JsonFile<AffiliateClick[]>;
+  private clicks: AffiliateClick[];
+
+  constructor(dir: string) {
+    this.file = new JsonFile(join(dir, "affiliate.json"), []);
+    this.clicks = this.file.read();
+  }
+
+  async record(click: AffiliateClick): Promise<void> {
+    this.clicks = [click, ...this.clicks];
+    this.file.write(this.clicks);
+  }
+
+  async list(userId?: string): Promise<AffiliateClick[]> {
+    return userId === undefined ? this.clicks : this.clicks.filter((c) => c.userId === userId);
   }
 }

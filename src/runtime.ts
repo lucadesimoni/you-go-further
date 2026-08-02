@@ -24,7 +24,7 @@ import { InMemoryFeedbackStore, type FeedbackStore } from "./feedback";
 import { InMemoryProductStore, type ProductStore } from "./engine";
 import { InMemoryUserStore, InMemoryProfileStore, seedUsers, type UserStore, type ProfileStore } from "./users";
 import { InMemorySettingsStore, defaultSettings, type SettingsStore } from "./settings";
-import { InMemoryOrderStore, type OrderStore } from "./commerce";
+import { InMemoryAffiliateStore, InMemoryOrderStore, type AffiliateStore, type OrderStore } from "./commerce";
 import { paymentProviderFromEnv, type PaymentProvider } from "./commerce/payments";
 import { InMemoryMagicLinkStore, type MagicLinkStore } from "./auth/magicLink";
 import { mailerFromEnv, type Mailer } from "./auth/mailer";
@@ -36,6 +36,7 @@ import {
   FileUserStore,
   FileSettingsStore,
   FileOrderStore,
+  FileAffiliateStore,
   FileMagicLinkStore,
   FileProfileStore,
   createPgStores,
@@ -51,6 +52,8 @@ export interface Runtime {
   users: UserStore;
   settings: SettingsStore;
   orders: OrderStore;
+  /** Ledger of hand-offs to partner shops — the Phase-1 revenue trail. */
+  affiliate: AffiliateStore;
   magicLinks: MagicLinkStore;
   profiles: ProfileStore;
   payments: PaymentProvider;
@@ -69,6 +72,7 @@ interface StoreSet {
   users: UserStore;
   settings: SettingsStore;
   orders: OrderStore;
+  affiliate: AffiliateStore;
   magicLinks: MagicLinkStore;
   profiles: ProfileStore;
   init?: () => Promise<void>;
@@ -88,6 +92,7 @@ function createStores(config: AppConfig): StoreSet {
         users: new FileUserStore(dir, seedUsers()),
         settings: new FileSettingsStore(dir, settings),
         orders: new FileOrderStore(dir),
+        affiliate: new FileAffiliateStore(dir),
         magicLinks: new FileMagicLinkStore(dir),
         profiles: new FileProfileStore(dir),
       };
@@ -103,6 +108,7 @@ function createStores(config: AppConfig): StoreSet {
           users: pg.users,
           settings: pg.settings,
           orders: pg.orders,
+          affiliate: pg.affiliate,
           magicLinks: pg.magicLinks,
           profiles: pg.profiles,
           init: pg.init,
@@ -124,6 +130,7 @@ function createStores(config: AppConfig): StoreSet {
     users: new InMemoryUserStore(),
     settings: new InMemorySettingsStore(settings),
     orders: new InMemoryOrderStore(),
+    affiliate: new InMemoryAffiliateStore(),
     magicLinks: new InMemoryMagicLinkStore(),
     profiles: new InMemoryProfileStore(),
   };
@@ -151,7 +158,7 @@ function createRegistry(config: AppConfig): ProviderRegistry {
 /** Assemble the runtime from a config (defaults to the resolved app config). */
 export function createRuntime(config: AppConfig = getConfig()): Runtime {
   const registry = createRegistry(config);
-  const { store, feedback, connections, products, users, settings, orders, magicLinks, profiles, init } =
+  const { store, feedback, connections, products, users, settings, orders, affiliate, magicLinks, profiles, init } =
     createStores(config);
   const sinks: ExportSink[] = config.exportEnabled ? [new BufferSink()] : [];
   // Stream to Databricks when configured (big-data egress).
@@ -168,6 +175,7 @@ export function createRuntime(config: AppConfig = getConfig()): Runtime {
     users,
     settings,
     orders,
+    affiliate,
     magicLinks,
     profiles,
     payments: paymentProviderFromEnv(),

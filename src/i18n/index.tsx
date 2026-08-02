@@ -1,21 +1,27 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { en, type Dictionary, type TranslationKey } from "./en";
 import { de } from "./de";
+import { fr } from "./fr";
+import { it } from "./it";
 
 /**
- * Two languages, English and Swiss German. The dictionaries are plain objects
- * checked against each other at compile time, so nothing here reaches for an
- * i18n framework the app doesn't need.
+ * Switzerland's national languages plus English. The dictionaries are plain
+ * objects checked against each other at compile time, so nothing here reaches
+ * for an i18n framework the app doesn't need.
+ *
+ * Romanche is not included: it has around 40 000 speakers, essentially all of
+ * whom also read German, and a half-maintained translation would be worse than
+ * none. Adding it later is one more file.
  */
-export type Lang = "en" | "de";
+export type Lang = "en" | "de" | "fr" | "it";
 
-export const LANGS: Lang[] = ["en", "de"];
+export const LANGS: Lang[] = ["de", "fr", "it", "en"];
 
-const DICTIONARIES: Record<Lang, Dictionary> = { en, de };
+const DICTIONARIES: Record<Lang, Dictionary> = { en, de, fr, it };
 
 const STORAGE_KEY = "ygf.lang";
 
-/** Most of this platform's users are Swiss, so a de-* browser gets German. */
+/** Most of this platform's users are Swiss, so their own language wins first. */
 export function detectLang(navigatorLanguages?: readonly string[]): Lang {
   const langs =
     navigatorLanguages ??
@@ -23,6 +29,8 @@ export function detectLang(navigatorLanguages?: readonly string[]): Lang {
   for (const raw of langs) {
     const tag = String(raw).toLowerCase();
     if (tag.startsWith("de")) return "de";
+    if (tag.startsWith("fr")) return "fr";
+    if (tag.startsWith("it")) return "it";
     if (tag.startsWith("en")) return "en";
   }
   return "en";
@@ -31,7 +39,7 @@ export function detectLang(navigatorLanguages?: readonly string[]): Lang {
 export function loadLang(): Lang {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "en" || stored === "de") return stored;
+    if (LANGS.includes(stored as Lang)) return stored as Lang;
   } catch {
     /* private mode */
   }
@@ -115,5 +123,5 @@ export function useT(): (key: TranslationKey, vars?: Vars) => string {
   return useI18n().t;
 }
 
-export type { TranslationKey } from "./en";
-export { en, de };
+export type { Dictionary, TranslationKey } from "./en";
+export { en, de, fr, it };

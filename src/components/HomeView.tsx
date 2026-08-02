@@ -112,6 +112,11 @@ export function HomeView({
             <button type="button" className="btn btn-primary" onClick={() => onNavigate("plan")}>
               {t("home.planSession")}
             </button>
+            {/* A race is the reason most athletes open this at all — give it its
+                own way in, not just "plan a session". */}
+            <button type="button" className="btn btn-ghost" onClick={() => onNavigate("plan")}>
+              {t("home.planRace")}
+            </button>
             {/* "Log a session" is only useful if it leads somewhere concrete.
                 When a real run is waiting to be reviewed, go straight to it. */}
             {reviewable.length > 0 && onReviewSession ? (

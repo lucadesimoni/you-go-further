@@ -36,6 +36,18 @@ export interface AppConfig {
   defaultTier: Tier;
   /** Allow the in-app role/tier switcher (demo & staging; off in prod). */
   allowRoleSwitching: boolean;
+  /**
+   * Sell subscriptions. Off for the Phase-1 Swiss launch — the app is free and
+   * earns through affiliate commission — which serves every athlete the full
+   * feature set and hides the billing screens.
+   */
+  subscriptionsEnabled: boolean;
+  /**
+   * Sell products ourselves instead of handing off to partner shops. Off for
+   * Phase 1: no stock, no fulfilment, no returns — the brands ship, and pay
+   * commission. The direct-sale cart stays in the code for B2B and a house brand.
+   */
+  sellDirect: boolean;
   /** Public OAuth client ids for real social sign-in (empty = simulated). */
   googleClientId: string;
   appleClientId: string;
@@ -54,6 +66,8 @@ interface RawConfig {
   exportEnabled?: string | boolean;
   defaultTier?: string;
   allowRoleSwitching?: string | boolean;
+  subscriptionsEnabled?: string | boolean;
+  sellDirect?: string | boolean;
   googleClientId?: string;
   appleClientId?: string;
   version?: string;
@@ -69,6 +83,8 @@ const DEFAULTS: AppConfig = {
   exportEnabled: false,
   defaultTier: "free",
   allowRoleSwitching: true,
+  subscriptionsEnabled: false,
+  sellDirect: false,
   googleClientId: "",
   appleClientId: "",
   version: "0.2.0",
@@ -91,6 +107,8 @@ function readEnv(): RawConfig {
     exportEnabled: get("EXPORT_ENABLED"),
     defaultTier: get("DEFAULT_TIER"),
     allowRoleSwitching: get("ALLOW_ROLE_SWITCHING"),
+    subscriptionsEnabled: get("SUBSCRIPTIONS_ENABLED"),
+    sellDirect: get("SELL_DIRECT"),
     googleClientId: get("GOOGLE_CLIENT_ID"),
     appleClientId: get("APPLE_CLIENT_ID"),
     version: get("APP_VERSION"),
@@ -134,6 +152,8 @@ function resolve(): AppConfig {
     exportEnabled: asBool(raw.exportEnabled, DEFAULTS.exportEnabled),
     defaultTier: tier,
     allowRoleSwitching: asBool(raw.allowRoleSwitching, DEFAULTS.allowRoleSwitching),
+    subscriptionsEnabled: asBool(raw.subscriptionsEnabled, DEFAULTS.subscriptionsEnabled),
+    sellDirect: asBool(raw.sellDirect, DEFAULTS.sellDirect),
     googleClientId: raw.googleClientId || DEFAULTS.googleClientId,
     appleClientId: raw.appleClientId || DEFAULTS.appleClientId,
     version: raw.version || DEFAULTS.version,

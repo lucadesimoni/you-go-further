@@ -10,12 +10,13 @@ import { ProfileView } from "./components/ProfileView";
 import { SubscriptionView } from "./components/SubscriptionView";
 import { AccountMenu } from "./components/AccountMenu";
 import { HomeView } from "./components/HomeView";
+import { RaceImport } from "./components/RaceImport";
 import { ToastHost } from "./components/ToastHost";
 import { ConfirmHost } from "./components/ConfirmHost";
 import { Onboarding } from "./components/Onboarding";
 import { isOnboarded, setOnboarded, getOnboardStep } from "./api/onboarding";
 import { toast } from "./ui/toast";
-import { type Tier } from "./subscription";
+import { effectiveTier, type Tier } from "./subscription";
 import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, type Permission } from "./auth";
 import { isSolo } from "./personas";
 import { getConfig } from "./config";
@@ -55,7 +56,10 @@ export function App() {
   // Applies data-theme to <html> and follows the OS while on "system".
   const { choice: themeChoice, setChoice: setThemeChoice } = useTheme();
   const [account, setAccount] = useState<Account | null>(() => currentAccount());
-  const [tier, setTier] = useState<Tier>(account?.tier ?? "free");
+  // What the athlete is actually served. With subscriptions off (the Phase-1
+  // free launch) that is the full feature set regardless of the stored plan.
+  const [storedTier, setStoredTier] = useState<Tier>(account?.tier ?? "free");
+  const tier = effectiveTier(storedTier, config.subscriptionsEnabled);
   const [tab, setTab] = useState<string>("home");
   // One-shot planner prefill, e.g. from "Plan for this route" in Connect.
   const [plannerPrefill, setPlannerPrefill] = useState<Partial<SessionInput>>();
@@ -68,7 +72,12 @@ export function App() {
   const [reviewActivityId, setReviewActivityId] = useState<string>();
 
   const visibleTabs = useMemo(() => (account ? TABS.filter((t) => hasPermission(account, t.perm)) : []), [account]);
-  const canBilling = account ? hasPermission(account, "billing:manage") || isSolo(account) : false;
+  // Billing only exists when there is something to bill for. The Phase-1 app is
+  // free, so the screen and its menu entry are simply not there.
+  const canBilling =
+    config.subscriptionsEnabled && account
+      ? hasPermission(account, "billing:manage") || isSolo(account)
+      : false;
 
   // Insights are built from the athlete's **own** synced sessions — never from
   // sample data — so the numbers on screen are always really theirs.
@@ -127,7 +136,7 @@ export function App() {
   );
 
   useEffect(() => {
-    if (account) setTier(account.tier);
+    if (account) setStoredTier(account.tier);
   }, [account]);
   useEffect(() => {
     if (!account) return;
@@ -187,8 +196,8 @@ export function App() {
       api
         .me()
         .then((res) => {
-          if (res.principal.tier !== tier) {
-            setTier(res.principal.tier);
+          if (res.principal.tier !== storedTier) {
+            setStoredTier(res.principal.tier);
             if (account) saveAccount({ ...account, tier: res.principal.tier });
             toast.success(t("toast.planActive", { tier: res.principal.tier }));
           }
@@ -325,13 +334,21 @@ export function App() {
           />
         )}
         {tab === "plan" && (
-          <Planner initial={plannerPrefill} role={account.role} onEditProfile={() => setTab("profile")} />
+          <>
+            {/* The Phase-1 moment: a race you have not run yet, fuelled. It sits
+                above the session planner because it is the reason to open this
+                screen — planning a training session is the everyday case. */}
+            <RaceImport onPlan={setPlannerPrefill} />
+            <Planner initial={plannerPrefill} role={account.role} onEditProfile={() => setTab("profile")} />
+          </>
         )}
         {tab === "progress" && progress && (
           <ProgressView profile={progress} fuelling={fuelling} hasData={hasSyncedData} onConnect={() => setTab("connect")} />
         )}
         {tab === "profile" && <ProfileView account={account} />}
-        {tab === "subscription" && <SubscriptionView tier={tier} onChoose={setTier} canBilling={canBilling} />}
+        {tab === "subscription" && config.subscriptionsEnabled && (
+          <SubscriptionView tier={storedTier} onChoose={setStoredTier} canBilling={canBilling} />
+        )}
         {tab === "connect" && (
           <Dashboard
             tier={tier}
