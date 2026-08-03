@@ -131,6 +131,8 @@ describe("no dead keys", () => {
       // Debrief ratings and findings: t(`debrief.gi.${g}`), t(`finding.${f.id}`).
       /^debrief\.(gi|energy)\./,
       /^finding\./,
+      // The race forecast's badge: t(`sim.badge.${sim.verdict}`).
+      /^sim\.badge\./,
     ];
     const unused = keys.filter(
       (k) => !k.endsWith("_one") && !body.includes(`"${k}"`) && !builtDynamically.some((r) => r.test(k)),

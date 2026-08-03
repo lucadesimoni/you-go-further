@@ -259,6 +259,47 @@ export const fr: Dictionary = {
   "route.estimatedProfile":
     "Profil altimétrique estimé — swisstopo était injoignable ; la forme est indicative et les horaires des ravitaillements approximatifs.",
 
+  // ---- Race forecast (course simulation) ----------------------------------
+  "sim.title": "Jusqu'où va le réservoir",
+  "sim.badge.outrun": "le plan ne suffit pas",
+  "sim.badge.averted": "le plan tient",
+  "sim.badge.covered": "large marge",
+  "sim.verdict.outrun":
+    "Ce parcours dépasse le plan vers le km {km}. Prenez davantage avant ce point, ou prévoyez une seconde moitié plus lente.",
+  "sim.verdict.averted":
+    "À l'eau seule, vous êtes à sec vers le km {km}. Avec ce plan, vous terminez avec environ {finishPct}% encore dans le réservoir.",
+  "sim.verdict.covered": "Le plan couvre ce parcours — environ {finishPct}% de réserve à l'arrivée.",
+  "sim.chartLabel":
+    "Glucides restants sur {km} km, avec le plan et à l'eau seule, à {finishPct}% à l'arrivée",
+  "sim.fadeLine": "{pct}% — là où l'allure lâche",
+  "sim.full": "réservoir plein",
+  "sim.withPlan": "Avec le plan",
+  "sim.onWater": "À l'eau seule",
+  "sim.burn": "Dépense",
+  "sim.burnNote": "ce que le parcours exige",
+  "sim.intake": "Apport",
+  "sim.intakeNote": "ce que le plan fournit",
+  "sim.sweat": "Sudation",
+  "sim.sweatNote": "liquide à remplacer",
+  "sim.finish": "À l'arrivée",
+  "sim.finishNote": "restant dans le réservoir",
+  "sim.warn.bonk":
+    "Même avec le plan, le réservoir descend vers le km {km}. Prenez davantage avant ce point, ou acceptez une seconde moitié plus lente.",
+  "sim.warn.bonkAverted":
+    "À l'eau seule, vous seriez à sec au km {km}. Le plan vous mène à l'arrivée avec environ {finishPct}% restants.",
+  "sim.warn.dehydration":
+    "Le déficit hydrique atteint environ {deficitPct}% de la masse corporelle — au-delà de {threshold}%, l'allure en souffre. Buvez {mlPerHour} ml par heure plutôt qu'à la soif.",
+  "sim.warn.sodium":
+    "Vous perdez environ {lossMg} mg de sodium et n'en remplacez qu'environ {replacedMg} mg. Sur une séance aussi longue, c'est dans cet écart que naissent les crampes.",
+  "sim.warn.lateStart":
+    "Le premier ravitaillement tombe à {atMin} minutes. Commencer dans les 30–40 premières garde le réservoir plein au lieu de courir après.",
+  "sim.warn.gapBeforeClimb":
+    "Rien de prévu dans les {km} km avant la montée — la portion la plus dure commence l'estomac vide.",
+  "sim.explain":
+    "La courbe montre vos réserves de glucides face au coût énergétique propre à ce parcours : une montée les vide deux à trois fois plus vite par mètre que le plat, d'où la chute marquée là où le profil grimpe. La seconde courbe, c'est la même course à l'eau seule — l'écart entre les deux, c'est ce que vous apporte le ravitaillement.",
+  "sim.explainHeat":
+    "Calculé pour une température ressentie de {feelsLike} °C face à une réserve d'environ {store} g. Cette réserve est une valeur de population pour un muscle et un foie entraînés en endurance, pas une mesure de vous — lisez donc la forme et le kilomètre, pas le dernier chiffre.",
+
   // ---- Shop / affiliate ---------------------------------------------------
   "shop.orderAt": "Commander chez {brand} →",
   "shop.noShop": "Aucune boutique n'est encore indiquée pour ces produits.",

@@ -418,6 +418,31 @@ await step("a race GPX becomes a fuelling plan for that exact course", async () 
     throw new Error("no product named on the imported course");
   }
 });
+await step("the forecast says where the tank runs down on this course", async () => {
+  // A mountain marathon is exactly the case a watch cannot answer in advance:
+  // where does the plan hold, and where would water alone leave you.
+  await page.waitForSelector(".race .sim", { timeout: 20000 });
+  await page.locator(".race .sim").scrollIntoViewIfNeeded();
+
+  const headline = await page.locator(".race .sim-headline").innerText();
+  if (!/km \d|%/.test(headline)) throw new Error(`forecast names neither a kilometre nor a reserve: ${headline}`);
+
+  // Both curves have to be drawn — one of them is the whole argument.
+  if ((await page.locator(".race .sim-line-fuelled").count()) === 0) throw new Error("no fuelled curve");
+  if ((await page.locator(".race .sim-line-unfuelled").count()) === 0) throw new Error("no water-only curve");
+
+  // And the four numbers behind it: burn, intake, sweat, finish.
+  const stats = await page.locator(".race .sim .stat").count();
+  if (stats < 4) throw new Error(`forecast shows ${stats} figures, expected burn/intake/sweat/finish`);
+  const body = await page.locator(".race .sim").innerText();
+  if (!/\d+ g/.test(body)) throw new Error(`forecast prints no carbohydrate figure: ${body}`);
+  if (!/[\d.]+ L/.test(body)) throw new Error(`forecast prints no fluid figure: ${body}`);
+
+  // An estimated height profile must carry through to the forecast drawn on it.
+  const estimatedProfile = (await page.locator(".race .elev-chart-estimated").count()) > 0;
+  const estimatedSim = (await page.locator(".race .sim-chart-estimated").count()) > 0;
+  if (estimatedProfile !== estimatedSim) throw new Error("forecast hides that its profile was estimated");
+});
 await step("buying means going to the brand, not our own checkout", async () => {
   await page.locator(".geo-plan").first().click();
   await page.waitForSelector(".cart", { timeout: 20000 });

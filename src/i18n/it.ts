@@ -258,6 +258,47 @@ export const it: Dictionary = {
   "route.estimatedProfile":
     "Profilo altimetrico stimato — swisstopo non era raggiungibile, quindi la forma è indicativa e gli orari dei rifornimenti approssimativi.",
 
+  // ---- Race forecast (course simulation) ----------------------------------
+  "sim.title": "Fin dove arriva il serbatoio",
+  "sim.badge.outrun": "il piano non basta",
+  "sim.badge.averted": "il piano regge",
+  "sim.badge.covered": "ampio margine",
+  "sim.verdict.outrun":
+    "Questo percorso supera il piano intorno al km {km}. Prenda di più prima di quel punto, o metta in conto una seconda metà più lenta.",
+  "sim.verdict.averted":
+    "Con la sola acqua resta a secco verso il km {km}. Con questo piano arriva al traguardo con circa il {finishPct}% ancora nel serbatoio.",
+  "sim.verdict.covered": "Il piano copre questo percorso — circa il {finishPct}% di riserva all'arrivo.",
+  "sim.chartLabel":
+    "Carboidrati residui su {km} km, con il piano e con la sola acqua, al {finishPct}% all'arrivo",
+  "sim.fadeLine": "{pct}% — dove il passo cede",
+  "sim.full": "serbatoio pieno",
+  "sim.withPlan": "Con il piano",
+  "sim.onWater": "Solo acqua",
+  "sim.burn": "Consumo",
+  "sim.burnNote": "quanto chiede il percorso",
+  "sim.intake": "Apporto",
+  "sim.intakeNote": "quanto dà il piano",
+  "sim.sweat": "Sudore",
+  "sim.sweatNote": "liquidi da reintegrare",
+  "sim.finish": "All'arrivo",
+  "sim.finishNote": "resta nel serbatoio",
+  "sim.warn.bonk":
+    "Anche con il piano il serbatoio si svuota intorno al km {km}. Prenda di più prima di quel punto, o accetti una seconda metà più lenta.",
+  "sim.warn.bonkAverted":
+    "Con la sola acqua sarebbe a secco al km {km}. Il piano la porta al traguardo con circa il {finishPct}% residuo.",
+  "sim.warn.dehydration":
+    "Il deficit di liquidi arriva a circa il {deficitPct}% del peso corporeo — oltre il {threshold}% il passo ne risente. Beva {mlPerHour} ml all'ora invece che a sete.",
+  "sim.warn.sodium":
+    "Perde circa {lossMg} mg di sodio e ne reintegra circa {replacedMg} mg. Su una sessione così lunga è in questo divario che nascono i crampi.",
+  "sim.warn.lateStart":
+    "Il primo rifornimento è a {atMin} minuti. Iniziare entro i primi 30–40 tiene il serbatoio pieno invece di rincorrerlo.",
+  "sim.warn.gapBeforeClimb":
+    "Nei {km} km prima della salita non è previsto nulla — il tratto più duro comincia a stomaco vuoto.",
+  "sim.explain":
+    "La curva è la sua scorta di carboidrati messa contro il costo energetico di questo percorso: una salita la consuma due o tre volte più in fretta al metro rispetto al piano, ed è per questo che lì scende ripida. La seconda curva è la stessa gara con la sola acqua — la distanza fra le due è ciò che le dà il rifornimento.",
+  "sim.explainHeat":
+    "Calcolato a una temperatura percepita di {feelsLike} °C contro una scorta di circa {store} g. Quella scorta è un valore di popolazione per muscolo e fegato allenati alla resistenza, non una misura su di lei: legga l'andamento e il chilometro, non l'ultima cifra.",
+
   // ---- Shop / affiliate ---------------------------------------------------
   "shop.orderAt": "Ordinare da {brand} →",
   "shop.noShop": "Per questi prodotti non è ancora indicato alcun negozio.",

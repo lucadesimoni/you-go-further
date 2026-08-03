@@ -258,6 +258,47 @@ export const de: Dictionary = {
   "route.estimatedProfile":
     "Höhenprofil geschätzt — swisstopo war nicht erreichbar. Der Verlauf ist ungefähr, die Zeitpunkte entsprechend grob.",
 
+  // ---- Race forecast (course simulation) ----------------------------------
+  "sim.title": "Wie weit der Tank reicht",
+  "sim.badge.outrun": "Plan reicht nicht",
+  "sim.badge.averted": "Plan trägt",
+  "sim.badge.covered": "klar im Rahmen",
+  "sim.verdict.outrun":
+    "Diese Strecke läuft dem Plan bei etwa km {km} davon. Nehmen Sie vorher mehr zu sich — oder rechnen Sie mit einer langsameren zweiten Hälfte.",
+  "sim.verdict.averted":
+    "Nur mit Wasser sind Sie bei etwa km {km} leer. Mit diesem Plan kommen Sie mit rund {finishPct}% im Tank ins Ziel.",
+  "sim.verdict.covered": "Der Plan deckt diese Strecke — rund {finishPct}% Reserve im Ziel.",
+  "sim.chartLabel":
+    "Verbleibende Kohlenhydrate über {km} km, mit Plan und nur mit Wasser, im Ziel bei {finishPct}%",
+  "sim.fadeLine": "{pct}% — hier bricht das Tempo ein",
+  "sim.full": "voller Tank",
+  "sim.withPlan": "Mit Plan",
+  "sim.onWater": "Nur Wasser",
+  "sim.burn": "Verbrauch",
+  "sim.burnNote": "fordert diese Strecke",
+  "sim.intake": "Zufuhr",
+  "sim.intakeNote": "liefert der Plan",
+  "sim.sweat": "Schweiss",
+  "sim.sweatNote": "Flüssigkeit zu ersetzen",
+  "sim.finish": "Im Ziel",
+  "sim.finishNote": "bleibt im Tank",
+  "sim.warn.bonk":
+    "Auch mit Plan ist der Tank bei etwa km {km} unten. Nehmen Sie vorher mehr zu sich, oder akzeptieren Sie eine langsamere zweite Hälfte.",
+  "sim.warn.bonkAverted":
+    "Nur mit Wasser wären Sie bei km {km} leer. Der Plan bringt Sie mit rund {finishPct}% ins Ziel.",
+  "sim.warn.dehydration":
+    "Das Flüssigkeitsdefizit erreicht rund {deficitPct}% des Körpergewichts — ab {threshold}% leidet das Tempo. Trinken Sie {mlPerHour} ml pro Stunde statt nach Durst.",
+  "sim.warn.sodium":
+    "Sie verlieren rund {lossMg} mg Natrium und ersetzen etwa {replacedMg} mg. Über eine so lange Einheit ist genau diese Lücke der Anfang von Krämpfen.",
+  "sim.warn.lateStart":
+    "Die erste Zufuhr liegt bei {atMin} Minuten. Innerhalb der ersten 30–40 zu beginnen hält den Tank voll, statt ihm hinterherzulaufen.",
+  "sim.warn.gapBeforeClimb":
+    "In den {km} km vor dem Anstieg ist nichts vorgesehen — das härteste Stück beginnt auf leerem Magen.",
+  "sim.explain":
+    "Die Kurve zeigt Ihren Kohlenhydratspeicher gegen den Energiebedarf dieser Strecke: ein Anstieg zieht ihn pro Meter zwei- bis dreimal schneller herunter als die Ebene, deshalb fällt sie dort steil ab. Die zweite Kurve ist dasselbe Rennen nur mit Wasser — der Abstand dazwischen ist das, was die Verpflegung bringt.",
+  "sim.explainHeat":
+    "Gerechnet bei gefühlten {feelsLike} °C gegen einen Speicher von rund {store} g. Dieser Speicher ist ein Erfahrungswert für ausdauertrainierte Muskulatur und Leber, keine Messung an Ihnen — lesen Sie also den Verlauf und den Kilometer, nicht die letzte Stelle.",
+
   // ---- Session debrief ----------------------------------------------------
   // ---- Shop / Affiliate ---------------------------------------------------
   "shop.orderAt": "Bei {brand} bestellen →",

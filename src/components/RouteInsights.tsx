@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import type { LatLng } from "../model";
 import type { Activity } from "../engine";
 import { enrichRoute, type RouteConditions } from "../geo";
-import { computeTarget, planRouteFuelling } from "../engine";
+import { computeTarget, planRouteFuelling, simulateRace } from "../engine";
 import { debriefSession, logForActivity } from "../analysis";
 import { SessionDebrief } from "./SessionDebrief";
 import type { SessionFeedback } from "../feedback";
 import { loadProfile } from "../api/profileStore";
 import { ElevationFuelChart } from "./ElevationFuelChart";
+import { RaceForecast } from "./RaceForecast";
 import type { SessionInput } from "./Planner";
 import { useT } from "../i18n";
 import { Explain } from "./Explain";
@@ -104,6 +105,31 @@ export function RouteInsights({
     input: sessionInput,
     target,
   });
+
+  // The same course, run forward: where the tank actually runs down, with this
+  // plan and without it. Below about an hour and a quarter the answer is always
+  // "you had enough glycogen anyway", which is not worth a panel.
+  const sim =
+    fuelPlan.estimatedMin >= 75 && fuelPlan.segments.length >= 2
+      ? simulateRace({
+          plan: fuelPlan,
+          bodyWeightKg: bodyProfile.bodyWeightKg,
+          intensity: sessionInput.intensity,
+          fluidPerHourMl: target.fluidPerHourMl,
+          sodiumPerLitreMg: target.sodiumPerLitreMg,
+          temperatureC: weather.temperatureC,
+          humidityPct: weather.humidityPct,
+          sweatLevel: bodyProfile.sweatLevel,
+          // Only a profile the athlete has actually told us to use counts as a
+          // measurement; the defaults are population figures wearing a number.
+          ...(bodyProfile.useSignals
+            ? {
+                measuredSweatRateMlPerH: bodyProfile.sweatRateMlPerH,
+                measuredSweatSodiumMgPerL: bodyProfile.sweatSodiumMgPerL,
+              }
+            : {}),
+        })
+      : null;
 
   // A past run can be held against what the athlete says actually happened.
   const log = activityId ? logForActivity(feedback, activityId) : undefined;
@@ -215,6 +241,10 @@ export function RouteInsights({
           </Explain>
         </div>
       )}
+
+      {/* Where the plan holds and where it doesn't — the question behind the
+          stop list, answered in kilometres. */}
+      {sim && <RaceForecast sim={sim} estimated={terrain.source === "estimated"} />}
 
       {implications.length > 0 && (
         <ul className="geo-implications">

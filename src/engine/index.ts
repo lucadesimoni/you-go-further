@@ -39,3 +39,5 @@ export type {
   StopKind,
 } from "./routeFuelling";
 export * from "./oxidation";
+export * from "./heatStrain";
+export * from "./simulate";

@@ -218,3 +218,50 @@ equivalent for the effort, multiplies by body mass for kcal/h, applies the
 carbohydrate share of that energy (the crossover: ~45 % easy, ~90 % at race
 effort), and divides by 4 kcal/g. A 55 kg runner and a 90 kg runner at the same
 effort no longer burn the same.
+
+## Heat strain — what the weather actually costs
+
+`src/engine/heatStrain.ts` models the three things heat changes, rather than
+bucketing the day as "hot":
+
+1. **Apparent temperature.** The Rothfusz regression behind the US National
+   Weather Service heat index, converted to Celsius. Below 27 °C humidity barely
+   moves what the body feels, so the plain temperature is used there instead of
+   extrapolating the formula outside its range.
+2. **Sweat rate.** Metabolic heat production scales with intensity × body mass
+   (8–15.5 ml/h per kg from easy to race), rises ~3 % per degree of apparent
+   temperature above 15 °C, and takes a further penalty above 60 % humidity when
+   it is at least 20 °C — the point where evaporation starts failing and sweat
+   runs off the skin without cooling anything.
+3. **Carbohydrate burn.** Muscle glycogen use is higher at the same power in the
+   heat (Febbraio 2001). The multiplier is capped at +25 %, the top of the
+   published range.
+
+Sodium loss follows the sweat rate at 800 mg/L, a population placeholder with a
+fivefold spread between athletes — which is exactly why a measured sweat test
+always overrides it, and why `HeatStrain.measured` says which one was used.
+
+## Race simulation — where the tank runs down
+
+`src/engine/simulate.ts` walks the route segment by segment and tracks four
+balances: carbohydrate, fluid, sodium and time. Burn is distributed by each
+segment's **share of the route's grade-adjusted energy cost**, so a climb drains
+the store faster than the flat, exactly as it does in the legs.
+
+The output is the same course run twice — with the plan and on water alone — and
+the gap between the two curves is what the fuelling buys. It reports:
+
+- the kilometre where each curve crosses the **fade line** (20 % of the usable
+  store, where pace falls away sharply),
+- the peak fluid deficit as a percentage of body mass, against the 2 % where
+  endurance performance measurably drops,
+- sodium lost against sodium replaced,
+- and the tank remaining at the finish.
+
+Warnings carry both an English sentence and the numbers behind it, so the UI can
+write the sentence in the athlete's own language rather than parsing it back out.
+Reported kilometres are whole: a tenth of a kilometre would imply a precision the
+model does not have.
+
+The glycogen store is 6.5 g/kg for endurance-trained muscle and liver — a
+population figure, not a measurement, and the card says so.

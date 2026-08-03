@@ -114,8 +114,10 @@ disclosures, form controls). No component hard-codes a colour or radius. See
 `docs/design-system.md`.
 
 ## Testing
-`npm test` — 35 Vitest cases across engine, analysis, data pipeline (registry,
-dedup, concurrent ingest, export), and subscription gating.
+`npm test` — 519 Vitest cases across engine, analysis, geo, i18n, auth, the data
+pipeline (registry, dedup, concurrent ingest, export), and subscription gating.
+`npm run e2e` drives the whole journey in a real browser against a running
+server; `npm run e2e:mobile` does the same for the mobile screens.
 
 ## Honest status
 Connectors and the store are production-shaped **interfaces with a working mock**
@@ -130,6 +132,13 @@ computed from the same per-session load so nothing on screen can disagree.
 
 **Per session** — `src/engine`. Targets, the timed cue schedule, terrain-aware
 stop placement, and the absorption ceiling of the chosen products.
+
+**Per course** — `src/engine/simulate.ts`, on top of `src/engine/heatStrain.ts`.
+The route is walked segment by segment with carbohydrate, fluid, sodium and time
+tracked against the athlete's own store, in the day's actual heat and humidity.
+It runs the course twice — with the plan and on water alone — and names the
+kilometre where each crosses the fade line. Pure functions with no I/O, so the
+same simulation runs in the browser, on the server, and in tests.
 
 **Per athlete** — `src/analysis/trainingLoad.ts`. Daily load including rest days,
 then exponentially weighted 42- and 7-day averages (fitness and fatigue), their

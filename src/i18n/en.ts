@@ -247,6 +247,38 @@ export const en = {
   "route.estimatedProfile":
     "Height profile estimated — swisstopo was unreachable, so the shape is indicative and the stop times are approximate.",
 
+  // ---- Race forecast (course simulation) ----------------------------------
+  "sim.title": "How far the tank goes",
+  "sim.badge.outrun": "plan falls short",
+  "sim.badge.averted": "plan holds",
+  "sim.badge.covered": "well within range",
+  "sim.verdict.outrun": "This course outruns the plan around km {km}. Take more before that point, or plan on a slower second half.",
+  "sim.verdict.averted": "On water alone you run empty around km {km}. With this plan you finish with about {finishPct}% still in the tank.",
+  "sim.verdict.covered": "The plan covers this course — about {finishPct}% in reserve at the finish.",
+  "sim.chartLabel": "Carbohydrate remaining over {km} km, with the plan and on water alone, finishing at {finishPct}%",
+  "sim.fadeLine": "{pct}% — where pace starts to go",
+  "sim.full": "full tank",
+  "sim.withPlan": "With the plan",
+  "sim.onWater": "On water alone",
+  "sim.burn": "Burn",
+  "sim.burnNote": "this course demands",
+  "sim.intake": "Intake",
+  "sim.intakeNote": "the plan delivers",
+  "sim.sweat": "Sweat",
+  "sim.sweatNote": "fluid to replace",
+  "sim.finish": "At the finish",
+  "sim.finishNote": "left in the tank",
+  "sim.warn.bonk": "Even with the plan the tank runs down around km {km}. Take more before that point, or accept a slower second half.",
+  "sim.warn.bonkAverted": "On water alone you would be empty by km {km}. The plan carries you to the finish with about {finishPct}% left.",
+  "sim.warn.dehydration": "Fluid runs about {deficitPct}% of body mass down — past {threshold}% pace starts to suffer. Drink {mlPerHour} ml an hour rather than to thirst.",
+  "sim.warn.sodium": "You lose about {lossMg} mg of sodium and replace roughly {replacedMg} mg. Over a session this long, that gap is where cramping starts.",
+  "sim.warn.lateStart": "The first feed is at {atMin} minutes. Starting inside the first 30–40 keeps the tank topped rather than chasing it later.",
+  "sim.warn.gapBeforeClimb": "Nothing to eat in the {km} km before the climb — the hardest stretch arrives on an empty stomach.",
+  "sim.explain":
+    "The curve is your carbohydrate store spent against this course's own energy cost: a climb draws it down two to three times faster per metre than the flat, which is why the drop is steep where the profile is. The second curve is the same race on water alone — the gap between them is what the fuelling buys you.",
+  "sim.explainHeat":
+    "Modelled at a feels-like {feelsLike} °C against a store of roughly {store} g. That store is a population figure for endurance-trained muscle and liver, not a measurement of you, so read the shape and the kilometre rather than the last digit.",
+
   // ---- Shop / affiliate ---------------------------------------------------
   "shop.orderAt": "Order at {brand} →",
   "shop.noShop": "No shop is listed for these products yet.",
