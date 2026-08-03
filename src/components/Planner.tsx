@@ -195,11 +195,13 @@ export function Planner({
             label={t("plan.fluidPerHour")}
             value={`${rec.target.fluidPerHourMl} ml`}
             note={rec.target.hydrationSource === "measured" ? t("plan.measured") : undefined}
+            tone="good"
           />
           <Stat
             label={t("plan.sodiumPerLitreLong")}
             value={`${rec.target.sodiumPerLitreMg} mg`}
             note={rec.target.sodiumSource === "measured" ? t("plan.measured") : undefined}
+            tone="good"
           />
         </div>
 

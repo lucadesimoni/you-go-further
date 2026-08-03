@@ -67,10 +67,66 @@ semantic colour therefore has an `--*-ink` variant used for text:
 | --- | --- |
 | `--accent`, `--info`, `--warn`, `--success`, `--accent-purple` | `--accent-ink`, `--info-ink`, `--warn-ink`, `--success-ink`, `--accent-purple-ink` |
 
-In dark mode the ink is an alias of the vivid colour. In light mode each one is
-darkened until it carries at least **4.5:1** on a white panel — amber especially,
-which is unreadable at its pill brightness. Use the vivid token for fills,
-borders and pills; use ink whenever the colour is the text.
+In light mode each one is darkened until it carries at least **4.5:1** on a white
+panel — amber especially, which is unreadable at its pill brightness. In dark
+mode most inks are an alias of the vivid colour, with one exception: the Swiss
+red `#e4002b` carries only **3.51:1** on the dark panel, so `--accent-ink` is a
+lightened `#ff5c72` there. A fully saturated red cannot be lightened without
+moving toward pink; that is the trade, and it applies to text only. Fills,
+borders, buttons and pills keep `--accent`, so the brand red is still the brand
+red wherever it is a shape rather than a word.
+
+Use the vivid token for fills, borders and pills; use ink whenever the colour is
+the text.
+
+### Tint tokens
+
+Tints are **mixed from the semantic colour**, never written out:
+
+```css
+--warn-line: color-mix(in srgb, var(--warn) 40%, transparent);  /* a border  */
+--warn-soft: color-mix(in srgb, var(--warn) 12%, transparent);  /* a wash    */
+```
+
+Both themes get their own tint from one definition, and a tint cannot drift from
+the colour it is tinting. This replaced twenty-two hand-written `rgba()` values
+frozen at the *dark* theme's colours — so a "success" border stayed mint green on
+a white panel, and one of them was a third amber matching neither theme.
+
+### Chart tokens
+
+Charts draw through **role** tokens, never palette tokens directly:
+
+| Token | The idea it draws |
+| --- | --- |
+| `--chart-primary` | the main series — carbohydrate available *with* the plan |
+| `--chart-baseline` | the comparison — the same session on water alone |
+| `--chart-limit`, `--chart-limit-zone` | the line where the tank runs out, and the region past it |
+| `--chart-stop`, `--chart-stop-climb` | a fuelling stop, and one placed for a climb |
+| `--chart-terrain`, `--chart-terrain-fill`, `--chart-climb` | the height profile and its climbs |
+| `--chart-fitness`, `--chart-fatigue` | the two load curves, always read against each other |
+| `--chart-alert` | where something goes wrong |
+| `--chart-grid`, `--chart-axis` | gridlines and tick labels |
+
+Four charts were drawing the same three ideas in three different greens and two
+different reds, because each reached for a palette token on its own. A role token
+is what stops that, and a legend swatch takes the same token as the line it names.
+
+**The assignment rule is about mark size, not taste.** A thin mark needs more
+contrast than a large one to stay legible, so lines and dots follow the `-ink`
+tokens, which already darken in light mode, while washes and thick marks keep the
+vivid token — a darkened colour in a large area only looks muddy. WCAG draws the
+same line at 3px, requiring **3:1** for a non-text mark against its surface and
+**4.5:1** for text.
+
+Both thresholds are measured in a real browser by `npm run e2e`, because the
+tokens are chained (`--chart-primary` → `--post-ink` → `--success-ink` →
+`--success`) and several are `color-mix()`, so only a rendering engine knows what
+they resolve to. `src/styles.test.ts` guards the rest: no raw colour outside the
+token block, no chart mark bypassing a role token, no legend swatch disagreeing
+with its line, and no token used that is never defined — an undefined token voids
+its whole declaration silently, which is how a marker ring and a control's
+transition both turned out never to have rendered.
 
 ## Mobile
 

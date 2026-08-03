@@ -344,7 +344,14 @@ export function Dashboard({
           </div>
           <div className="targets plain-grid">
             <Stat label="Readiness" value={physiology.readiness !== undefined ? `${physiology.readiness}/100` : "—"} />
-            <Stat label="Overnight HRV" value={physiology.hrvMs ? `${physiology.hrvMs} ms` : "—"} note={hrvStatus !== "—" ? hrvStatus : undefined} />
+            <Stat
+              label="Overnight HRV"
+              value={physiology.hrvMs ? `${physiology.hrvMs} ms` : "—"}
+              note={hrvStatus !== "—" ? hrvStatus : undefined}
+              // HRV below baseline is the one worth flagging; at or above it is
+              // not news, so it stays neutral rather than congratulating anyone.
+              tone={hrvStatus === "below baseline" ? "watch" : "muted"}
+            />
             <Stat label="Resting HR" value={physiology.restingHr ? `${physiology.restingHr} bpm` : "—"} />
             <Stat label="Sleep" value={physiology.sleepScore ? `${physiology.sleepScore}/100` : "—"} />
           </div>

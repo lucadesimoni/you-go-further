@@ -94,7 +94,15 @@ export function HomeView({
           )}
         </div>
         <div className="home-readiness">
-          <span className="home-readiness-value">{bodyProfile.readiness}</span>
+          {/* Neutral unless it means something. Red is the alert colour
+              everywhere else in the app, and a middling readiness is not an
+              alert — it was reading as one purely because the figure was
+              decorated with the brand accent. */}
+          <span
+            className={`home-readiness-value${bodyProfile.readiness < 45 ? " home-readiness-low" : ""}`}
+          >
+            {bodyProfile.readiness}
+          </span>
           <span className="home-readiness-label">{t("home.readiness")}</span>
           <span className="home-readiness-src">
             {bodyProfile.useSignals ? t("home.readinessMeasured") : t("home.readinessSelf")}

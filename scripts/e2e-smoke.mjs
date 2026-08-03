@@ -574,6 +574,64 @@ await step("light and dark are switchable and stick to <html>", async () => {
   const dark = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
   if (dark !== "dark") throw new Error(`expected dark, got ${dark}`);
 });
+await step("every chart colour and ink is legible in both themes", async () => {
+  // Reading the stylesheet cannot answer this: the tokens are chained
+  // (--chart-primary → --post-ink → --success-ink → --success) and several are
+  // color-mix(), so only a browser knows what they actually resolve to. Two
+  // real defects hid behind that — a Swiss red carrying 3.5:1 as dark-mode
+  // text, and an amber marker at 2.8:1 on a white panel.
+  const TOKENS = {
+    // Thin marks need 3:1 to be distinguishable (WCAG 1.4.11 non-text).
+    "chart-primary": 3, "chart-baseline": 3, "chart-limit": 3, "chart-stop": 3,
+    "chart-stop-climb": 3, "chart-terrain": 3, "chart-fitness": 3,
+    "chart-fatigue": 3, "chart-alert": 3,
+    // Text needs 4.5:1.
+    "accent-ink": 4.5, "info-ink": 4.5, "warn-ink": 4.5, "success-ink": 4.5,
+    "accent-purple-ink": 4.5, text: 4.5, muted: 4.5,
+  };
+  const measured = await page.evaluate((tokens) => {
+    const probe = document.createElement("div");
+    document.body.appendChild(probe);
+    const resolve = (expr) => {
+      probe.style.color = expr;
+      return getComputedStyle(probe).color;
+    };
+    const out = {};
+    for (const theme of ["dark", "light"]) {
+      document.documentElement.setAttribute("data-theme", theme);
+      out[theme] = { panel: resolve("var(--panel)"), tokens: {} };
+      for (const t of Object.keys(tokens)) out[theme].tokens[t] = resolve(`var(--${t})`);
+    }
+    probe.remove();
+    return out;
+  }, TOKENS);
+
+  const parse = (css) => (css.match(/rgba?\(([^)]+)\)/)?.[1] ?? "")
+    .split(/[\s,/]+/).filter(Boolean).map(Number);
+  const lin = (c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4);
+  const lum = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  const ratio = (f, b) => {
+    const [x, y] = [lum(f) + 0.05, lum(b) + 0.05];
+    return Math.round((Math.max(x, y) / Math.min(x, y)) * 100) / 100;
+  };
+
+  const bad = [];
+  for (const [theme, { panel, tokens }] of Object.entries(measured)) {
+    const bg = parse(panel);
+    for (const [t, need] of Object.entries(TOKENS)) {
+      const rgb = parse(tokens[t]);
+      // An unresolvable token voids whatever declaration used it, silently.
+      if (rgb.length < 3) {
+        bad.push(`${theme}/${t} does not resolve`);
+        continue;
+      }
+      const r = ratio(rgb, bg);
+      if (r < need) bad.push(`${theme}/${t} ${r}:1 (needs ${need})`);
+    }
+  }
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  if (bad.length) throw new Error(bad.join("; "));
+});
 await step("German switches the interface and the html lang", async () => {
   await page.selectOption("#lang-select", { label: "Deutsch" });
   await page.waitForTimeout(400);

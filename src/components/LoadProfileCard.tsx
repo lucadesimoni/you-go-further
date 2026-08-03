@@ -60,6 +60,9 @@ export function LoadProfileCard() {
   // something — a 42-day average over ten days of data is mostly warm-up.
   if (!data || !data.reliable) return null;
 
+  /** The flags are already computed server-side — the figures just read them. */
+  const flagged = (id: string) => data.flags.some((f) => f.id === id);
+
   return (
     <section className="panel load">
       <div className="section-head">
@@ -69,13 +72,26 @@ export function LoadProfileCard() {
 
       <div className="targets plain-grid">
         <Stat label={t("load.fitness")} value={String(Math.round(data.fitness))} note={t("load.fitnessNote")} />
-        <Stat label={t("load.fatigue")} value={String(Math.round(data.fatigue))} note={t("load.fatigueNote")} />
+        <Stat
+          label={t("load.fatigue")}
+          value={String(Math.round(data.fatigue))}
+          note={t("load.fatigueNote")}
+          tone={flagged("deepFatigue") ? "watch" : "muted"}
+        />
         <Stat
           label={t("load.form")}
           value={`${data.form > 0 ? "+" : ""}${Math.round(data.form)}`}
           note={t("load.formNote")}
+          tone={flagged("wellRested") ? "good" : "muted"}
         />
-        <Stat label={t("load.ramp")} value={`${data.rampPct > 0 ? "+" : ""}${data.rampPct}%`} note={t("load.rampNote")} />
+        {/* The panel already says in words that a fast ramp is where injuries
+            cluster; the number it is talking about should not read as neutral. */}
+        <Stat
+          label={t("load.ramp")}
+          value={`${data.rampPct > 0 ? "+" : ""}${data.rampPct}%`}
+          note={t("load.rampNote")}
+          tone={flagged("rampTooFast") ? "watch" : "muted"}
+        />
       </div>
 
       {spark && (
