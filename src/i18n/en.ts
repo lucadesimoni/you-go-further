@@ -145,6 +145,12 @@ export const en = {
   "plan.simulate": "Simulate",
   "plan.reset": "Reset",
   "plan.shopThisPlan": "Shop this plan",
+  "absorb.title": "More than your gut can absorb",
+  "absorb.ceiling": "max ~{ceiling} g/h",
+  "absorb.body":
+    "The plan asks for {target} g/h, but these products can deliver about {ceiling} g/h — roughly {short} g/h would sit in your stomach rather than reach the muscle.",
+  "absorb.why":
+    "Carbohydrate crosses the gut wall through transporters, and glucose saturates its own at about 60 g/h. Adding fructose recruits a second route and lifts the ceiling to around 90 g/h. Beyond it the surplus draws water into the gut — which is what “my stomach turned” usually means.",
 
   "plan.pause": "Pause",
   "plan.replay": "Replay",
@@ -170,6 +176,26 @@ export const en = {
   "insights.bandBuilding": "Building",
   "insights.bandSolid": "Solid",
   "insights.bandDialledIn": "Dialled in",
+
+  // ---- Training load ------------------------------------------------------
+  "load.title": "Fitness, fatigue and form",
+  "load.fitness": "Fitness",
+  "load.fitnessNote": "42-day load",
+  "load.fatigue": "Fatigue",
+  "load.fatigueNote": "7-day load",
+  "load.form": "Form",
+  "load.formNote": "fitness − fatigue",
+  "load.ramp": "Ramp",
+  "load.rampNote": "per week",
+  "load.building": "building",
+  "load.steady": "steady",
+  "load.tapering": "tapering",
+  "load.detraining": "detraining",
+  "load.chartLabel": "Fitness and fatigue over the last {days} days",
+  "load.explain":
+    "Fitness is your training load averaged over six weeks; fatigue is the same load over one. Form is the gap between them — negative while you are loading, positive once you have absorbed it. It belongs on a nutrition screen because each state changes what you should eat: deep fatigue makes recovery carbohydrate and protein urgent, and a fast ramp moves your weekly carbohydrate floor.",
+  "load.explainMonotony":
+    "Monotony {monotony} across {days} active days — how alike your days are. Above 2, hard days never get an easy day to recover into, which is where staleness and illness cluster.",
 
   // ---- Fuelling next actions (ids come from the engine) -------------------
   "action.logFirst": "Log your next session",

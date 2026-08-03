@@ -29,7 +29,7 @@ import {
   type Order,
 } from "../commerce";
 import { deriveAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
-import { analyze, derivePhysiology } from "../analysis";
+import { analyze, cohortPrior, derivePhysiology, loadFlags, loadProfile, observe, summariseBands } from "../analysis";
 import { generateSampleWellness } from "../providers";
 import { lastNDays } from "../data";
 import type { ProviderId } from "../model";
@@ -230,6 +230,32 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           return ok({ connected: true, provider, imported: activities.length, inserted });
         }
         return notFound();
+      }
+
+      // --- Cohort: what usually happens at a rate, pooled across athletes -----
+      if (key === "GET /api/cohort") {
+        // Anonymised on the way out of the store: an observation is a rate band,
+        // a gut outcome and a fade outcome. No athlete id, no date, no route.
+        const everyone = await feedback.listAll();
+        const observations = everyone.map(observe).filter((o): o is NonNullable<typeof o> => o !== null);
+        const rate = Number(query.carbPerHourG);
+        return ok({
+          bands: summariseBands(observations),
+          total: observations.length,
+          ...(Number.isFinite(rate) ? { prior: cohortPrior(rate, observations) } : {}),
+        });
+      }
+
+      // --- Training load: fitness, fatigue, form, monotony, ramp -------------
+      if (key === "GET /api/load") {
+        const [acts, prof] = await Promise.all([store.query({ userId: principal.id }), profiles.get(principal.id)]);
+        const profile = loadProfile(acts, prof);
+        return ok({
+          // The daily series is long; the client only draws the recent window.
+          ...profile,
+          series: profile.series.slice(-90),
+          flags: loadFlags(profile),
+        });
       }
 
       // --- Affiliate: hand the athlete to a partner shop, and keep the trail ---

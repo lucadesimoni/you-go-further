@@ -85,6 +85,10 @@ export class FileFeedbackStore implements FeedbackStore {
     return this.data[userId] ?? [];
   }
 
+  async listAll(): Promise<SessionFeedback[]> {
+    return Object.values(this.data).flat();
+  }
+
   async clear(userId: string): Promise<void> {
     delete this.data[userId];
     this.file.write(this.data);

@@ -117,6 +117,8 @@ export interface Product {
   notes?: string;
 }
 
+import type { DeliverabilityCheck } from "./oxidation";
+
 export interface FuellingTarget {
   /** Carbohydrate grams per hour to consume during the session. */
   carbPerHourG: number;
@@ -150,4 +152,12 @@ export interface Recommendation {
   phases: PhasePlan[];
   /** Human-readable notes, caveats, and goal-specific guidance. */
   notes: string[];
+  /**
+   * Whether the during-session products can actually absorb the target rate.
+   *
+   * The engine could previously recommend 90 g/h and a handful of glucose-only
+   * gels in the same breath, and nothing checked that the gut can only move
+   * about 60 g/h of glucose an hour. Now it checks itself.
+   */
+  deliverability?: DeliverabilityCheck;
 }

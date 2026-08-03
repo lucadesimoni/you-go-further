@@ -82,6 +82,7 @@ import type { User, NewUser, UserPatch, AthleteProfile } from "../users";
 import type { PlatformSettings } from "../settings";
 import type { AffiliateSummary, CartLine, Order, OutboundLink, PartnerProgram } from "../commerce";
 import type { Activity } from "../model";
+import type { BandStat, CohortPrior, LoadProfile } from "../analysis";
 import type { Tier } from "../subscription";
 
 export interface CheckoutResponse {
@@ -170,6 +171,14 @@ export const api = {
     call<{ authorizeUrl: string; configured: boolean; live: boolean; state: string }>(
       "GET",
       `/api/oauth/${provider}/authorize-url?return_to=${encodeURIComponent(returnTo)}`,
+    ),
+  /** Fitness / fatigue / form, computed server-side from the same session load. */
+  load: () => call<LoadProfile & { flags: { id: string; severity: string; text: string }[] }>("GET", "/api/load"),
+  /** What usually happens at a carbohydrate rate, pooled anonymously. */
+  cohort: (carbPerHourG?: number) =>
+    call<{ bands: BandStat[]; total: number; prior?: CohortPrior }>(
+      "GET",
+      `/api/cohort${carbPerHourG !== undefined ? `?carbPerHourG=${carbPerHourG}` : ""}`,
     ),
   connections: () => call<{ connections: { provider: string }[] }>("GET", "/api/connections"),
   /** Outbound partner links for a cart — built server-side, where the ids live. */

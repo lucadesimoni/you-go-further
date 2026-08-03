@@ -150,6 +150,12 @@ export const de: Dictionary = {
   "plan.simulate": "Simulieren",
   "plan.reset": "Zurücksetzen",
   "plan.shopThisPlan": "Diesen Plan einkaufen",
+  "absorb.title": "Mehr, als Ihr Magen aufnehmen kann",
+  "absorb.ceiling": "max. ~{ceiling} g/h",
+  "absorb.body":
+    "Der Plan verlangt {target} g/h, diese Produkte liefern aber nur rund {ceiling} g/h — etwa {short} g/h blieben im Magen, statt den Muskel zu erreichen.",
+  "absorb.why":
+    "Kohlenhydrate gelangen über Transporter durch die Darmwand, und Glukose sättigt ihren eigenen bei etwa 60 g/h. Fruktose öffnet einen zweiten Weg und hebt die Grenze auf rund 90 g/h. Darüber zieht der Überschuss Wasser in den Darm — genau das steckt meist hinter «der Magen hat zugemacht».",
 
   "plan.pause": "Pause",
   "plan.replay": "Erneut abspielen",
@@ -177,6 +183,26 @@ export const de: Dictionary = {
   "insights.bandBuilding": "Im Aufbau",
   "insights.bandSolid": "Solide",
   "insights.bandDialledIn": "Bestens eingestellt",
+
+  // ---- Training load ------------------------------------------------------
+  "load.title": "Fitness, Ermüdung und Form",
+  "load.fitness": "Fitness",
+  "load.fitnessNote": "42-Tage-Belastung",
+  "load.fatigue": "Ermüdung",
+  "load.fatigueNote": "7-Tage-Belastung",
+  "load.form": "Form",
+  "load.formNote": "Fitness − Ermüdung",
+  "load.ramp": "Anstieg",
+  "load.rampNote": "pro Woche",
+  "load.building": "im Aufbau",
+  "load.steady": "gleichmässig",
+  "load.tapering": "im Tapering",
+  "load.detraining": "im Abbau",
+  "load.chartLabel": "Fitness und Ermüdung der letzten {days} Tage",
+  "load.explain":
+    "Fitness ist Ihre Trainingsbelastung über sechs Wochen gemittelt, Ermüdung dieselbe Belastung über eine Woche. Form ist die Differenz — negativ, solange Sie aufbauen, positiv, sobald Sie es verarbeitet haben. Das gehört auf eine Ernährungsseite, weil jeder Zustand die Verpflegung verändert: bei starker Ermüdung werden Kohlenhydrate und Protein zur Regeneration dringend, und ein schneller Anstieg hebt Ihren wöchentlichen Kohlenhydratbedarf.",
+  "load.explainMonotony":
+    "Monotonie {monotony} bei {days} aktiven Tagen — wie ähnlich sich Ihre Tage sind. Über 2 folgt auf harte Tage nie ein lockerer, und genau dort häufen sich Stagnation und Infekte.",
 
   // ---- Fuelling next actions (ids come from the engine) -------------------
   "action.logFirst": "Erfassen Sie Ihre nächste Einheit",

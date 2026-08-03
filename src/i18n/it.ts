@@ -150,6 +150,12 @@ export const it: Dictionary = {
   "plan.simulate": "Simulare",
   "plan.reset": "Azzerare",
   "plan.shopThisPlan": "Ordinare questo piano",
+  "absorb.title": "Più di quanto lo stomaco possa assorbire",
+  "absorb.ceiling": "max ~{ceiling} g/h",
+  "absorb.body":
+    "Il piano chiede {target} g/h, ma questi prodotti ne forniscono circa {ceiling} g/h — circa {short} g/h resterebbero nello stomaco invece di arrivare al muscolo.",
+  "absorb.why":
+    "I carboidrati attraversano la parete intestinale tramite trasportatori, e il glucosio satura il proprio intorno ai 60 g/h. Il fruttosio apre una seconda via e alza il tetto a circa 90 g/h. Oltre quel tetto l'eccesso richiama acqua nell'intestino — di solito è questo che significa «mi si è chiuso lo stomaco».",
 
   "plan.pause": "Pausa",
   "plan.replay": "Riprodurre di nuovo",
@@ -177,6 +183,26 @@ export const it: Dictionary = {
   "insights.bandBuilding": "In crescita",
   "insights.bandSolid": "Solido",
   "insights.bandDialledIn": "Perfettamente a punto",
+
+  // ---- Training load ------------------------------------------------------
+  "load.title": "Condizione, fatica e freschezza",
+  "load.fitness": "Condizione",
+  "load.fitnessNote": "carico su 42 giorni",
+  "load.fatigue": "Fatica",
+  "load.fatigueNote": "carico su 7 giorni",
+  "load.form": "Freschezza",
+  "load.formNote": "condizione − fatica",
+  "load.ramp": "Incremento",
+  "load.rampNote": "a settimana",
+  "load.building": "in costruzione",
+  "load.steady": "stabile",
+  "load.tapering": "in scarico",
+  "load.detraining": "in calo",
+  "load.chartLabel": "Condizione e fatica degli ultimi {days} giorni",
+  "load.explain":
+    "La condizione è il suo carico di allenamento mediato su sei settimane; la fatica è lo stesso carico su una settimana. La freschezza è la differenza — negativa mentre carica, positiva quando l'ha assorbita. Sta su una schermata di alimentazione perché ogni stato cambia cosa mangiare: con molta fatica i carboidrati e le proteine del recupero diventano urgenti, e un incremento rapido alza il suo fabbisogno settimanale di carboidrati.",
+  "load.explainMonotony":
+    "Monotonia {monotony} su {days} giorni attivi — quanto si somigliano le sue giornate. Sopra 2 ai giorni duri non segue mai un giorno facile, ed è lì che si accumulano stagnazione e malanni.",
 
   // ---- Fuelling next actions (ids come from the engine) -------------------
   "action.logFirst": "Registri il suo prossimo allenamento",

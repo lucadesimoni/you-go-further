@@ -691,3 +691,75 @@ describe("affiliate — the Phase-1 revenue path", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("crunching: load analytics and the cohort", () => {
+  let route: ReturnType<typeof createApiRouter>;
+  beforeEach(() => {
+    route = createApiRouter(createRuntime({ ...getConfig(), enabledProviders: ["garmin", "strava"] }));
+  });
+
+  const logAt = async (principal: Principal, actualCarbPerHourG: number, gi: "none" | "mild" | "severe") =>
+    route(
+      req("POST", "/api/feedback", {
+        principal,
+        body: { gi, energy: "steady", durationMin: 180, plannedCarbPerHourG: 80, actualCarbPerHourG },
+      }),
+    );
+
+  it("pools outcomes across athletes, not just the one asking", async () => {
+    const a: Principal = { id: "u-a", name: "A", role: "athlete", tier: "free" };
+    const b: Principal = { id: "u-b", name: "B", role: "athlete", tier: "free" };
+    for (let i = 0; i < 8; i++) await logAt(a, 90, i < 2 ? "severe" : "none");
+    for (let i = 0; i < 8; i++) await logAt(b, 92, i < 2 ? "mild" : "none");
+
+    const res = await route(req("GET", "/api/cohort", { query: { carbPerHourG: "90" }, principal: a }));
+    const { prior, total } = res.data as { prior: { n: number; known: boolean; distressRate: number }; total: number };
+    // Neither athlete alone reaches the threshold; together they do.
+    expect(total).toBe(16);
+    expect(prior.n).toBe(16);
+    expect(prior.known).toBe(true);
+    expect(prior.distressRate).toBe(0.25);
+  });
+
+  it("returns nothing identifying — a band, an outcome and a count", async () => {
+    const a: Principal = { id: "u-a", name: "A", role: "athlete", tier: "free" };
+    await logAt(a, 90, "severe");
+    const res = await route(req("GET", "/api/cohort", { principal: a }));
+    const body = JSON.stringify(res.data);
+    expect(body).not.toContain("u-a");
+    expect(body).not.toContain("severe");
+  });
+
+  it("says it does not know rather than guessing from three logs", async () => {
+    const a: Principal = { id: "u-a", name: "A", role: "athlete", tier: "free" };
+    for (let i = 0; i < 3; i++) await logAt(a, 90, "severe");
+    const res = await route(req("GET", "/api/cohort", { query: { carbPerHourG: "90" }, principal: a }));
+    const { prior } = res.data as { prior: { known: boolean; text: string } };
+    expect(prior.known).toBe(false);
+    expect(prior.text).toMatch(/not enough/i);
+  });
+
+  it("computes fitness, fatigue and form from the athlete's own sessions only", async () => {
+    const a: Principal = { id: "u-a", name: "A", role: "athlete", tier: "free" };
+    const b: Principal = { id: "u-b", name: "B", role: "athlete", tier: "free" };
+    await route(req("POST", "/api/ingest", { body: { provider: "strava", days: 60 }, principal: a }));
+
+    const mine = await route(req("GET", "/api/load", { principal: a }));
+    const theirs = await route(req("GET", "/api/load", { principal: b }));
+    const m = mine.data as { fitness: number; reliable: boolean; series: unknown[]; flags: unknown[] };
+    const t2 = theirs.data as { fitness: number; reliable: boolean };
+    expect(m.fitness).toBeGreaterThan(0);
+    expect(m.reliable).toBe(true);
+    expect(Array.isArray(m.flags)).toBe(true);
+    // Another athlete's training must not appear in this one's numbers.
+    expect(t2.fitness).toBe(0);
+    expect(t2.reliable).toBe(false);
+  });
+
+  it("does not ship the whole daily history to the client", async () => {
+    const a: Principal = { id: "u-a", name: "A", role: "athlete", tier: "free" };
+    await route(req("POST", "/api/ingest", { body: { provider: "strava", days: 120 }, principal: a }));
+    const res = await route(req("GET", "/api/load", { principal: a }));
+    expect((res.data as { series: unknown[] }).series.length).toBeLessThanOrEqual(90);
+  });
+});

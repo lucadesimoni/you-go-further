@@ -122,3 +122,28 @@ Connectors and the store are production-shaped **interfaces with a working mock*
 implementation: OAuth URLs are real, but token exchange, live API calls, and a
 real warehouse backend are the documented next step. Sample activity data is
 clearly labelled as such in the UI.
+
+## Data crunching
+
+Three layers, all pure TypeScript with no UI or storage dependency, all
+computed from the same per-session load so nothing on screen can disagree.
+
+**Per session** — `src/engine`. Targets, the timed cue schedule, terrain-aware
+stop placement, and the absorption ceiling of the chosen products.
+
+**Per athlete** — `src/analysis/trainingLoad.ts`. Daily load including rest days,
+then exponentially weighted 42- and 7-day averages (fitness and fatigue), their
+difference (form), Foster monotony and strain, and the weekly ramp rate. Served
+by `GET /api/load`, scoped to the signed-in athlete, capped at 90 days of series
+so the client is not shipped years of history it will not draw.
+
+**Across athletes** — `src/analysis/cohort.ts`, served by `GET /api/cohort`. Logs
+are reduced to an anonymous observation — a rate band, whether the gut objected,
+whether the athlete faded — and pooled. Three rules make it defensible: nothing
+identifying leaves the store, a band stays silent below twelve observations, and
+proportions are reported with a **Wilson interval** rather than a bare
+percentage, because "3 of 4" is not 75 %.
+
+This is the direction the vision's Phase 3 needs: the athlete's own logs still
+win when they exist, but a first plan can start from what usually works rather
+than from the middle of the range.

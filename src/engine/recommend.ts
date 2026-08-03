@@ -1,5 +1,7 @@
 import { CATALOG } from "./catalog";
 import { idealOffering, type OfferingSlot, type OfferingSlotResult } from "./offering";
+import { checkDeliverable, productCarbSources, sumCarbSources } from "./oxidation";
+import type { DeliverabilityCheck } from "./oxidation";
 import type {
   AthleteInput,
   FuellingTarget,
@@ -295,10 +297,49 @@ function buildNotes(input: AthleteInput, target: FuellingTarget): string[] {
  */
 export function recommend(input: AthleteInput, catalog: Product[] = CATALOG): Recommendation {
   const target = computeTarget(input);
+  const phases = buildPhases(input, target, catalog);
+
+  // Hold the target against what can actually be absorbed.
+  //
+  // Two cases, and the second one used to be silent. When products *were*
+  // chosen, the mix is theirs. When the slot came back empty — which happens
+  // when the target needs a 2:1 blend and the library has none — the athlete
+  // previously got a carbohydrate target and no products at all, with nothing
+  // saying why. So the check falls back to what the library could offer, and
+  // reports the gap instead of leaving a hole on the screen.
+  const during = phases.find((p) => p.phase === "during")?.products ?? [];
+  const perHourSources = (products: Product[]) =>
+    sumCarbSources(
+      products.map((product) => {
+        const share = products.length > 0 ? target.carbPerHourG / products.length : 0;
+        const servings = product.carbsG > 0 ? share / product.carbsG : 0;
+        return productCarbSources(product, servings);
+      }),
+    );
+
+  let deliverability: DeliverabilityCheck | undefined;
+  if (target.carbPerHourG > 0) {
+    if (during.length > 0) {
+      deliverability = checkDeliverable(target.carbPerHourG, perHourSources(during), input.adaptation?.carbCeilingG);
+    } else {
+      // Nothing was selected: judge the library's best during-session options so
+      // the message names the real problem.
+      const available = catalog.filter((p) => p.phases.includes("during") && p.carbsG > 5);
+      if (available.length > 0) {
+        deliverability = checkDeliverable(
+          target.carbPerHourG,
+          perHourSources(available),
+          input.adaptation?.carbCeilingG,
+        );
+      }
+    }
+  }
+
   return {
     input,
     target,
-    phases: buildPhases(input, target, catalog),
+    phases,
     notes: buildNotes(input, target),
+    ...(deliverability ? { deliverability } : {}),
   };
 }

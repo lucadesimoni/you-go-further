@@ -182,3 +182,39 @@ places feeds by **where the energy is actually spent**:
 When the terrain profile is a local estimate (swisstopo unreachable) the chart is
 drawn dashed and labelled — a chart looks authoritative whether or not the data
 behind it is.
+
+## Absorption ceilings — what the gut can actually take
+
+Grams per hour is only half the problem. **Exogenous carbohydrate oxidation is
+capped by intestinal transport, not by appetite**, and the cap depends on which
+sugars are in the bottle.
+
+| Mix | Ceiling | Why |
+| --- | --- | --- |
+| Glucose / maltodextrin only | **~60 g/h** | SGLT1 saturates. Eating 90 g/h of maltodextrin does not deliver 90 g/h — the surplus stays in the gut. |
+| Glucose + fructose ~2:1 | **~90 g/h** | Fructose is absorbed by GLUT5, a second and independent route. |
+| 2:1, gut-trained | **up to ~110 g/h** | Only offered when the athlete's own logs show they already tolerate the rate below it. |
+
+`src/engine/oxidation.ts` computes this from the products actually selected, and
+`recommend()` reports a `DeliverabilityCheck` alongside the target. A plan asking
+90 g/h from glucose-only gels is not an aggressive plan, it is an impossible one,
+and the failure mode is a ruined race.
+
+Two deliberate choices:
+
+- **Undeclared products count as glucose.** Under-promising the ceiling costs a
+  little performance; over-promising costs the session.
+- **Training cannot defeat saturation.** A logged tolerance only raises the
+  ceiling when the mix has a second transporter to raise it with.
+
+When the offering engine finds nothing suitable — which happens when the target
+needs a 2:1 blend and the library has none — the check runs against the library's
+best options instead, so the athlete gets a reason rather than an empty panel.
+
+## Carbohydrate burn
+
+Burn is no longer a lookup table. `carbBurnPerHourG()` takes a metabolic
+equivalent for the effort, multiplies by body mass for kcal/h, applies the
+carbohydrate share of that energy (the crossover: ~45 % easy, ~90 % at race
+effort), and divides by 4 kcal/g. A 55 kg runner and a 90 kg runner at the same
+effort no longer burn the same.

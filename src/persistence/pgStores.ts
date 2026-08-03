@@ -182,6 +182,11 @@ export class PgFeedbackStore implements FeedbackStore {
     return this.list(userId);
   }
 
+  async listAll(): Promise<SessionFeedback[]> {
+    const res = await this.pool.query<{ data: SessionFeedback }>("SELECT data FROM feedback");
+    return res.rows.map((r) => r.data);
+  }
+
   async list(userId: string): Promise<SessionFeedback[]> {
     const res = await this.pool.query<{ data: SessionFeedback }>(
       "SELECT data FROM feedback WHERE user_id = $1 ORDER BY date DESC",

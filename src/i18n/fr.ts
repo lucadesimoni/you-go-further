@@ -152,6 +152,12 @@ export const fr: Dictionary = {
   "plan.simulate": "Simuler",
   "plan.reset": "Réinitialiser",
   "plan.shopThisPlan": "Commander ce plan",
+  "absorb.title": "Plus que votre estomac ne peut absorber",
+  "absorb.ceiling": "max ~{ceiling} g/h",
+  "absorb.body":
+    "Le plan demande {target} g/h, mais ces produits n'en délivrent qu'environ {ceiling} g/h — près de {short} g/h resteraient dans l'estomac au lieu d'atteindre le muscle.",
+  "absorb.why":
+    "Les glucides traversent la paroi intestinale par des transporteurs, et le glucose sature le sien vers 60 g/h. Le fructose ouvre une seconde voie et porte le plafond à environ 90 g/h. Au-delà, l'excédent attire l'eau dans l'intestin — c'est généralement ce que veut dire « mon estomac s'est bloqué ».",
 
   "plan.pause": "Pause",
   "plan.replay": "Rejouer",
@@ -178,6 +184,26 @@ export const fr: Dictionary = {
   "insights.bandBuilding": "En progression",
   "insights.bandSolid": "Solide",
   "insights.bandDialledIn": "Parfaitement réglé",
+
+  // ---- Training load ------------------------------------------------------
+  "load.title": "Forme, fatigue et fraîcheur",
+  "load.fitness": "Condition",
+  "load.fitnessNote": "charge sur 42 jours",
+  "load.fatigue": "Fatigue",
+  "load.fatigueNote": "charge sur 7 jours",
+  "load.form": "Fraîcheur",
+  "load.formNote": "condition − fatigue",
+  "load.ramp": "Progression",
+  "load.rampNote": "par semaine",
+  "load.building": "en construction",
+  "load.steady": "stable",
+  "load.tapering": "en affûtage",
+  "load.detraining": "en perte",
+  "load.chartLabel": "Condition et fatigue des {days} derniers jours",
+  "load.explain":
+    "La condition est votre charge d'entraînement moyennée sur six semaines ; la fatigue, la même charge sur une semaine. La fraîcheur est l'écart entre les deux — négatif tant que vous chargez, positif une fois assimilé. Cela a sa place sur un écran de nutrition car chaque état change ce qu'il faut manger : une grosse fatigue rend les glucides et les protéines de récupération urgents, et une progression rapide relève votre plancher hebdomadaire de glucides.",
+  "load.explainMonotony":
+    "Monotonie {monotony} sur {days} jours actifs — à quel point vos journées se ressemblent. Au-delà de 2, les journées dures n'ont jamais de journée facile pour récupérer, et c'est là que s'accumulent stagnation et maladies.",
 
   // ---- Fuelling next actions (ids come from the engine) -------------------
   "action.logFirst": "Enregistrez votre prochaine séance",

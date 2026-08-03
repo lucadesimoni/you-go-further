@@ -347,6 +347,36 @@ await step("the start screen shows it as reviewed afterwards", async () => {
   if ((await page.locator(".pill-done").count()) === 0) throw new Error("logged session is not marked as reviewed");
 });
 
+console.log("── engine depth & crunching ──");
+await step("the plan refuses to promise more than a gut can absorb", async () => {
+  await page.click('button.topnav-tab:has-text("Plan")');
+  await page.waitForSelector("text=Carb / hour", { timeout: 15000 });
+  // A five-hour race is where the target climbs past what any gut takes.
+  await page.selectOption("#goal", "race-preparation");
+  await page.selectOption("#activity", "cycling");
+  await page.locator("#duration").fill("300");
+  await page.locator('.segmented button:has-text("Race")').first().click();
+  await page.waitForTimeout(1000);
+
+  const target = Number(/(\d+)/.exec(await page.locator('.stat:has-text("Carb / hour") .stat-value').first().innerText())?.[1]);
+  if (!(target > 90)) throw new Error(`expected a target above the absorption ceiling, got ${target}`);
+  await page.waitForSelector(".absorb-warn", { timeout: 10000 });
+  const warn = await page.locator(".absorb-warn").innerText();
+  if (!/g\/h/.test(warn)) throw new Error(`warning names no rate: ${warn}`);
+  // And it must say what to do, not just that something is wrong.
+  if ((await page.locator(".absorb-fix").innerText()).length < 10) throw new Error("no fix offered");
+});
+await step("fitness, fatigue and form are computed from real sessions", async () => {
+  await page.click('button.topnav-tab:has-text("Insights")');
+  await page.waitForSelector(".load", { timeout: 20000 });
+  const text = await page.locator(".load").innerText();
+  for (const label of ["Fitness", "Fatigue", "Form"]) {
+    if (!text.includes(label)) throw new Error(`${label} missing from the load card`);
+  }
+  // Two curves, not one — the whole point is the gap between them.
+  if ((await page.locator(".load-spark polyline").count()) !== 2) throw new Error("load chart is not fitness vs fatigue");
+});
+
 console.log("── phase 1: free, race-first, affiliate ──");
 await step("nothing is behind a paywall", async () => {
   await page.click(".account-btn");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { recommend, computeTarget } from "./recommend";
-import type { AthleteInput } from "./types";
+import type { AthleteInput, Product } from "./types";
 
 const base: AthleteInput = {
   goal: "endurance-performance",
@@ -158,5 +158,68 @@ describe("recommend – product selection", () => {
   it("always includes a safety/disclaimer note", () => {
     const r = recommend(base);
     expect(r.notes.some((n) => /not medical advice/i.test(n))).toBe(true);
+  });
+});
+
+describe("the plan checks itself against what a gut can absorb", () => {
+  const bigInput: AthleteInput = {
+    goal: "race-preparation",
+    activity: "cycling",
+    durationMin: 300,
+    intensity: "race",
+    bodyWeightKg: 75,
+  };
+
+  it("reports whether the chosen products can deliver the target", () => {
+    const rec = recommend(bigInput);
+    expect(rec.deliverability).toBeDefined();
+    expect(rec.deliverability!.targetG).toBe(rec.target.carbPerHourG);
+    expect(rec.deliverability!.ceilingG).toBeGreaterThan(0);
+  });
+
+  it("catches a high target served by glucose-only products", () => {
+    // A catalog with nothing multi-transportable in it: the ceiling is ~60 g/h
+    // no matter how much the athlete is told to eat.
+    const glucoseOnly: Product[] = [
+      {
+        id: "plain-gel",
+        name: "Plain Gel",
+        brand: "Test",
+        category: "gel",
+        phases: ["during"],
+        carbsG: 25,
+        sodiumMg: 30,
+        servingLabel: "1 gel",
+      },
+      {
+        id: "plain-drink",
+        name: "Plain Drink",
+        brand: "Test",
+        category: "drink-mix",
+        phases: ["during"],
+        carbsG: 40,
+        sodiumMg: 400,
+        servingLabel: "500 ml",
+      },
+    ];
+    const rec = recommend(bigInput, glucoseOnly);
+    expect(rec.target.carbPerHourG).toBeGreaterThan(60);
+    // The offering engine refuses glucose-only products at this target, which
+    // used to leave the during phase empty with no explanation at all.
+    expect(rec.phases.find((p) => p.phase === "during")!.products).toEqual([]);
+    expect(rec.deliverability!.deliverable).toBe(false);
+    expect(rec.deliverability!.fix).toMatch(/fructose/i);
+  });
+
+  it("passes when the plan really is deliverable", () => {
+    const easy: AthleteInput = { ...bigInput, intensity: "easy", durationMin: 90, goal: "general-fitness" };
+    const rec = recommend(easy);
+    expect(rec.deliverability!.deliverable).toBe(true);
+  });
+
+  it("says nothing at all when there is no during-session fuelling to check", () => {
+    const short: AthleteInput = { ...bigInput, durationMin: 30, intensity: "easy", goal: "general-fitness" };
+    const rec = recommend(short);
+    if (rec.target.carbPerHourG === 0) expect(rec.deliverability).toBeUndefined();
   });
 });

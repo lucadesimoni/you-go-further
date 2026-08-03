@@ -15,6 +15,7 @@ import { OfferingPanel } from "./OfferingPanel";
 import { EnergyProfile } from "./EnergyProfile";
 import { useT } from "../i18n";
 import { BuyLink } from "./BuyLink";
+import { Explain } from "./Explain";
 
 /** Only session-specific fields live in the planner now; body data comes from the profile. */
 export type SessionInput = Pick<AthleteInput, "goal" | "activity" | "durationMin" | "intensity" | "conditions">;
@@ -201,6 +202,31 @@ export function Planner({
             note={rec.target.sodiumSource === "measured" ? t("plan.measured") : undefined}
           />
         </div>
+
+        {/* A target the chosen products cannot absorb is not an ambitious plan,
+            it is an impossible one — and the failure lands mid-race. */}
+        {rec.deliverability && !rec.deliverability.deliverable && (
+          <div className="panel absorb-warn">
+            <div className="section-head">
+              <h3 className="absorb-title">{t("absorb.title")}</h3>
+              <span className="pill pill-todo">
+                {t("absorb.ceiling", { ceiling: rec.deliverability.ceilingG })}
+              </span>
+            </div>
+            <p className="detail">
+              {t("absorb.body", {
+                target: rec.deliverability.targetG,
+                ceiling: rec.deliverability.ceilingG,
+                short: rec.deliverability.shortfallG,
+              })}
+            </p>
+            <p className="absorb-fix">{rec.deliverability.fix}</p>
+            <Explain>
+              <p>{rec.deliverability.ceiling.reason}</p>
+              <p>{t("absorb.why")}</p>
+            </Explain>
+          </div>
+        )}
 
         <SessionTimeline schedule={schedule} />
 

@@ -49,6 +49,10 @@ describe("dictionary parity", () => {
         "home.distance",
         "guide.articles", // "articles" is the same word in French
         "account.menu", // Italian uses the English "Account"
+        "absorb.ceiling", // "max ~90 g/h" is the same abbreviation everywhere
+        "load.fitness", // "Fitness" is the same word in German
+        "load.form", // as is "Form"
+        "load.fatigue", // and "Fatigue" in French
       ]);
       const identical = keys.filter((k) => !allowedIdentical.has(k) && dict[k] === en[k]);
       expect(identical).toEqual([]);

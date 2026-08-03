@@ -38,3 +38,4 @@ export type {
   Climb,
   StopKind,
 } from "./routeFuelling";
+export * from "./oxidation";
