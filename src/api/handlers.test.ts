@@ -34,6 +34,15 @@ describe("API router", () => {
     expect((res.data as { status: string }).status).toBe("ok");
   });
 
+  it("reports what is deployed, module by module", async () => {
+    const res = await route(req("GET", "/api/version"));
+    expect(res.status).toBe(200);
+    const data = res.data as { platform: string; modules: { id: string; version: string }[] };
+    expect(data.platform).toMatch(/^\d+\.\d+\.\d+$/);
+    // The engine is the module a support question is most likely to be about.
+    expect(data.modules.find((m) => m.id === "engine")?.version).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
   it("recommends from a posted AthleteInput", async () => {
     const res = await route(req("POST", "/api/recommend", { body: input }));
     expect(res.status).toBe(200);

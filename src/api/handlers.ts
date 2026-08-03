@@ -47,6 +47,7 @@ import type { AthleteProfile } from "../users";
 import { computeProgress, fuellingScore } from "../progress";
 import { normalizeHealthSync, profileUpdateFromSync } from "../health";
 import { NUTRITION_GUIDE, GUIDE_CATEGORIES, GUIDE_DISCLAIMER } from "../content/nutritionGuide";
+import { versionManifest } from "../version";
 
 export interface ApiRequest {
   method: string;
@@ -588,6 +589,11 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
             storeBackend: config.storeBackend,
             activitiesStored: await store.count(),
           });
+
+        // What is actually deployed, module by module. A bug report that names
+        // a release is worth ten that describe "the current version".
+        case key === "GET /api/version":
+          return ok(versionManifest());
 
         case key === "POST /api/auth/session": {
           // Issue a signed session. In production the caller first verifies the

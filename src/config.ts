@@ -13,6 +13,7 @@
 import { ALL_PROVIDER_IDS } from "./providers";
 import type { ProviderId } from "./model";
 import type { Tier } from "./subscription";
+import { PLATFORM_VERSION } from "./version";
 
 export type StoreBackend = "memory" | "file" | "postgres" | "warehouse";
 
@@ -87,7 +88,7 @@ const DEFAULTS: AppConfig = {
   sellDirect: false,
   googleClientId: "",
   appleClientId: "",
-  version: "0.2.0",
+  version: PLATFORM_VERSION,
 };
 
 function readEnv(): RawConfig {

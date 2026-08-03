@@ -35,11 +35,14 @@ spelling is a convention, kept by review.
 | **Composition root** | `src/runtime.ts` | Wires store/providers/sinks from config — swap a backend without code changes. |
 | **Design system** | `src/styles.css`, `docs/design-system.md` | One token layer driving light + dark, with contrast-safe "ink" variants for text. |
 | **Languages** | `src/i18n/`, `docs/i18n.md` | Swiss German, French, Italian + English, with per-locale guard tests for parity, placeholders, accents and ss-not-ß. |
+| **Module reference** | `docs/modules.md`, `src/version.ts` | Every module: what it owns, what may be imported from it, its own version and how far its contract can be trusted. |
+| **Engine reference** | `docs/engine.md` | The engine file by file — targets, offering, schedule, absorption, terrain, heat, simulation. |
 | **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fuelling formulas. |
+| **Versions** | `CHANGELOG.md`, `GET /api/version` | One platform version per release, one contract version per module, reported by the running server. |
 | **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `user-flows.md`. |
 | **Vision & roadmap** | `docs/vision.md` | The seven phases, plus an honest read of where this code stands against Phase 1. |
 | **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |
-| **Tests** | `src/**/*.test.ts` | 46 Vitest cases across engine, analysis, data pipeline, subscription, RBAC, and runtime. |
+| **Tests** | `src/**/*.test.ts`, `scripts/` | 531 Vitest cases across engine, analysis, geo, i18n, auth, data pipeline, subscription and RBAC; plus a real-browser e2e journey and a mobile parity smoke. |
 
 ## Deploy anywhere
 

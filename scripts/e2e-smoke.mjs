@@ -44,6 +44,25 @@ const step = async (label, fn) => {
 
 const email = `smoke-${Date.now()}@club.ch`;
 
+console.log("── what is deployed ──");
+await step("the running server states its own version, module by module", async () => {
+  // Through the real Node server, not the pure router a unit test calls: the
+  // route has to actually be reachable on the deployment.
+  const res = await fetch(`${B}/api/version`);
+  if (!res.ok) throw new Error(`GET /api/version → ${res.status}`);
+  const manifest = await res.json();
+  if (!/^\d+\.\d+\.\d+$/.test(manifest.platform ?? "")) throw new Error(`no platform version: ${manifest.platform}`);
+  if (!Array.isArray(manifest.modules) || manifest.modules.length < 20) {
+    throw new Error(`manifest lists ${manifest.modules?.length} modules`);
+  }
+  // Health and the manifest must agree — two version numbers is how a bug
+  // report ends up naming a release that was never deployed.
+  const health = await (await fetch(`${B}/api/health`)).json();
+  if (health.version !== manifest.platform) {
+    throw new Error(`health says ${health.version}, manifest says ${manifest.platform}`);
+  }
+});
+
 console.log("── sign in (magic link) ──");
 await page.goto(B, { waitUntil: "networkidle" });
 await step("login screen renders", () => page.waitForSelector("text=Fuel smarter, go further"));

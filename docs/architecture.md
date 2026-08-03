@@ -25,6 +25,14 @@ for.
 
 ## Modules
 
+The full module reference — every module, its version, its layer, what may be
+imported from it, and why anything less than stable is less than stable — lives
+in [`modules.md`](./modules.md), backed by the machine-readable manifest in
+`src/version.ts` and served by `GET /api/version`. The engine has its own
+file-by-file reference in [`engine.md`](./engine.md).
+
+What follows is the narrative version of the parts that carry the most weight.
+
 ### `src/model.ts` — shared domain
 The provider-neutral `Activity` shape every layer speaks. Adding a provider or a
 storage backend never changes it.
@@ -114,7 +122,7 @@ disclosures, form controls). No component hard-codes a colour or radius. See
 `docs/design-system.md`.
 
 ## Testing
-`npm test` — 519 Vitest cases across engine, analysis, geo, i18n, auth, the data
+`npm test` — 531 Vitest cases across engine, analysis, geo, i18n, auth, the data
 pipeline (registry, dedup, concurrent ingest, export), and subscription gating.
 `npm run e2e` drives the whole journey in a real browser against a running
 server; `npm run e2e:mobile` does the same for the mobile screens.
