@@ -27,6 +27,7 @@ import { InMemorySettingsStore, defaultSettings, type SettingsStore } from "./se
 import { InMemoryAffiliateStore, InMemoryOrderStore, type AffiliateStore, type OrderStore } from "./commerce";
 import { paymentProviderFromEnv, type PaymentProvider } from "./commerce/payments";
 import { InMemoryMagicLinkStore, type MagicLinkStore } from "./auth/magicLink";
+import { InMemoryApiKeyStore, type ApiKeyStore } from "./api/apiKeys";
 import { mailerFromEnv, type Mailer } from "./auth/mailer";
 import {
   FileActivityStore,
@@ -37,6 +38,7 @@ import {
   FileSettingsStore,
   FileOrderStore,
   FileAffiliateStore,
+  FileApiKeyStore,
   FileMagicLinkStore,
   FileProfileStore,
   createPgStores,
@@ -54,6 +56,8 @@ export interface Runtime {
   orders: OrderStore;
   /** Ledger of hand-offs to partner shops — the Phase-1 revenue trail. */
   affiliate: AffiliateStore;
+  /** Credentials for the public `/v1` engine — the Phase-6 licensing surface. */
+  apiKeys: ApiKeyStore;
   magicLinks: MagicLinkStore;
   profiles: ProfileStore;
   payments: PaymentProvider;
@@ -73,6 +77,7 @@ interface StoreSet {
   settings: SettingsStore;
   orders: OrderStore;
   affiliate: AffiliateStore;
+  apiKeys: ApiKeyStore;
   magicLinks: MagicLinkStore;
   profiles: ProfileStore;
   init?: () => Promise<void>;
@@ -93,6 +98,7 @@ function createStores(config: AppConfig): StoreSet {
         settings: new FileSettingsStore(dir, settings),
         orders: new FileOrderStore(dir),
         affiliate: new FileAffiliateStore(dir),
+        apiKeys: new FileApiKeyStore(dir),
         magicLinks: new FileMagicLinkStore(dir),
         profiles: new FileProfileStore(dir),
       };
@@ -109,6 +115,10 @@ function createStores(config: AppConfig): StoreSet {
           settings: pg.settings,
           orders: pg.orders,
           affiliate: pg.affiliate,
+          // Postgres has no key table yet; keys stay on disk beside it rather
+          // than silently living only in memory, where a redeploy would revoke
+          // every partner's credential at once.
+          apiKeys: new FileApiKeyStore(config.dataDir),
           magicLinks: pg.magicLinks,
           profiles: pg.profiles,
           init: pg.init,
@@ -131,6 +141,7 @@ function createStores(config: AppConfig): StoreSet {
     settings: new InMemorySettingsStore(settings),
     orders: new InMemoryOrderStore(),
     affiliate: new InMemoryAffiliateStore(),
+    apiKeys: new InMemoryApiKeyStore(),
     magicLinks: new InMemoryMagicLinkStore(),
     profiles: new InMemoryProfileStore(),
   };
@@ -158,7 +169,7 @@ function createRegistry(config: AppConfig): ProviderRegistry {
 /** Assemble the runtime from a config (defaults to the resolved app config). */
 export function createRuntime(config: AppConfig = getConfig()): Runtime {
   const registry = createRegistry(config);
-  const { store, feedback, connections, products, users, settings, orders, affiliate, magicLinks, profiles, init } =
+  const { store, feedback, connections, products, users, settings, orders, affiliate, apiKeys, magicLinks, profiles, init } =
     createStores(config);
   const sinks: ExportSink[] = config.exportEnabled ? [new BufferSink()] : [];
   // Stream to Databricks when configured (big-data egress).
@@ -176,6 +187,7 @@ export function createRuntime(config: AppConfig = getConfig()): Runtime {
     settings,
     orders,
     affiliate,
+    apiKeys,
     magicLinks,
     profiles,
     payments: paymentProviderFromEnv(),

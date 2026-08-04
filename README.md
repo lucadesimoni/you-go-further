@@ -39,10 +39,11 @@ spelling is a convention, kept by review.
 | **Engine reference** | `docs/engine.md` | The engine file by file — targets, offering, schedule, absorption, terrain, heat, simulation. |
 | **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fuelling formulas. |
 | **Versions** | `CHANGELOG.md`, `GET /api/version` | One platform version per release, one contract version per module, reported by the running server. |
+| **Public engine API** | `/v1`, `docs/public-api.md` | The licensable surface: per-tenant keys, scopes, rate limits, usage metering, and a versioned contract with golden shape tests. |
 | **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `user-flows.md`. |
 | **Vision & roadmap** | `docs/vision.md` | The seven phases, plus an honest read of where this code stands against Phase 1. |
 | **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |
-| **Tests** | `src/**/*.test.ts`, `scripts/` | 531 Vitest cases across engine, analysis, geo, i18n, auth, data pipeline, subscription and RBAC; plus a real-browser e2e journey and a mobile parity smoke. |
+| **Tests** | `src/**/*.test.ts`, `scripts/` | 580 Vitest cases across engine, analysis, geo, i18n, auth, data pipeline, subscription and RBAC; plus a real-browser e2e journey and a mobile parity smoke. |
 
 ## Deploy anywhere
 

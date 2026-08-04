@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.3.0";
+export const PLATFORM_VERSION = "0.4.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -249,12 +249,25 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "api",
     path: "src/api",
-    version: "1.1.0",
+    version: "1.2.0",
     layer: "platform",
     stability: "stable",
     summary:
-      "The HTTP contract: a pure request router shared by the Node server and the Vercel adapter, and the browser client that speaks to it.",
-    publicApi: ["createApiRouter", "api", "isApiConfigured", "getSessionToken"],
+      "Two HTTP surfaces: `/api/*`, the pure router our own app uses, shared by the Node server and the Vercel adapter; and `/v1/*`, the versioned public engine contract with per-tenant keys, rate limiting and usage metering.",
+    publicApi: [
+      "createApiRouter",
+      "api",
+      "isApiConfigured",
+      "getSessionToken",
+      "v1Plan",
+      "v1Course",
+      "v1Absorption",
+      "v1Heat",
+      "issueApiKey",
+      "checkApiKey",
+      "RateLimiter",
+      "UsageMeter",
+    ],
   },
 
   // ---- Interface: React and the browser -----------------------------------

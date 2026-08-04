@@ -772,3 +772,149 @@ describe("crunching: load analytics and the cohort", () => {
     expect((res.data as { series: unknown[] }).series.length).toBeLessThanOrEqual(90);
   });
 });
+
+describe("public engine API (/v1)", () => {
+  let route: ReturnType<typeof createApiRouter>;
+  const owner: Principal = { id: "o1", name: "Owner", role: "owner", orgId: "fuel-labs", tier: "elite" };
+
+  const session = {
+    goal: "race-preparation",
+    activity: "trail-running",
+    intensity: "race",
+    durationMin: 240,
+    bodyWeightKg: 70,
+  };
+
+  /** Issue a key through the admin endpoint, the way an operator actually would. */
+  async function issue(over: Record<string, unknown> = {}): Promise<string> {
+    const res = await route(
+      req("POST", "/api/keys", { principal: owner, body: { tenantId: "garmin", name: "pilot", ...over } }),
+    );
+    expect(res.status).toBe(201);
+    return (res.data as { secret: string }).secret;
+  }
+
+  beforeEach(() => {
+    route = createApiRouter(createRuntime({ ...getConfig(), enabledProviders: ["garmin"] }));
+  });
+
+  it("refuses an unauthenticated call — this is not an open endpoint", async () => {
+    const res = await route(req("POST", "/v1/plan", { body: session }));
+    expect(res.status).toBe(401);
+    expect((res.data as { error: string }).error).toBe("unauthorized");
+  });
+
+  it("refuses a key that was never issued", async () => {
+    const res = await route(req("POST", "/v1/plan", { body: session, headers: { "x-api-key": "ygf_test_made_up" } }));
+    expect(res.status).toBe(401);
+  });
+
+  it("answers a valid key, and takes it from either header", async () => {
+    const secret = await issue();
+    const forms: Record<string, string>[] = [{ "x-api-key": secret }, { authorization: `Bearer ${secret}` }];
+    for (const headers of forms) {
+      const res = await route(req("POST", "/v1/plan", { body: session, headers }));
+      expect(res.status).toBe(200);
+      expect((res.data as { target: { carbPerHourG: number } }).target.carbPerHourG).toBeGreaterThan(0);
+    }
+  });
+
+  it("separates 'who are you' from 'not with that key'", async () => {
+    // A plan-only key must not reach the course endpoint, and the status has to
+    // say why — a partner debugging an integration needs to tell them apart.
+    const secret = await issue({ scopes: ["plan"] });
+    const res = await route(
+      req("POST", "/v1/course", { body: { session, route: [] }, headers: { "x-api-key": secret } }),
+    );
+    expect(res.status).toBe(403);
+    expect((res.data as { error: string }).error).toBe("insufficient_scope");
+  });
+
+  it("lets meta through on any valid key, so a partner can discover their own scopes", async () => {
+    const secret = await issue({ scopes: ["course"] });
+    const res = await route(req("GET", "/v1/meta", { headers: { "x-api-key": secret } }));
+    expect(res.status).toBe(200);
+    expect((res.data as { scopes: string[] }).scopes).toEqual(["course"]);
+  });
+
+  it("rate-limits per key and says when to come back", async () => {
+    const secret = await issue({ rateLimitPerMin: 3 });
+    const call = () => route(req("POST", "/v1/plan", { body: session, headers: { "x-api-key": secret } }));
+    for (let i = 0; i < 3; i++) expect((await call()).status).toBe(200);
+    const limited = await call();
+    expect(limited.status).toBe(429);
+    expect((limited.data as { retryAfterSec: number }).retryAfterSec).toBeGreaterThan(0);
+  });
+
+  it("stops serving a revoked key immediately", async () => {
+    const secret = await issue();
+    const list = await route(req("GET", "/api/keys", { principal: owner }));
+    const id = (list.data as { keys: { id: string }[] }).keys[0].id;
+
+    expect((await route(req("POST", "/v1/plan", { body: session, headers: { "x-api-key": secret } }))).status).toBe(200);
+    await route(req("DELETE", `/api/keys/${id}`, { principal: owner }));
+    const after = await route(req("POST", "/v1/plan", { body: session, headers: { "x-api-key": secret } }));
+    expect(after.status).toBe(401);
+  });
+
+  it("never returns a hash or a usable secret when listing keys", async () => {
+    const secret = await issue();
+    const res = await route(req("GET", "/api/keys", { principal: owner }));
+    const body = JSON.stringify(res.data);
+    expect(body).not.toContain("hash");
+    // The whole secret must be gone. The prefix stays on purpose — it is how an
+    // operator tells two keys apart in a list — so the test that matters is
+    // that it is a prefix and not the key.
+    expect(body).not.toContain(secret);
+    const [key] = (res.data as { keys: { prefix: string }[] }).keys;
+    expect(secret.startsWith(key.prefix)).toBe(true);
+    expect(key.prefix.length).toBeLessThanOrEqual(16);
+    expect(secret.length - key.prefix.length).toBeGreaterThan(20);
+  });
+
+  it("counts usage against the tenant, for the licence conversation", async () => {
+    const secret = await issue();
+    await route(req("POST", "/v1/plan", { body: session, headers: { "x-api-key": secret } }));
+    await route(req("POST", "/v1/heat", { body: { bodyWeightKg: 70, intensity: "race", temperatureC: 28, humidityPct: 60 }, headers: { "x-api-key": secret } }));
+    const res = await route(req("GET", "/api/keys", { principal: owner }));
+    const usage = (res.data as { usage: { calls: Record<string, number>; total: number }[] }).usage;
+    expect(usage[0].total).toBe(2);
+    expect(usage[0].calls).toEqual({ plan: 1, heat: 1 });
+  });
+
+  it("keeps an anonymous caller out of key administration entirely", async () => {
+    // The transport resolves `x-role` to a principal only where demo role
+    // switching is on; with no session at all, the request arrives as an
+    // anonymous athlete and must get nowhere near issuing a credential.
+    const anon: Principal = { id: "anon", name: "Anonymous", role: "athlete", tier: "free" };
+    expect((await route(req("GET", "/api/keys", { principal: anon }))).status).toBe(403);
+    expect((await route(req("POST", "/api/keys", { principal: anon, body: { tenantId: "x", name: "y" } }))).status).toBe(403);
+    expect((await route(req("DELETE", "/api/keys/k_1", { principal: anon }))).status).toBe(403);
+  });
+
+  it("keeps key administration to an owner", async () => {
+    const res = await route(req("POST", "/api/keys", { principal: athlete, body: { tenantId: "x", name: "y" } }));
+    expect(res.status).toBe(403);
+  });
+
+  it("requires a tenant, so usage is always attributable to someone", async () => {
+    const res = await route(req("POST", "/api/keys", { principal: owner, body: { name: "orphan" } }));
+    expect(res.status).toBe(400);
+  });
+
+  it("answers the same on both deployments, however the platform rewrites the path", async () => {
+    // Vercel delivers /v1/plan as /api/v1/plan. One router, one answer.
+    const secret = await issue();
+    const direct = await route(req("POST", "/v1/plan", { body: session, headers: { "x-api-key": secret } }));
+    const rewritten = await route(req("POST", "/api/v1/plan", { body: session, headers: { "x-api-key": secret } }));
+    expect(direct.status).toBe(200);
+    expect(rewritten.status).toBe(200);
+    expect((rewritten.data as { target: unknown }).target).toEqual((direct.data as { target: unknown }).target);
+  });
+
+  it("404s an unknown v1 endpoint rather than falling through to an app route", async () => {
+    const secret = await issue();
+    const res = await route(req("GET", "/v1/activities", { headers: { "x-api-key": secret } }));
+    expect(res.status).toBe(404);
+  });
+});

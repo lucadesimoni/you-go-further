@@ -33,9 +33,17 @@ const MIME: Record<string, string> = {
 };
 
 /**
- * Resolve a Principal, preferring a signed session (Authorization: Bearer …) and
- * falling back to the `x-role` demo header when no valid token is present.
+ * Resolve a Principal, preferring a signed session (Authorization: Bearer …).
+ *
+ * The `x-role` fallback is a **demo affordance**, and it is honoured only where
+ * demo role switching is switched on. It used to be honoured everywhere, which
+ * meant an unauthenticated request carrying `x-role: admin` became an org admin
+ * on any deployment — `allowRoleSwitching` gated the UI's role picker and
+ * nothing else. With API keys behind an owner-only endpoint, that gap would have
+ * let anyone mint a credential for themselves.
  */
+const ANONYMOUS: Principal = { id: "anon", name: "Anonymous", role: "athlete", tier: "free" };
+
 function principalFrom(headers: http.IncomingHttpHeaders): Principal {
   const auth = String(headers["authorization"] ?? "");
   if (auth.startsWith("Bearer ")) {
@@ -44,15 +52,15 @@ function principalFrom(headers: http.IncomingHttpHeaders): Principal {
       return { id: claims.sub, name: claims.name, role: claims.role, tier: claims.tier, orgId: claims.orgId };
     }
   }
+  if (!getConfig().allowRoleSwitching) return ANONYMOUS;
   const role = String(headers["x-role"] ?? "athlete");
-  const match = PERSONAS.find((p) => p.role === role);
-  return match ?? { id: "anon", name: "Anonymous", role: "athlete", tier: "free" };
+  return PERSONAS.find((p) => p.role === role) ?? ANONYMOUS;
 }
 
 function cors(res: http.ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "content-type,x-role,authorization");
+  res.setHeader("Access-Control-Allow-Headers", "content-type,x-role,authorization,x-api-key");
 }
 
 async function serveStatic(pathname: string, res: http.ServerResponse): Promise<boolean> {
@@ -84,7 +92,11 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
   const pathname = url.pathname;
 
-  if (pathname.startsWith("/api/")) {
+  // Two API surfaces reach the same router: `/api/` for our own app, and `/v1/`
+  // for the public engine contract. Without `/v1` here it falls through to the
+  // static handler, which answers every unknown path with the SPA — so an
+  // unauthenticated call to a keyed endpoint would come back 200 with a page.
+  if (pathname.startsWith("/api/") || pathname === "/v1" || pathname.startsWith("/v1/")) {
     let body: unknown;
     let rawBody: string | undefined;
     if (req.method === "POST") {

@@ -63,6 +63,63 @@ await step("the running server states its own version, module by module", async 
   }
 });
 
+console.log("── the public engine API ──");
+await step("/v1 refuses an unauthenticated call and serves a keyed one", async () => {
+  // Through the real Node server, not the pure router: a licensable API that
+  // only works in a unit test is not a licensable API.
+  const unauth = await fetch(`${B}/v1/plan`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ activity: "running", intensity: "race", durationMin: 180, bodyWeightKg: 70 }),
+  });
+  if (unauth.status !== 401) throw new Error(`unauthenticated /v1/plan returned ${unauth.status}, expected 401`);
+
+  // Issue a key the way an operator would, as an owner.
+  const issued = await fetch(`${B}/api/keys`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-role": "admin" },
+    body: JSON.stringify({ tenantId: "e2e", name: "smoke", scopes: ["plan", "course"] }),
+  });
+  if (issued.status !== 201) throw new Error(`issuing a key returned ${issued.status}`);
+  const { secret, key } = await issued.json();
+  if (!secret || !/^ygf_(live|test)_/.test(secret)) throw new Error(`unexpected key format: ${secret}`);
+  if (JSON.stringify(key).includes(secret)) throw new Error("the stored key record contains the secret");
+
+  const plan = await fetch(`${B}/v1/plan`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": secret },
+    body: JSON.stringify({
+      goal: "race-preparation",
+      activity: "trail-running",
+      intensity: "race",
+      durationMin: 300,
+      bodyWeightKg: 70,
+    }),
+  });
+  if (!plan.ok) throw new Error(`keyed /v1/plan returned ${plan.status}`);
+  const body = await plan.json();
+  if (!body.contract || !body.engine) throw new Error("response is not version-stamped");
+  if (!(body.target?.carbPerHourG > 0)) throw new Error("no carbohydrate target returned");
+  // The watch payload: an ordered list of "at this minute, do this".
+  if (!Array.isArray(body.cues) || body.cues.length < 4) throw new Error("no cue schedule for a watch to count down");
+  const times = body.cues.map((c) => c.atMin);
+  if (times.some((t, i) => i > 0 && t < times[i - 1])) throw new Error("cues are not in time order");
+
+  // A key without the catalog scope must be refused there, with 403 not 401.
+  const scoped = await fetch(`${B}/v1/catalog`, { headers: { "x-api-key": secret } });
+  if (scoped.status !== 403) throw new Error(`out-of-scope call returned ${scoped.status}, expected 403`);
+
+  // Revoking has to bite immediately, not at the next restart.
+  const del = await fetch(`${B}/api/keys/${key.id}`, { method: "DELETE", headers: { "x-role": "admin" } });
+  if (!del.ok) throw new Error(`revoking returned ${del.status}`);
+  const after = await fetch(`${B}/v1/plan`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": secret },
+    body: JSON.stringify({ activity: "running", intensity: "race", durationMin: 180, bodyWeightKg: 70 }),
+  });
+  if (after.status !== 401) throw new Error(`a revoked key still returned ${after.status}`);
+});
+
 console.log("── sign in (magic link) ──");
 await page.goto(B, { waitUntil: "networkidle" });
 await step("login screen renders", () => page.waitForSelector("text=Fuel smarter, go further"));

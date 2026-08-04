@@ -48,6 +48,9 @@ import { computeProgress, fuellingScore } from "../progress";
 import { normalizeHealthSync, profileUpdateFromSync } from "../health";
 import { NUTRITION_GUIDE, GUIDE_CATEGORIES, GUIDE_DISCLAIMER } from "../content/nutritionGuide";
 import { versionManifest } from "../version";
+import { v1Plan, v1Course, v1Absorption, v1Heat, v1Meta, v1Catalog, CONTRACT_VERSION } from "./publicApi";
+import { checkApiKey, issueApiKey, publicKeyView, ALL_SCOPES, type ApiScope } from "./apiKeys";
+import { RateLimiter, UsageMeter } from "./rateLimit";
 
 export interface ApiRequest {
   method: string;
@@ -86,9 +89,17 @@ const GI_RATINGS: GiRating[] = ["none", "mild", "severe"];
 const ENERGY_RATINGS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
 
 export function createApiRouter(runtime: Runtime = createRuntime()) {
-  const { config, store, pipeline, feedback, registry, connections, products, users, settings, orders, affiliate, magicLinks, profiles, payments, mailer } = runtime;
+  const { config, store, pipeline, feedback, registry, connections, products, users, settings, orders, affiliate, apiKeys, magicLinks, profiles, payments, mailer } = runtime;
 
   const isProvider = (v: string): v is ProviderId => (ALL_PROVIDER_IDS as string[]).includes(v);
+
+  /**
+   * One limiter and one meter per router, so they live as long as the process.
+   * Both are keyed by API key id — "which partner" is the only dimension either
+   * question has ever cared about.
+   */
+  const limiter = new RateLimiter();
+  const meter = new UsageMeter();
 
   /** Apply a payment outcome: mark the order and, for plans, move the user's tier. */
   async function settleOrder(order: Order, outcome: "paid" | "failed"): Promise<void> {
@@ -161,6 +172,91 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
     const segs = path.split("/").filter(Boolean); // ["api","oauth","strava","callback"]
 
     try {
+      /**
+       * --- The public engine API: `/v1/*` -----------------------------------
+       *
+       * A different surface with different rules, and it comes first because it
+       * must never fall through into an app route by accident. It authenticates
+       * with an API key rather than a session — a watch has no cookie jar and no
+       * athlete to log in — and answers purely from its request body.
+       */
+      // Vercel routes functions under `/api/`, so its rewrite delivers
+      // `/v1/plan` as `/api/v1/plan` while the Node server sees `/v1/plan`.
+      // Normalising here is what keeps one router from behaving like two.
+      if (segs[0] === "v1" || (segs[0] === "api" && segs[1] === "v1")) {
+        const v1Segs = segs[0] === "v1" ? segs : segs.slice(1);
+        const presented =
+          headers?.["x-api-key"] ??
+          (String(headers?.["authorization"] ?? "").startsWith("Bearer ")
+            ? String(headers?.["authorization"]).slice(7)
+            : undefined);
+
+        const endpoint = v1Segs[1] ?? "";
+        // Which scope this endpoint needs. `meta` needs only a valid key: a
+        // partner has to be able to discover what their key can do.
+        const needed: Record<string, ApiScope | undefined> = {
+          meta: undefined,
+          plan: "plan",
+          absorption: "plan",
+          heat: "plan",
+          course: "course",
+          catalog: "catalog",
+        };
+        if (!(endpoint in needed)) return { status: 404, data: { error: "unknown_endpoint", contract: CONTRACT_VERSION } };
+
+        const check = await checkApiKey(presented, apiKeys, needed[endpoint]);
+        if (!check.ok || !check.key) {
+          // 401 for "who are you", 403 for "not with that key" — a partner
+          // debugging an integration needs to be able to tell those apart.
+          const status = check.reason === "scope" ? 403 : 401;
+          return {
+            status,
+            data: {
+              error: check.reason === "scope" ? "insufficient_scope" : "unauthorized",
+              detail:
+                check.reason === "missing"
+                  ? "Send your key as `X-API-Key` or `Authorization: Bearer`."
+                  : check.reason === "revoked"
+                    ? "This key has been revoked."
+                    : check.reason === "scope"
+                      ? `This key does not carry the \`${needed[endpoint]}\` scope.`
+                      : "Unknown API key.",
+              contract: CONTRACT_VERSION,
+            },
+          };
+        }
+
+        const gate = limiter.take(check.key.id, check.key.rateLimitPerMin);
+        if (!gate.allowed) {
+          return {
+            status: 429,
+            data: {
+              error: "rate_limited",
+              detail: `Limit is ${gate.limit} requests a minute. Retry in ${gate.retryAfterSec}s.`,
+              retryAfterSec: gate.retryAfterSec,
+              contract: CONTRACT_VERSION,
+            },
+          };
+        }
+
+        meter.record(check.key.id, check.key.tenantId, endpoint);
+        // Cheap enough to write on every call, and it is the field that answers
+        // "is this integration still live?" in a licensing conversation.
+        void apiKeys.update(check.key.id, { lastUsedAt: new Date().toISOString() });
+
+        // A tenant's own product library, when they have one, so the plans name
+        // their products rather than ours.
+        const catalog = mergeCatalog(await products.list());
+
+        if (method === "GET" && endpoint === "meta") return v1Meta(check.key.scopes, check.key.rateLimitPerMin);
+        if (method === "GET" && endpoint === "catalog") return v1Catalog(catalog);
+        if (method === "POST" && endpoint === "plan") return v1Plan(body, catalog);
+        if (method === "POST" && endpoint === "course") return v1Course(body, catalog);
+        if (method === "POST" && endpoint === "absorption") return v1Absorption(body, catalog);
+        if (method === "POST" && endpoint === "heat") return v1Heat(body);
+        return { status: 405, data: { error: "method_not_allowed", contract: CONTRACT_VERSION } };
+      }
+
       // --- OAuth connect flow: /api/oauth/:provider/(authorize-url|dev-consent|callback) ---
       if (segs[0] === "api" && segs[1] === "oauth" && method === "GET") {
         const provider = segs[2];
@@ -289,6 +385,63 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         };
         await affiliate.record(click);
         return ok({ recorded: true, tracked: click.tracked });
+      }
+
+      /**
+       * --- API key administration -------------------------------------------
+       *
+       * Issuing a credential to a licensee is an owner-level act, so it sits
+       * behind `org:configure` rather than any athlete-facing role.
+       */
+      if (segs[0] === "api" && segs[1] === "keys") {
+        authorize(await currentPrincipal(principal), "org:configure");
+
+        if (method === "GET" && segs.length === 2) {
+          const keys = await apiKeys.list(query.tenantId || undefined);
+          return ok({
+            // Never the hash, and never a secret: there is nothing here that
+            // could be replayed against the API.
+            keys: keys.map(publicKeyView),
+            usage: meter.list(query.tenantId || undefined).slice(0, 60),
+            scopes: ALL_SCOPES,
+          });
+        }
+
+        if (method === "POST" && segs.length === 2) {
+          const b = (body ?? {}) as Record<string, unknown>;
+          const tenantId = typeof b.tenantId === "string" ? b.tenantId.trim() : "";
+          if (!tenantId) return bad("tenantId is required");
+          const scopes = Array.isArray(b.scopes)
+            ? (b.scopes.filter((x): x is ApiScope => ALL_SCOPES.includes(x as ApiScope)))
+            : undefined;
+          const issued = issueApiKey({
+            tenantId,
+            name: typeof b.name === "string" ? b.name : "",
+            ...(scopes && scopes.length > 0 ? { scopes } : {}),
+            ...(typeof b.rateLimitPerMin === "number" ? { rateLimitPerMin: b.rateLimitPerMin } : {}),
+            environment: config.environment,
+          });
+          await apiKeys.create(issued.key);
+          // The one and only time the plaintext exists outside the caller's
+          // hands. It is not stored, so it cannot be shown again — and the
+          // response says so rather than leaving them to find out.
+          return {
+            status: 201,
+            data: {
+              key: publicKeyView(issued.key),
+              secret: issued.secret,
+              notice: "Copy this key now. Only a hash is stored, so it cannot be shown again.",
+            },
+          };
+        }
+
+        // DELETE /api/keys/:id — revoke. The record stays, so the usage history
+        // it accumulated stays attributable.
+        if (method === "DELETE" && segs[2]) {
+          const updated = await apiKeys.update(segs[2], { revokedAt: new Date().toISOString() });
+          if (!updated) return notFound();
+          return ok({ key: publicKeyView(updated) });
+        }
       }
 
       if (key === "GET /api/affiliate/summary") {

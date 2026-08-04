@@ -17,6 +17,7 @@ import { createRuntime } from "../src/runtime";
 import { PERSONAS } from "../src/personas";
 import type { Principal } from "../src/auth/roles";
 import { verifySession, DEV_AUTH_SECRET } from "../src/auth/jwt";
+import { getConfig } from "../src/config";
 
 // Created once per warm instance and reused across invocations (keeps the pg
 // pool alive). Migrations run lazily on the first request via a memoized promise.
@@ -29,7 +30,9 @@ function ensureInit(): Promise<void> {
   return initPromise;
 }
 
-/** Same precedence as the Node server: signed session, else the x-role demo header. */
+/** Same precedence, and the same gate, as the Node server. */
+const ANONYMOUS: Principal = { id: "anon", name: "Anonymous", role: "athlete", tier: "free" };
+
 function principalFrom(headers: IncomingMessage["headers"]): Principal {
   const auth = String(headers["authorization"] ?? "");
   if (auth.startsWith("Bearer ")) {
@@ -38,9 +41,10 @@ function principalFrom(headers: IncomingMessage["headers"]): Principal {
       return { id: claims.sub, name: claims.name, role: claims.role, tier: claims.tier, orgId: claims.orgId };
     }
   }
+  // The `x-role` demo header is honoured only where demo role switching is on.
+  if (!getConfig().allowRoleSwitching) return ANONYMOUS;
   const role = String(headers["x-role"] ?? "athlete");
-  const match = PERSONAS.find((p) => p.role === role);
-  return match ?? { id: "anon", name: "Anonymous", role: "athlete", tier: "free" };
+  return PERSONAS.find((p) => p.role === role) ?? ANONYMOUS;
 }
 
 type VercelRequest = IncomingMessage & { body?: unknown; query?: Record<string, string | string[]> };
@@ -62,7 +66,7 @@ async function readBody(req: VercelRequest): Promise<unknown> {
 export default async function handler(req: VercelRequest, res: ServerResponse): Promise<void> {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "content-type,x-role,authorization");
+  res.setHeader("Access-Control-Allow-Headers", "content-type,x-role,authorization,x-api-key");
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     return void res.end();
@@ -88,6 +92,13 @@ export default async function handler(req: VercelRequest, res: ServerResponse): 
       path: url.pathname,
       query,
       body,
+      // Without these the router is blind to `x-api-key`, so every public `/v1`
+      // call would look unauthenticated on this deployment while working on the
+      // other one — the exact class of drift this shared router exists to avoid.
+      headers: Object.fromEntries(
+        Object.entries(req.headers).map(([k, v]) => [k, Array.isArray(v) ? v.join(",") : String(v ?? "")]),
+      ),
+      ...(typeof body === "string" ? { rawBody: body } : {}),
       principal: principalFrom(req.headers),
     });
 

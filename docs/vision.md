@@ -109,9 +109,12 @@ An honest read, not a status report. Phase 1 is **a free Swiss app, three sports
 connect Garmin or Strava, import a race or a route, get a plan, order from partners,
 revenue from affiliate commission.**
 
-> **Status:** the four gaps this document originally named are closed. What
-> remains before a launch is commercial rather than technical — signing the brand
-> agreements that turn the outbound links from untracked into earning.
+> **Status:** the four Phase-1 gaps this document originally named are closed, and
+> what remains before a launch is commercial rather than technical — signing the
+> brand agreements that turn the outbound links from untracked into earning.
+> Phase 3's cross-athlete learning and Phase 6's licensable contract are built;
+> Phase 2 needs a Garmin developer account and a Monkey C app, which do not live
+> in this repository.
 
 ## Already there
 
@@ -180,20 +183,56 @@ than none.
   and maintained. Nothing in Phase 1 needs them; they are the Phase-6 B2B asset
   arriving five phases early, and every screen is a screen to keep working.
 
-## What Phase 3 will need that today's loop cannot do
+## Phase 3 — the second direction of learning, now built
 
-The engine learns **per athlete, from that athlete's own logs** — `deriveAdaptation`
-reads the last eight sessions of one user. "Millionen echter Entscheidungen" needs
-the opposite direction: outcomes pooled across users, so a product that reliably
-causes GI distress at 90 g/h is known before *this* athlete finds out. That is a
-different data model (anonymised outcome events, not per-user feedback rows) and it
-is worth designing before the user base makes migration painful.
+The engine used to learn **only per athlete, from that athlete's own logs**.
+"Millionen echter Entscheidungen" needs the opposite direction too: outcomes
+pooled across users, so a rate that reliably causes GI distress is known before
+*this* athlete finds out.
+
+`src/analysis/cohort.ts` is that model — deliberately a different one, anonymous
+outcome observations rather than per-user feedback rows, so it never becomes a
+way to read one athlete's history. Three rules make it defensible: nothing
+identifying leaves the store, a rate band stays silent below twelve observations,
+and proportions carry a **Wilson interval** rather than a bare percentage,
+because "3 of 4" is not 75 %. An observation is only recorded when the athlete
+reported what they *actually* took — using the planned rate would make the cohort
+agree with our own advice and learn nothing.
+
+The athlete's own logs still win when they exist. The cohort is what a *first*
+plan starts from, instead of the middle of the range.
+
+**Still ahead for Phase 3:** the vision also names AI-assisted reading of product
+reviews and published research. Nothing of that is built, and it should not be
+faked — a claim sourced from a language model reading a review is not the same
+kind of thing as a claim sourced from Minetti or Jeukendrup, and the engine's
+credibility rests on never mixing the two silently.
 
 ## The asset, stated plainly
 
-Phase 6 says the engine is the product. Today it already is a clean, framework-free
-TypeScript core (`src/engine`, `src/analysis`, `src/feedback`, `src/progress`) with
-no UI or storage dependencies, reachable over HTTP at `/api/target`, `/api/recommend`,
-`/api/schedule`, `/api/offering` and `/api/adaptation`. That is a licensable shape
-already. What it lacks for a licensing conversation is versioning, a stable public
-contract, rate limiting and per-tenant keys — none urgent, all worth not breaking.
+Phase 6 says the engine is the product. It is a clean, framework-free TypeScript
+core (`src/engine`, `src/analysis`, `src/feedback`, `src/progress`) with no UI or
+storage dependencies — a property now enforced by a test rather than a habit, so
+it cannot quietly acquire one.
+
+The four things this section used to list as missing for a licensing conversation
+are built:
+
+| Was missing | Now |
+| --- | --- |
+| Versioning | `src/version.ts` — a version per module and one for the platform, served by `GET /api/version`. |
+| A stable public contract | **`/v1`** (`docs/public-api.md`) — its own `CONTRACT_VERSION`, flattened responses, and golden tests that fail if a field disappears. |
+| Rate limiting | A per-key token bucket. |
+| Per-tenant keys | Scoped, revocable, hashed at rest, with usage metered per key per endpoint per day. |
+
+`/v1` is deliberately separate from the app's own `/api/*`: our routes may change
+whenever the app does, and a partner's cannot. It answers purely from the request
+body — no athlete identity, no storage, no history — which is what makes it
+embeddable in someone else's product without dragging our database along, and
+means integrating does not hand us their users.
+
+**This is also Phase 2's groundwork.** A Garmin Connect IQ app is exactly a
+third-party client calling the engine over HTTP, and `/v1/plan` already returns
+the flat, time-ordered cue list a watch counts down to. What remains for Phase 2
+is the Monkey C application itself and a Garmin developer account — neither of
+which lives in this repository.

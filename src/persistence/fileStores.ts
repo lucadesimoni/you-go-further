@@ -12,6 +12,7 @@ import type { PlatformSettings, SettingsStore } from "../settings";
 import type { AffiliateClick, AffiliateStore, Order, OrderStore } from "../commerce";
 import type { MagicLinkStore } from "../auth/magicLink";
 import { normalizeSettingsPatch } from "../settings";
+import type { ApiKey, ApiKeyStore } from "../api/apiKeys";
 import { JsonFile } from "./jsonFile";
 
 /**
@@ -305,6 +306,46 @@ export class FileProfileStore implements ProfileStore {
     this.data[userId] = next;
     this.file.write(this.data);
     return next;
+  }
+}
+
+/**
+ * API keys on disk.
+ *
+ * These outlive a restart on purpose: a partner integration that stopped
+ * working because we redeployed would be the worst possible first impression,
+ * and re-issuing a key means editing someone else's firmware.
+ */
+export class FileApiKeyStore implements ApiKeyStore {
+  private readonly file: JsonFile<ApiKey[]>;
+  private keys: ApiKey[];
+
+  constructor(dir: string) {
+    this.file = new JsonFile(join(dir, "api-keys.json"), []);
+    this.keys = this.file.read();
+  }
+
+  async create(key: ApiKey): Promise<ApiKey> {
+    this.keys = [key, ...this.keys];
+    this.file.write(this.keys);
+    return key;
+  }
+
+  async list(tenantId?: string): Promise<ApiKey[]> {
+    return tenantId === undefined ? this.keys : this.keys.filter((k) => k.tenantId === tenantId);
+  }
+
+  async findByHash(hash: string): Promise<ApiKey | undefined> {
+    return this.keys.find((k) => k.hash === hash);
+  }
+
+  async update(id: string, patch: Partial<ApiKey>): Promise<ApiKey | undefined> {
+    const i = this.keys.findIndex((k) => k.id === id);
+    if (i < 0) return undefined;
+    const { id: _i, tenantId: _t, hash: _h, ...safe } = patch;
+    this.keys[i] = { ...this.keys[i], ...safe };
+    this.file.write(this.keys);
+    return this.keys[i];
   }
 }
 

@@ -210,17 +210,30 @@ translated into all four languages.
 
 Public API: `nutritionGuide`.
 
-### `src/api` — 1.1.0, stable
+### `src/api` — 1.2.0, stable
 
-The HTTP contract. `handlers.ts` is a **pure request router** — request in,
-response out, no Node and no Vercel — which is what lets `server/index.ts` and
+Two HTTP surfaces behind one pure router. `handlers.ts` is request in, response
+out, with no Node and no Vercel in it — which is what lets `server/index.ts` and
 `api/[...path].ts` share it and never drift. `client.ts` is the browser side.
 
-Every activity read is scoped to the signed-in principal; the OAuth flow binds
-identity to a one-time `state` minted by an authenticated call, so a consent
-redirect that carries no Authorization header still lands on the right account.
+**`/api/*`** serves our own app. Every activity read is scoped to the signed-in
+principal; the OAuth flow binds identity to a one-time `state` minted by an
+authenticated call, so a consent redirect carrying no Authorization header still
+lands on the right account.
 
-Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`.
+**`/v1/*`** is the public engine contract — see [`public-api.md`](./public-api.md).
+It is deliberately a different surface with different rules: its own
+`CONTRACT_VERSION`, flattened responses, golden shape tests, API-key
+authentication rather than a session, and no storage or identity of its own. A
+request carries everything its answer needs.
+
+`apiKeys.ts` issues scoped, revocable per-tenant credentials, storing only a
+SHA-256 hash. `rateLimit.ts` is a per-key token bucket plus aggregate usage
+metering — counts, never requests.
+
+Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
+`v1Plan`, `v1Course`, `v1Absorption`, `v1Heat`, `issueApiKey`, `checkApiKey`,
+`RateLimiter`, `UsageMeter`.
 
 ---
 

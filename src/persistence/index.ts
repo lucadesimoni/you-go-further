@@ -10,6 +10,7 @@ export {
   FileMagicLinkStore,
   FileProfileStore,
   FileAffiliateStore,
+  FileApiKeyStore,
 } from "./fileStores";
 export {
   createPgStores,

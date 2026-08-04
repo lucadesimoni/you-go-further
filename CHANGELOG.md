@@ -8,6 +8,60 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.4.0
+
+The engine stops being only our app's engine: a versioned public contract that
+somebody else can build against.
+
+**Added**
+
+- **`/v1` — the public engine API** (`src/api/publicApi.ts`). Deliberately a
+  separate surface from `/api/*`: our own app's routes may change whenever the
+  app does, but `/v1` is somebody else's dependency, with its own
+  `CONTRACT_VERSION`, its own flattened response shapes, and golden tests that
+  fail if a field disappears — because on the other side of it is watch firmware
+  nobody can hotfix. Six endpoints: `plan`, `course`, `absorption`, `heat`,
+  `catalog`, `meta`. Every response, including every error, is stamped with the
+  contract, engine and platform versions.
+- **Per-tenant API keys** (`src/api/apiKeys.ts`). Only a SHA-256 hash is stored,
+  so a leaked database hands over nothing usable; the plaintext is returned once
+  and the response says so. Scoped (`plan`, `course`, `catalog`, `cohort`),
+  revocable without a deploy, and compared in constant time. `ygf_live_` in
+  production, `ygf_test_` everywhere else.
+- **Rate limiting and usage metering** (`src/api/rateLimit.ts`). A token bucket
+  rather than a fixed window, which a caller can straddle to spend twice the
+  limit at the moment it matters. Usage is counted per key, per endpoint, per day
+  — aggregate only, because answering "how many calls" never requires holding a
+  partner's athletes' body data.
+- **Key administration** behind `org:configure`: issue, list with usage, revoke.
+
+**Why it exists.** The vision names this exactly: Phase 6 says the engine, not
+the app, is the product, and that a licensing conversation needs versioning, a
+stable contract, rate limiting and per-tenant keys. Versioning landed in 0.3.0;
+this is the other three. Phase 2 needs the same thing sooner — a Garmin Connect
+IQ app is a third-party client calling the engine over HTTP, and `/v1/plan`
+already returns the flat, ordered cue list a watch counts down to.
+
+**Fixed**
+
+- **Privilege escalation on both deployments.** The transports honoured the
+  `x-role` demo header unconditionally, so an unauthenticated request carrying
+  `x-role: admin` became an org admin — `allowRoleSwitching` gated the UI's role
+  picker and nothing else. It now gates the header too. Found while wiring the
+  owner-only key endpoint, whose gate it would have bypassed.
+- **The Vercel adapter never passed request headers to the router**, so every
+  `/v1` call would have looked unauthenticated on that deployment while working
+  on the other — the exact drift a shared router exists to prevent. It also now
+  forwards the raw body, which payment-webhook signature verification needs.
+- `/v1` reached the router on neither deployment: the Node server only forwarded
+  `/api/`, so the SPA fallback answered an unauthenticated keyed endpoint with
+  **200 and a page**. Vercel needed a rewrite, which delivers the path as
+  `/api/v1/...`, so the router normalises both forms and a test pins that the two
+  return identical answers.
+- `planRouteFuelling`'s catalog was not threaded through the course endpoint, so
+  a tenant with their own product library would have got our products named in
+  their stops.
+
 ## 0.3.0
 
 The release that made the platform describable: every module versioned,
