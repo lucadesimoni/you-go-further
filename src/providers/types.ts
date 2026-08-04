@@ -63,6 +63,16 @@ export interface ActivityProvider {
   authorizeUrl(redirectUri: string, state: string): string;
   /** Exchange an OAuth authorization code for a credential (real adapters). */
   exchangeToken?(code: string, redirectUri: string): Promise<ProviderCredential>;
+  /**
+   * Trade a refresh token for a fresh access token.
+   *
+   * Optional because not every provider needs it: Garmin's Health API is OAuth
+   * 1.0a and its tokens do not expire, and Polar's AccessLink tokens are
+   * long-lived. Where it *is* needed it is not optional at all — a Strava access
+   * token lasts six hours, so without this every sync after the first morning
+   * fails with a 401 and the athlete's history simply stops.
+   */
+  refreshToken?(credential: ProviderCredential): Promise<ProviderCredential>;
   /** Pull and normalize activities in the given window. */
   fetchActivities(credential: ProviderCredential, range: FetchRange): Promise<Activity[]>;
 }

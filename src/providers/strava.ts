@@ -121,16 +121,73 @@ export class StravaProvider extends BaseActivityProvider {
     };
   }
 
+  /**
+   * Trade the refresh token for a fresh access token.
+   *
+   * A Strava access token lasts six hours. Without this, the first sync of the
+   * day works and every one after it returns 401 — the athlete sees their
+   * history stop and no error explaining why.
+   */
+  async refreshToken(credential: ProviderCredential): Promise<ProviderCredential> {
+    if (!this.configured() || !credential.refreshToken || credential.refreshToken.startsWith("dev-")) {
+      return credential;
+    }
+    const body = new URLSearchParams({
+      client_id: env("STRAVA_CLIENT_ID")!,
+      client_secret: env("STRAVA_CLIENT_SECRET")!,
+      grant_type: "refresh_token",
+      refresh_token: credential.refreshToken,
+    });
+    const res = await this.fetchImpl(oauthConfig(this.descriptor).tokenUrl, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body,
+    });
+    if (!res.ok) throw new Error(`Strava token refresh failed: HTTP ${res.status}`);
+    const j = (await res.json()) as { access_token: string; refresh_token?: string; expires_at?: number };
+    return {
+      ...credential,
+      accessToken: j.access_token,
+      // Strava rotates the refresh token; keeping the old one would work until
+      // it silently stopped.
+      refreshToken: j.refresh_token ?? credential.refreshToken,
+      expiresAt: (j.expires_at ?? 0) * 1000,
+    };
+  }
+
+  /** Refresh first when the token is expired, or about to be mid-request. */
+  private async fresh(credential: ProviderCredential): Promise<ProviderCredential> {
+    const expiresAt = credential.expiresAt ?? 0;
+    if (expiresAt === 0 || expiresAt - Date.now() > 60_000) return credential;
+    return this.refreshToken(credential);
+  }
+
   async fetchActivities(credential: ProviderCredential, range: FetchRange): Promise<Activity[]> {
     if (!this.configured() || credential.accessToken.startsWith("dev-")) {
       return generateSampleActivities("strava", range.after, range.before);
     }
+    const live = await this.fresh(credential);
     const after = Math.floor(Date.parse(range.after) / 1000);
     const before = Math.floor(Date.parse(range.before) / 1000);
-    const url = `https://www.strava.com/api/v3/athlete/activities?after=${after}&before=${before}&per_page=100`;
-    const res = await this.fetchImpl(url, { headers: { Authorization: `Bearer ${credential.accessToken}` } });
-    if (!res.ok) throw new Error(`Strava activities fetch failed: HTTP ${res.status}`);
-    const arr = (await res.json()) as StravaActivity[];
-    return arr.map(mapStravaActivity);
+
+    // Strava paginates. A single page silently truncates any athlete with more
+    // than `PER_PAGE` sessions in the window — which a season backfill always
+    // has, and which looks exactly like "they did not train much".
+    const PER_PAGE = 100;
+    const MAX_PAGES = 20; // 2000 sessions; past that, narrow the window instead.
+    const out: Activity[] = [];
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const url = `https://www.strava.com/api/v3/athlete/activities?after=${after}&before=${before}&per_page=${PER_PAGE}&page=${page}`;
+      const res = await this.fetchImpl(url, { headers: { Authorization: `Bearer ${live.accessToken}` } });
+      // 429 is Strava's rate limit, and retrying immediately makes it worse.
+      // Returning what we have keeps the sync partial rather than empty.
+      if (res.status === 429) break;
+      if (!res.ok) throw new Error(`Strava activities fetch failed: HTTP ${res.status}`);
+      const arr = (await res.json()) as StravaActivity[];
+      out.push(...arr.map(mapStravaActivity));
+      // A short page is the last page.
+      if (arr.length < PER_PAGE) break;
+    }
+    return out;
   }
 }

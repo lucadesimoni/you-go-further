@@ -24,32 +24,74 @@ export function mapSuuntoSport(activityType: string | undefined): SportType {
   return "other";
 }
 
+/**
+ * Suunto's numeric activity enum.
+ *
+ * Only the ids this platform actually plans for are named; everything else is
+ * honestly "other" rather than guessed at. Written from the published enum and
+ * **not verified against the live API from here** — `scripts/verify-providers.mjs`
+ * is what checks it where the network and a token exist.
+ */
+const SUUNTO_ACTIVITY_IDS: Record<number, string> = {
+  1: "running",
+  2: "cycling",
+  3: "cycling",
+  5: "swimming",
+  11: "trail running",
+  13: "trailrunning",
+  21: "triathlon",
+  59: "trail running",
+};
+
 interface SuuntoWorkout {
   workoutId?: number | string;
   workoutKey?: string;
+  /** Some payloads name the sport; others send only the numeric enum. */
   activityType?: string;
+  activityId?: number;
   startTime?: number; // epoch ms
   totalTime?: number; // seconds
   totalDistance?: number; // meters
   totalAscent?: number;
+  /**
+   * Heart rate — in **hertz** on most firmware, already bpm on some.
+   * @see toBpm
+   */
   hravg?: number;
   hrmax?: number;
   energyConsumption?: number; // kcal
 }
 
+/**
+ * Suunto reports heart rate in beats per **second**, and not consistently: some
+ * firmware sends bpm in the same field.
+ *
+ * This is the worst kind of unit bug, because it does not throw. An average of
+ * 2.6 is a perfectly valid number that quietly makes every intensity inference,
+ * every training load and every fuelling target wrong.
+ *
+ * Nothing plausible sits between the two scales: a human at rest is above 25 bpm
+ * and no one sustains 15 beats per second, so a value under 15 is hertz.
+ */
+export function toBpm(value: number | undefined): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return undefined;
+  return value < 15 ? Math.round(value * 60) : Math.round(value);
+}
+
 export function mapSuuntoActivity(w: SuuntoWorkout): Activity {
   const externalId = String(w.workoutId ?? w.workoutKey ?? "");
+  const typeName = w.activityType ?? (typeof w.activityId === "number" ? SUUNTO_ACTIVITY_IDS[w.activityId] : undefined);
   return {
     id: `suunto:${externalId}`,
     provider: "suunto",
     externalId,
-    sport: mapSuuntoSport(w.activityType),
+    sport: mapSuuntoSport(typeName),
     startTime: w.startTime ? new Date(w.startTime).toISOString() : new Date().toISOString(),
     durationSec: Math.round(w.totalTime ?? 0),
     distanceM: w.totalDistance,
     elevationGainM: w.totalAscent,
-    avgHr: w.hravg,
-    maxHr: w.hrmax,
+    avgHr: toBpm(w.hravg),
+    maxHr: toBpm(w.hrmax),
     calories: w.energyConsumption != null ? Math.round(w.energyConsumption) : undefined,
     name: w.activityType,
   };

@@ -93,10 +93,44 @@ export function generateSampleActivities(
     if (rand() > 0.62) continue; // rest day
     const sport = sports[Math.floor(rand() * sports.length)];
     const isLong = rand() > 0.78;
-    const durationSec = Math.round((isLong ? 90 + rand() * 120 : 35 + rand() * 55) * 60);
+    // A swim is not a four-hour session. Capping it here rather than sharing the
+    // running range is what stops the generator inventing a 12 km pool swim.
+    const durationSec =
+      sport === "swim"
+        ? Math.round((30 + rand() * 45) * 60)
+        : Math.round((isLong ? 90 + rand() * 120 : 35 + rand() * 55) * 60);
     const hrFrac = 0.62 + rand() * 0.28; // 62–90% of max
     const avgHr = Math.round(maxHr * hrFrac);
-    const speedMs = sport === "ride" ? 7 + rand() * 4 : sport === "swim" ? 0.9 + rand() * 0.4 : 2.6 + rand() * 1.6;
+
+    /**
+     * Pace decays with duration, which is the whole point of endurance.
+     *
+     * Drawing speed independently of duration let a 3.5-hour run come out at
+     * 4:24/km for 48 km — a number no amateur produces, in data the demo and
+     * every e2e run are judged on. The decay is a plain power law: roughly 6 %
+     * slower per doubling of time, which is the shape of the real curve without
+     * pretending to be Riegel's exact exponent.
+     */
+    const hours = durationSec / 3600;
+    const decay = Math.pow(Math.max(0.5, hours), -0.09);
+    const baseMs = sport === "ride" ? 7.2 + rand() * 3.4 : sport === "swim" ? 0.95 + rand() * 0.35 : 2.7 + rand() * 1.1;
+    const speedMs = baseMs * decay;
+    const distanceM = Math.round(durationSec * speedMs);
+
+    /**
+     * Indoors: a trainer, a treadmill, a pool. No GPS, no ascent — and it is
+     * where a plan has to cope with a session that has no route at all. Sample
+     * data in which every session has a track never exercises that path.
+     */
+    const indoor = sport === "swim" || (sport !== "trail-run" && rand() > 0.82);
+
+    /**
+     * Ascent, Swiss. A road ride here climbs 8–20 m/km and a trail run 25–55,
+     * where a flat 100 km ride with 250 m of climbing would be a Dutch polder.
+     */
+    const ascentPerKm = sport.includes("trail") ? 25 + rand() * 30 : sport === "ride" ? 8 + rand() * 12 : 5 + rand() * 15;
+    const elevationGainM = indoor ? 0 : Math.round((distanceM / 1000) * ascentPerKm);
+
     const externalId = `${t}`;
     out.push({
       id: `${provider}:${externalId}`,
@@ -105,15 +139,15 @@ export function generateSampleActivities(
       sport,
       startTime: new Date(t + Math.floor(rand() * 12) * 3600_000).toISOString(),
       durationSec,
-      distanceM: Math.round(durationSec * speedMs),
-      elevationGainM: sport.includes("trail") ? Math.round(200 + rand() * 900) : Math.round(rand() * 300),
+      distanceM,
+      elevationGainM,
       avgHr,
       maxHr: Math.min(maxHr, avgHr + Math.round(8 + rand() * 20)),
       avgPowerW: sport === "ride" ? Math.round(160 + rand() * 140) : undefined,
       calories: Math.round((durationSec / 60) * (7 + rand() * 6)),
       trainingLoad: provider === "strava" ? undefined : Math.round((durationSec / 60) * hrFrac * 2.2),
-      // Outdoor sessions carry a GPS track; pool swims don't.
-      route: sport === "swim" ? undefined : generateRoute(rand, Math.round(durationSec * speedMs)),
+      // Outdoor sessions carry a GPS track; a trainer or a pool does not.
+      route: indoor ? undefined : generateRoute(rand, distanceM),
       name: `${sport} session`,
     });
   }

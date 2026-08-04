@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.4.0";
+export const PLATFORM_VERSION = "0.5.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -199,13 +199,14 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "providers",
     path: "src/providers",
-    version: "0.6.0",
+    version: "0.7.0",
     layer: "platform",
     stability: "preview",
-    summary: "Training-service connectors — Strava, Garmin, Polar, Suunto — plus the registry and sample data.",
-    publicApi: ["providerRegistry", "authorizeUrl", "fetchActivities", "connections"],
+    summary:
+      "Training-service connectors — Strava, Garmin, Polar, Suunto — with normalisers tested against each service's own payload shape, plus the registry and sample data.",
+    publicApi: ["providerRegistry", "authorizeUrl", "fetchActivities", "refreshToken", "connections"],
     caveat:
-      "Authorisation URLs and scopes are the real ones; token exchange and live API calls are the documented next step, and the UI labels sample data as sample data.",
+      "Normalisation, pagination, token refresh and rate-limit handling are implemented and tested against representative fixtures, but no call has been made to a live provider API from here — that needs network egress, a registered application and a real athlete's consent. `npm run verify:providers` performs that check wherever those exist; see docs/provider-import.md.",
   },
   {
     id: "commerce",

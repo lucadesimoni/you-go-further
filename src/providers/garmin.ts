@@ -29,13 +29,37 @@ export function mapGarminSport(type: string | undefined): SportType {
   return "other";
 }
 
+/**
+ * Garmin ships **two** activity shapes, and both turn up in the wild.
+ *
+ * The official Health/Activity API sends `activityType` as a string enum
+ * (`"TRAIL_RUNNING"`) and the start as `startTimeInSeconds` + a local
+ * `startTimeOffsetInSeconds`. The internal Garmin Connect web endpoints — what
+ * most third-party examples on the internet are actually written against — send
+ * `activityType: { typeKey }` and `startTimeGMT` instead.
+ *
+ * Reading only one of them is not a partial failure but a silent one: every
+ * session comes back with sport "other" and a start time of *now*, which is
+ * exactly the data training-load analysis is built on.
+ */
 interface GarminActivity {
-  activityId: number | string;
+  activityId?: number | string;
+  /** Health API: the id the push notifications de-duplicate on. */
+  summaryId?: number | string;
   activityName?: string;
-  activityType?: { typeKey?: string };
+  /** Health API sends a string; the web API sends an object. */
+  activityType?: string | { typeKey?: string; typeId?: number };
+  /** Health API: epoch seconds, already UTC. */
+  startTimeInSeconds?: number;
+  /** Health API: the athlete's local offset. Informational — the epoch is UTC. */
+  startTimeOffsetInSeconds?: number;
+  /** Web API: a "YYYY-MM-DD HH:mm:ss" string, in GMT despite the space. */
   startTimeGMT?: string;
   durationInSeconds?: number;
   distanceInMeters?: number;
+  /** Health API name. */
+  totalElevationGainInMeters?: number;
+  /** Web API name. */
   elevationGainInMeters?: number;
   averageHeartRateInBeatsPerMinute?: number;
   maxHeartRateInBeatsPerMinute?: number;
@@ -43,18 +67,45 @@ interface GarminActivity {
   activeKilocalories?: number;
 }
 
+/** The activity type, from whichever of the two shapes this payload uses. */
+function garminTypeKey(t: GarminActivity["activityType"]): string | undefined {
+  return typeof t === "string" ? t : t?.typeKey;
+}
+
+/**
+ * Start time, from whichever shape this payload uses.
+ *
+ * `startTimeInSeconds` is already UTC, so `startTimeOffsetInSeconds` must *not*
+ * be added — doing so shifts every session by the athlete's timezone and puts
+ * some of them on the wrong day. `startTimeGMT` carries a space instead of a T,
+ * which `Date` parses as local time in Node, so it is normalised first.
+ */
+function garminStartTime(g: GarminActivity): string | undefined {
+  if (typeof g.startTimeInSeconds === "number") return new Date(g.startTimeInSeconds * 1000).toISOString();
+  if (!g.startTimeGMT) return undefined;
+  const iso = g.startTimeGMT.includes("T") ? g.startTimeGMT : g.startTimeGMT.replace(" ", "T");
+  const withZone = /[Zz]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`;
+  const parsed = Date.parse(withZone);
+  return Number.isNaN(parsed) ? undefined : new Date(parsed).toISOString();
+}
+
 /** Normalize one Garmin activity into our model. */
 export function mapGarminActivity(g: GarminActivity): Activity {
-  const externalId = String(g.activityId);
+  // The Health API de-duplicates on `summaryId`; the web API only has
+  // `activityId`. Preferring the summary id keeps repeated pushes idempotent.
+  const externalId = String(g.summaryId ?? g.activityId ?? "");
+  const startTime = garminStartTime(g);
   return {
     id: `garmin:${externalId}`,
     provider: "garmin",
     externalId,
-    sport: mapGarminSport(g.activityType?.typeKey),
-    startTime: g.startTimeGMT ? new Date(g.startTimeGMT).toISOString() : new Date().toISOString(),
+    sport: mapGarminSport(garminTypeKey(g.activityType)),
+    // Falling back to "now" would stamp imported history with today's date, so
+    // it is the last resort and never silently preferred.
+    startTime: startTime ?? new Date().toISOString(),
     durationSec: g.durationInSeconds ?? 0,
     distanceM: g.distanceInMeters,
-    elevationGainM: g.elevationGainInMeters,
+    elevationGainM: g.totalElevationGainInMeters ?? g.elevationGainInMeters,
     avgHr: g.averageHeartRateInBeatsPerMinute,
     maxHr: g.maxHeartRateInBeatsPerMinute,
     avgPowerW: g.averagePowerInWatts,

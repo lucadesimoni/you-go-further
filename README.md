@@ -26,7 +26,7 @@ spelling is a convention, kept by review.
 | **Swiss product catalog** | `src/engine/catalog.ts` | Editable data: Sponser & Winforce products with macros, sodium, caffeine, phase tags. |
 | **Race import** | `src/geo/gpx.ts`, `RaceImport` | Drop the organiser's GPX and get the fuelling for that exact course, before running it. |
 | **Affiliate** | `src/commerce/affiliate.ts` | Hand-off to the brand's own shop with attribution and a click ledger — the revenue model, with no invented publisher ids. |
-| **Provider connectors** | `src/providers/` | Strava/Garmin/Polar/Suunto: real OAuth config + a common `ActivityProvider` interface, with a runnable sample-data implementation. |
+| **Provider connectors** | `src/providers/`, `docs/provider-import.md` | Strava/Garmin/Polar/Suunto: real OAuth config, pagination and token refresh, with each normaliser tested against that service's own payload shape. `npm run verify:providers` checks them against the live APIs. |
 | **Data connectivity** | `src/data/` | Backend-neutral `ActivityStore`, an `IngestionPipeline` (fetch → normalize → dedup → store), and an `ExportSink` seam for a warehouse/lake. |
 | **Analysis** | `src/analysis/` | Training load, acute:chronic workload ratio, weekly trends, and weekly nutrition demand (feeds the engine). |
 | **Subscription (Abo)** | `src/subscription/` | Base / Pro / Elite tiers with data-driven feature gating — **off for the free Phase-1 launch**, one config flag away for B2B. |
@@ -43,7 +43,7 @@ spelling is a convention, kept by review.
 | **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `user-flows.md`. |
 | **Vision & roadmap** | `docs/vision.md` | The seven phases, plus an honest read of where this code stands against Phase 1. |
 | **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |
-| **Tests** | `src/**/*.test.ts`, `scripts/` | 580 Vitest cases across engine, analysis, geo, i18n, auth, data pipeline, subscription and RBAC; plus a real-browser e2e journey and a mobile parity smoke. |
+| **Tests** | `src/**/*.test.ts`, `scripts/` | 623 Vitest cases across engine, analysis, geo, i18n, auth, data pipeline, subscription and RBAC; plus a real-browser e2e journey and a mobile parity smoke. |
 
 ## Deploy anywhere
 

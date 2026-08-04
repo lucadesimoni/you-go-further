@@ -8,6 +8,60 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.5.0
+
+Import, tested against each provider's own payload shape instead of against our
+idea of it. Ten defects found, every one of which would have corrupted or lost
+real athlete data on the first live sync.
+
+**What could not be tested.** No call was made to a live Strava, Garmin, Polar or
+Suunto API. This environment blocks every provider host, and a live check also
+needs a registered developer application per provider and a real athlete's OAuth
+consent. `npm run verify:providers` is the script that does that run wherever
+those exist; it reports a provider with no token as **skipped, not passed**. See
+`docs/provider-import.md`.
+
+**Fixed — import**
+
+- **Garmin returned every session as sport "other" and dated today.** The
+  normaliser read only the internal web API's `{ typeKey }` and `startTimeGMT`,
+  while the official Health API sends a string `activityType` and
+  `startTimeInSeconds`. Both shapes are read now, and the epoch is already UTC so
+  the local offset is not added to it. Ascent was dropped for the same reason
+  (`totalElevationGainInMeters`).
+- **Polar sessions landed in the wrong timezone.** `start-time` is local wall
+  clock with the zone in a separate `start-time-utc-offset`, so parsing the
+  string alone made the runtime guess — a Swiss athlete's summer sessions came
+  out two hours off, some on the wrong day. Polar's own `training-load` was also
+  discarded and then recomputed, worse, from averages.
+- **Suunto heart rates were in hertz.** An average of 2.6 does not throw; it
+  quietly ruins every intensity inference, training load and fuelling target
+  downstream. Suunto's numeric sport enum was also unread, so every workout was
+  "other".
+- **Strava truncated at 100 activities and never refreshed its token.** A backfill
+  silently lost everything past the first page, which looks exactly like "they
+  did not train much"; and since an access token lasts six hours, the first sync
+  of the day worked and every one after it failed with a 401. Both fixed, plus a
+  429 now returns a partial sync rather than throwing the whole thing away.
+
+**Fixed — sample data**
+
+Speed was drawn independently of duration, producing a 3.5-hour run at 4:24/km
+over 48 km and a 100 km Swiss ride with 254 m of climbing — in the data the demo,
+the screenshots and every e2e run are judged on. Pace now decays with duration,
+ascent is Swiss and scales with distance, a swim stays a swim, and some sessions
+have no GPS at all, because real weeks have them and the app has to meet one.
+
+**Added**
+
+- `src/providers/fixtures.ts` — representative payloads in each service's own
+  shape, including the traps above.
+- `src/providers/import.test.ts` — normalisation, units, dedup, pagination, token
+  refresh and rate-limit handling. Assertions pin physiological plausibility, not
+  just types.
+- `scripts/verify-providers.mjs` / `npm run verify:providers`.
+- `docs/provider-import.md` — what is verified, what is not, and why.
+
 ## 0.4.0
 
 The engine stops being only our app's engine: a versioned public contract that

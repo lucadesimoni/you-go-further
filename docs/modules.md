@@ -163,16 +163,24 @@ and typed, but has not been exercised against a live database here.
 
 Public API: `fileStores`, `pgStores`, `jsonFile`.
 
-### `src/providers` — 0.6.0, **preview**
+### `src/providers` — 0.7.0, **preview**
 
 Training-service connectors — Strava, Garmin, Polar, Suunto — plus the registry,
-connection records and sample data.
+connection records and sample data. See [`provider-import.md`](./provider-import.md).
 
-*Preview because:* authorisation URLs and scopes are the real ones, but token
-exchange and live API calls are the documented next step. The UI labels sample
-data as sample data rather than implying a live sync.
+Each normaliser is tested against **that service's own payload shape**, held in
+`fixtures.ts`: Garmin's two incompatible activity shapes, Polar's hyphenated keys
+and ISO-8601 durations, Suunto's heart rate in hertz, Strava's pagination and
+six-hour tokens.
 
-Public API: `providerRegistry`, `authorizeUrl`, `fetchActivities`, `connections`.
+*Preview because:* no call has been made to a live provider API from this
+environment — that needs network egress to hosts it blocks, a registered
+developer application per provider, and a real athlete's OAuth consent.
+`npm run verify:providers` performs exactly that check wherever those exist, and
+reports a provider with no token as **skipped, not passed**.
+
+Public API: `providerRegistry`, `authorizeUrl`, `fetchActivities`,
+`refreshToken`, `connections`.
 
 ### `src/commerce` — 0.8.0, **preview**
 

@@ -36,27 +36,63 @@ interface PolarExercise {
   id: number | string;
   sport?: string;
   "detailed-sport-info"?: string;
+  /** Local wall-clock time, with no zone designator of its own. */
   "start-time"?: string;
+  /** Minutes east of UTC for that wall-clock time. */
+  "start-time-utc-offset"?: number;
   duration?: string;
   distance?: number;
   calories?: number;
   "heart-rate"?: { average?: number; maximum?: number };
+  /** Polar's own computed load for the session. */
+  "training-load"?: number;
+  device?: string;
+}
+
+/**
+ * Polar's `start-time` is **local wall-clock with no zone**, and the zone comes
+ * separately in `start-time-utc-offset` (minutes). Parsing the string alone
+ * makes the runtime guess: Node reads it as the *server's* local time, so the
+ * same session lands at a different instant depending on where it was imported.
+ * A Swiss athlete's summer sessions come out two hours off.
+ */
+function polarStartTime(e: PolarExercise): string | undefined {
+  const raw = e["start-time"];
+  if (!raw) return undefined;
+  const offsetMin = e["start-time-utc-offset"];
+  // Already carries a zone: trust it.
+  if (/[Zz]|[+-]\d\d:?\d\d$/.test(raw)) {
+    const t = Date.parse(raw);
+    return Number.isNaN(t) ? undefined : new Date(t).toISOString();
+  }
+  const asUtc = Date.parse(`${raw}Z`);
+  if (Number.isNaN(asUtc)) return undefined;
+  // The wall clock read as UTC, minus the offset, is the true instant.
+  return new Date(asUtc - (typeof offsetMin === "number" ? offsetMin : 0) * 60_000).toISOString();
 }
 
 export function mapPolarActivity(e: PolarExercise): Activity {
   const externalId = String(e.id);
+  // The coarse `sport` is often just "OTHER"; the detailed field is where a
+  // trail run or a road ride is actually distinguishable.
+  const detailed = e["detailed-sport-info"];
+  const coarse = e.sport;
+  const bySport = mapPolarSport(coarse);
   return {
     id: `polar:${externalId}`,
     provider: "polar",
     externalId,
-    sport: mapPolarSport(e.sport ?? e["detailed-sport-info"]),
-    startTime: e["start-time"] ? new Date(e["start-time"]).toISOString() : new Date().toISOString(),
+    sport: bySport === "other" ? mapPolarSport(detailed) : bySport,
+    startTime: polarStartTime(e) ?? new Date().toISOString(),
     durationSec: parseIsoDuration(e.duration),
     distanceM: typeof e.distance === "number" ? e.distance : undefined,
     avgHr: e["heart-rate"]?.average,
     maxHr: e["heart-rate"]?.maximum,
     calories: e.calories,
-    name: e.sport,
+    // Polar computes this on the device from the athlete's own HR reserve.
+    // Discarding it and recomputing from averages is strictly worse.
+    trainingLoad: typeof e["training-load"] === "number" ? e["training-load"] : undefined,
+    name: detailed ?? coarse,
   };
 }
 

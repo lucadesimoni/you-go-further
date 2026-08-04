@@ -122,7 +122,7 @@ disclosures, form controls). No component hard-codes a colour or radius. See
 `docs/design-system.md`.
 
 ## Testing
-`npm test` — 580 Vitest cases across engine, analysis, geo, i18n, auth, the data
+`npm test` — 623 Vitest cases across engine, analysis, geo, i18n, auth, the data
 pipeline (registry, dedup, concurrent ingest, export), and subscription gating.
 `npm run e2e` drives the whole journey in a real browser against a running
 server; `npm run e2e:mobile` does the same for the mobile screens.
