@@ -61,11 +61,29 @@ export interface ApiRequest {
   rawBody?: string;
   headers?: Record<string, string>;
   principal: Principal;
+  /**
+   * Who is calling, when there is no account yet.
+   *
+   * The endpoints that most need a limit are precisely the ones nobody has
+   * signed in to use — asking for a sign-in link, redeeming one — so the
+   * principal cannot be the key. Supplied by the transport; when it is absent
+   * everyone shares one bucket, which throttles them together rather than not
+   * at all.
+   */
+  clientIp?: string;
 }
 
 export interface ApiResponse {
   status: number;
   data: unknown;
+  /**
+   * Headers the transport must set.
+   *
+   * `Retry-After` on a 429 is the difference between a client that backs off and
+   * one that keeps hammering: the number was already in the body, where no HTTP
+   * client and no CDN looks for it.
+   */
+  headers?: Record<string, string>;
 }
 
 const getEnv = (k: string): string | undefined =>
@@ -100,6 +118,76 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
    */
   const limiter = new RateLimiter();
   const meter = new UsageMeter();
+
+  /**
+   * A second limiter for `/api/*`, keyed by caller rather than by API key.
+   *
+   * The endpoints that need it most are the unauthenticated ones: asking for a
+   * sign-in link sends real email to an address the caller chose, so without a
+   * limit anyone can use us to flood a stranger's inbox, and burn our sending
+   * reputation doing it.
+   */
+  const appLimiter = new RateLimiter();
+
+  /**
+   * Per-minute budgets for the endpoints worth protecting.
+   *
+   * A rule may name **several** buckets, and each is checked. That matters for
+   * the sign-in endpoint: the thing being abused is a stranger's *inbox*, so the
+   * tight limit belongs on the address. A tight per-IP limit instead would have
+   * punished an office, a university or a mobile carrier — everyone behind one
+   * NAT shares an address, and five sign-ins a minute for a whole building is
+   * not a security control, it is an outage.
+   */
+  const LIMITS: { match: (key: string) => boolean; buckets: (req: ApiRequest) => { id: string; perMin: number }[] }[] = [
+    {
+      match: (k) => k === "POST /api/auth/email/request",
+      buckets: (r) => {
+        const email = String(((r.body ?? {}) as { email?: unknown }).email ?? "").trim().toLowerCase();
+        return [
+          // Protects the recipient: nobody's inbox gets flooded through us.
+          { id: `email:${email}`, perMin: 3 },
+          // Protects our sending reputation from one noisy source, loosely
+          // enough that a shared address still works.
+          { id: `ip:${r.clientIp ?? "unknown"}`, perMin: 30 },
+        ];
+      },
+    },
+    // Redeeming and social sign-in are credential checks: limiting them blunts
+    // brute force against a token without getting in a real athlete's way.
+    { match: (k) => k === "POST /api/auth/email/verify", buckets: (r) => [{ id: `ip:${r.clientIp ?? "unknown"}`, perMin: 30 }] },
+    {
+      match: (k) => k === "POST /api/auth/google" || k === "POST /api/auth/apple",
+      buckets: (r) => [{ id: `ip:${r.clientIp ?? "unknown"}`, perMin: 30 }],
+    },
+    // Pulls from a third-party API on their quota as well as ours.
+    { match: (k) => k === "POST /api/ingest", buckets: (r) => [{ id: `user:${r.principal.id}`, perMin: 10 }] },
+    // Sends the athlete to a payment provider and creates an order row.
+    { match: (k) => k === "POST /api/checkout", buckets: (r) => [{ id: `user:${r.principal.id}`, perMin: 10 }] },
+  ];
+
+  function limitFor(key: string, req: ApiRequest): ApiResponse | null {
+    const rule = LIMITS.find((r) => r.match(key));
+    if (!rule) return null;
+    let gate = { allowed: true, retryAfterSec: 0 } as { allowed: boolean; retryAfterSec: number };
+    for (const bucket of rule.buckets(req)) {
+      const taken = appLimiter.take(`${key}|${bucket.id}`, bucket.perMin);
+      // Every bucket is charged, so a caller cannot spend one budget for free
+      // by tripping another first.
+      if (!taken.allowed && gate.allowed) gate = taken;
+    }
+    if (gate.allowed) return null;
+    return {
+      status: 429,
+      data: {
+        error: "rate_limited",
+        detail: `Too many requests. Try again in ${gate.retryAfterSec}s.`,
+        retryAfterSec: gate.retryAfterSec,
+      },
+      // The header is what a client, a proxy and a CDN actually read.
+      headers: { "retry-after": String(gate.retryAfterSec) },
+    };
+  }
 
   /** Apply a payment outcome: mark the order and, for plans, move the user's tier. */
   async function settleOrder(order: Order, outcome: "paid" | "failed"): Promise<void> {
@@ -171,6 +259,9 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
     const key = `${method} ${path}`;
     const segs = path.split("/").filter(Boolean); // ["api","oauth","strava","callback"]
 
+    const limited = limitFor(key, req);
+    if (limited) return limited;
+
     try {
       /**
        * --- The public engine API: `/v1/*` -----------------------------------
@@ -236,6 +327,7 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
               retryAfterSec: gate.retryAfterSec,
               contract: CONTRACT_VERSION,
             },
+            headers: { "retry-after": String(gate.retryAfterSec) },
           };
         }
 
@@ -577,17 +669,28 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         if (!isEmail(email)) return bad("Please enter a valid email address.");
         const platform = await settings.get();
         const known = await users.get(`user:${email}`);
-        if (!platform.registrationOpen && !known) {
-          return bad("Registration is closed. Ask an admin for an invitation.");
+        /**
+         * When registration is closed, an unknown address gets no mail — but it
+         * gets the *same answer* as a known one.
+         *
+         * Replying "registration is closed" only to strangers turned this into
+         * a membership oracle: anyone could type an address and learn from the
+         * response whether that person has an account here. Since the reply is
+         * now identical either way, the only thing that differs is whether an
+         * email arrives, which only the address's owner can see.
+         */
+        const eligible = platform.registrationOpen || Boolean(known);
+        let link: string | undefined;
+        if (eligible) {
+          const secret = getEnv("AUTH_SECRET") ?? DEV_AUTH_SECRET;
+          const token = createMagicToken(email, secret);
+          link = magicLinkUrl(b.returnTo || "/", token);
+          await mailer.send({
+            to: email,
+            subject: "Your You Go Further sign-in link",
+            text: `Sign in here (valid 15 minutes, one use):\n\n${link}`,
+          });
         }
-        const secret = getEnv("AUTH_SECRET") ?? DEV_AUTH_SECRET;
-        const token = createMagicToken(email, secret);
-        const link = magicLinkUrl(b.returnTo || "/", token);
-        await mailer.send({
-          to: email,
-          subject: "Your You Go Further sign-in link",
-          text: `Sign in here (valid 15 minutes, one use):\n\n${link}`,
-        });
         // Only the console (dev) mailer echoes the link back to the caller.
         return ok({ sent: true, devLink: mailer.id === "console" ? link : undefined });
       }
@@ -958,7 +1061,20 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
       }
     } catch (e) {
       if (e instanceof ForbiddenError) return { status: 403, data: { error: e.message } };
-      return { status: 500, data: { error: e instanceof Error ? e.message : "Internal error" } };
+
+      /**
+       * An unexpected failure is ours to read, not the caller's.
+       *
+       * Returning `e.message` handed out whatever the failure happened to say —
+       * a Postgres error carries the failing query, a filesystem error carries a
+       * path, and a third-party client can carry a URL with a token in it. The
+       * caller gets a reference; the detail goes to our log, where the same
+       * reference makes the two findable together.
+       */
+      const ref = `e_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+      const detail = e instanceof Error ? `${e.message}\n${e.stack ?? ""}` : String(e);
+      console.error(`[api] ${ref} ${method} ${path} —`, detail);
+      return { status: 500, data: { error: "internal_error", reference: ref } };
     }
   };
 }

@@ -918,3 +918,125 @@ describe("public engine API (/v1)", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("API hardening", () => {
+  let route: ReturnType<typeof createApiRouter>;
+  beforeEach(() => {
+    route = createApiRouter(createRuntime({ ...getConfig(), enabledProviders: ["garmin", "strava"] }));
+  });
+
+  it("protects an inbox from being flooded through us", async () => {
+    // The thing being abused is the recipient's inbox, so that is what carries
+    // the tight budget.
+    const send = (email: string, ip = "1.2.3.4") =>
+      route(req("POST", "/api/auth/email/request", { body: { email, returnTo: "/" }, clientIp: ip }));
+    for (let i = 0; i < 3; i++) expect((await send("victim@club.ch")).status).toBe(200);
+
+    const blocked = await send("victim@club.ch");
+    expect(blocked.status).toBe(429);
+    // The header is what a client and a proxy read; a number in the body alone
+    // is decoration.
+    expect(blocked.headers?.["retry-after"]).toMatch(/^\d+$/);
+    expect((blocked.data as { retryAfterSec: number }).retryAfterSec).toBeGreaterThan(0);
+
+    // Another address is unaffected, even from the same caller.
+    expect((await send("someone-else@club.ch")).status).toBe(200);
+  });
+
+  it("does not lock out a whole office sharing one address", async () => {
+    // A university, a company and a mobile carrier all put many people behind
+    // one IP. A tight per-IP limit there is an outage, not a security control.
+    const send = (email: string) =>
+      route(req("POST", "/api/auth/email/request", { body: { email, returnTo: "/" }, clientIp: "10.0.0.1" }));
+    for (let i = 0; i < 12; i++) {
+      expect((await send(`colleague-${i}@club.ch`)).status, `request ${i} from a shared address`).toBe(200);
+    }
+  });
+
+  it("does not let the sign-in endpoint reveal who has an account", async () => {
+    // With registration closed, a stranger and a member must be answered the
+    // same way, or the endpoint becomes a membership oracle for any address.
+    const rt = createRuntime({ ...getConfig() });
+    await rt.settings.update({ registrationOpen: false });
+    const r = createApiRouter(rt);
+
+    const stranger = await r(req("POST", "/api/auth/email/request", { body: { email: "nobody@example.ch" }, clientIp: "9.9.9.1" }));
+    await rt.users.create({
+      id: "user:member@club.ch",
+      name: "Member",
+      email: "member@club.ch",
+      role: "athlete",
+      tier: "free",
+      status: "active",
+      createdAt: new Date().toISOString(),
+    });
+    const member = await r(req("POST", "/api/auth/email/request", { body: { email: "member@club.ch" }, clientIp: "9.9.9.2" }));
+
+    expect(stranger.status).toBe(member.status);
+    expect((stranger.data as { sent: boolean }).sent).toBe((member.data as { sent: boolean }).sent);
+    // Only the mail differs, and only its recipient can observe that.
+    expect((stranger.data as { devLink?: string }).devLink).toBeUndefined();
+    expect((member.data as { devLink?: string }).devLink).toBeTruthy();
+  });
+
+  it("returns a reference instead of the internal failure text", async () => {
+    // A raw error message carries whatever the failure happened to say: a
+    // Postgres error carries the query, a filesystem error carries a path.
+    const rt = createRuntime({ ...getConfig() });
+    rt.store.count = async () => {
+      throw new Error("connection to database ygf_prod at 10.4.2.9 failed: password authentication failed");
+    };
+    const r = createApiRouter(rt);
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await r(req("GET", "/api/health"));
+      expect(res.status).toBe(500);
+      const body = JSON.stringify(res.data);
+      expect(body).not.toMatch(/password|10\.4\.2\.9|ygf_prod/);
+      expect((res.data as { reference: string }).reference).toMatch(/^e_/);
+      // The detail is not lost — it goes where we can read it, tagged with the
+      // same reference so a support question is answerable.
+      expect(spy.mock.calls[0]?.join(" ")).toMatch(/password authentication failed/);
+      expect(spy.mock.calls[0]?.join(" ")).toContain((res.data as { reference: string }).reference);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("limits an ingest, which spends a third party's quota as well as ours", async () => {
+    const body = { provider: "garmin", days: 7 };
+    for (let i = 0; i < 10; i++) {
+      // Assert success, not merely "not 429" — a 400 would satisfy that and
+      // prove nothing about the limit.
+      expect((await route(req("POST", "/api/ingest", { body }))).status).toBe(200);
+    }
+    expect((await route(req("POST", "/api/ingest", { body }))).status).toBe(429);
+  });
+
+  it("leaves ordinary reads unlimited", async () => {
+    // A limit on the endpoints an athlete uses constantly would be a bug, not
+    // protection.
+    for (let i = 0; i < 40; i++) {
+      expect((await route(req("GET", "/api/health"))).status).toBe(200);
+    }
+  });
+
+  it("keeps the public API's 429 carrying a Retry-After header too", async () => {
+    const owner: Principal = { id: "o1", name: "Owner", role: "owner", orgId: "fuel-labs", tier: "elite" };
+    const issued = await route(
+      req("POST", "/api/keys", { principal: owner, body: { tenantId: "t", name: "n", rateLimitPerMin: 1 } }),
+    );
+    const secret = (issued.data as { secret: string }).secret;
+    const call = () =>
+      route(
+        req("POST", "/v1/plan", {
+          body: { activity: "running", intensity: "race", durationMin: 120, bodyWeightKg: 70 },
+          headers: { "x-api-key": secret },
+        }),
+      );
+    expect((await call()).status).toBe(200);
+    const limited = await call();
+    expect(limited.status).toBe(429);
+    expect(limited.headers?.["retry-after"]).toMatch(/^\d+$/);
+  });
+});

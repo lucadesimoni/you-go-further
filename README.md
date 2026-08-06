@@ -43,7 +43,7 @@ spelling is a convention, kept by review.
 | **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `user-flows.md`. |
 | **Vision & roadmap** | `docs/vision.md` | The seven phases, plus an honest read of where this code stands against Phase 1. |
 | **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |
-| **Tests** | `src/**/*.test.ts`, `scripts/` | 623 Vitest cases across engine, analysis, geo, i18n, auth, data pipeline, subscription and RBAC; plus a real-browser e2e journey and a mobile parity smoke. |
+| **Tests** | `src/**/*.test.ts`, `scripts/` | 630 Vitest cases across engine, analysis, geo, i18n, auth, data pipeline, subscription and RBAC; plus a real-browser e2e journey and a mobile parity smoke. |
 
 ## Deploy anywhere
 

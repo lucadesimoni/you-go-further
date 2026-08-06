@@ -49,11 +49,24 @@ function principalFrom(headers: IncomingMessage["headers"]): Principal {
 
 type VercelRequest = IncomingMessage & { body?: unknown; query?: Record<string, string | string[]> };
 
+/** Nothing this API accepts is large; matches the Node server's ceiling. */
+const MAX_BODY_BYTES = 1_000_000;
+
+class PayloadTooLarge extends Error {}
+
 async function readBody(req: VercelRequest): Promise<unknown> {
   // @vercel/node parses JSON bodies for us; fall back to reading the stream.
   if (req.body !== undefined && req.body !== "") return req.body;
   const chunks: Buffer[] = [];
-  for await (const c of req) chunks.push(c as Buffer);
+  let size = 0;
+  for await (const c of req) {
+    const buf = c as Buffer;
+    size += buf.length;
+    // Unbounded reads are a one-request denial of service. Matches the Node
+    // server's ceiling, so the two deployments reject the same things.
+    if (size > MAX_BODY_BYTES) throw new PayloadTooLarge();
+    chunks.push(buf);
+  }
   const raw = Buffer.concat(chunks).toString("utf8");
   if (!raw) return undefined;
   try {
@@ -81,7 +94,13 @@ export default async function handler(req: VercelRequest, res: ServerResponse): 
     if (req.method === "POST") {
       try {
         body = await readBody(req);
-      } catch {
+      } catch (e) {
+        if (e instanceof PayloadTooLarge) {
+          res.writeHead(413, { "content-type": "application/json" });
+          return void res.end(
+            JSON.stringify({ error: "payload_too_large", detail: `Body exceeds ${MAX_BODY_BYTES} bytes.` }),
+          );
+        }
         res.writeHead(400, { "content-type": "application/json" });
         return void res.end(JSON.stringify({ error: "Invalid JSON body" }));
       }
@@ -100,6 +119,9 @@ export default async function handler(req: VercelRequest, res: ServerResponse): 
       ),
       ...(typeof body === "string" ? { rawBody: body } : {}),
       principal: principalFrom(req.headers),
+      // Vercel always fronts the function with its own proxy, so the forwarded
+      // address is the real client here.
+      clientIp: String(req.headers["x-forwarded-for"] ?? "").split(",")[0].trim() || undefined,
     });
 
     // OAuth steps signal a redirect intent — honor it as a real 302.
@@ -108,7 +130,7 @@ export default async function handler(req: VercelRequest, res: ServerResponse): 
       res.writeHead(302, { Location: redirect });
       return void res.end();
     }
-    res.writeHead(result.status, { "content-type": "application/json" });
+    res.writeHead(result.status, { "content-type": "application/json", ...(result.headers ?? {}) });
     res.end(JSON.stringify(result.data));
   } catch (e) {
     res.writeHead(500, { "content-type": "application/json" });

@@ -120,6 +120,58 @@ await step("/v1 refuses an unauthenticated call and serves a keyed one", async (
   if (after.status !== 401) throw new Error(`a revoked key still returned ${after.status}`);
 });
 
+await step("the transport refuses an oversized body and limits sign-in requests", async () => {
+  // Both are transport-level: a unit test calling the router directly never
+  // reaches the code that reads the socket or writes a header.
+  const big = JSON.stringify({
+    goal: "endurance-performance",
+    activity: "running",
+    intensity: "race",
+    durationMin: 120,
+    bodyWeightKg: 70,
+    junk: "x".repeat(2_000_000),
+  });
+  const oversized = await fetch(`${B}/api/recommend`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: big,
+  });
+  if (oversized.status !== 413) throw new Error(`a 2 MB body returned ${oversized.status}, expected 413`);
+
+  // A normal request must be entirely unaffected.
+  const normal = await fetch(`${B}/api/recommend`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      goal: "endurance-performance",
+      activity: "running",
+      intensity: "race",
+      durationMin: 120,
+      bodyWeightKg: 70,
+    }),
+  });
+  if (!normal.ok) throw new Error(`an ordinary request returned ${normal.status}`);
+
+  // Asking for a sign-in link sends real email to an address the caller chose,
+  // so the tight budget is on the address. Hammering *one* address trips it
+  // without spending the looser per-source budget the rest of this suite needs.
+  const victim = `flood-${Date.now()}@club.ch`;
+  let limited;
+  for (let i = 0; i < 6 && !limited; i++) {
+    const res = await fetch(`${B}/api/auth/email/request`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: victim, returnTo: "/" }),
+    });
+    if (res.status === 429) limited = res;
+  }
+  if (!limited) throw new Error("sign-in link requests are not rate limited");
+  // The header is what a client and a proxy read; a number in the body is not.
+  if (!/^\d+$/.test(limited.headers.get("retry-after") ?? "")) {
+    throw new Error(`429 carried no Retry-After header: ${limited.headers.get("retry-after")}`);
+  }
+});
+
 console.log("── sign in (magic link) ──");
 await page.goto(B, { waitUntil: "networkidle" });
 await step("login screen renders", () => page.waitForSelector("text=Fuel smarter, go further"));

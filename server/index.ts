@@ -57,6 +57,25 @@ function principalFrom(headers: http.IncomingHttpHeaders): Principal {
   return PERSONAS.find((p) => p.role === role) ?? ANONYMOUS;
 }
 
+/** Nothing this API accepts is large; an elevation profile is the biggest by far. */
+const MAX_BODY_BYTES = 1_000_000;
+
+/**
+ * The caller's address, for limiting endpoints nobody has signed in to use.
+ *
+ * `x-forwarded-for` is trusted only when a proxy is declared, because a client
+ * can set that header themselves — trusting it blindly hands every attacker a
+ * fresh bucket per request, which is worse than having no limit at all, since
+ * it looks like protection.
+ */
+function clientIpFrom(req: http.IncomingMessage): string | undefined {
+  if (process.env.TRUST_PROXY === "true") {
+    const fwd = String(req.headers["x-forwarded-for"] ?? "").split(",")[0].trim();
+    if (fwd) return fwd;
+  }
+  return req.socket.remoteAddress ?? undefined;
+}
+
 function cors(res: http.ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
@@ -100,8 +119,27 @@ const server = http.createServer(async (req, res) => {
     let body: unknown;
     let rawBody: string | undefined;
     if (req.method === "POST") {
+      // Read with a ceiling. Streaming an unbounded body into memory is a
+      // one-request denial of service, and nothing this API accepts is large —
+      // an elevation profile, the biggest legitimate payload, is far below it.
       const chunks: Buffer[] = [];
-      for await (const c of req) chunks.push(c as Buffer);
+      let size = 0;
+      for await (const c of req) {
+        const buf = c as Buffer;
+        size += buf.length;
+        if (size > MAX_BODY_BYTES) {
+          // Answer *first*, then stop reading. Destroying the socket before the
+          // response is flushed means the client never sees the 413 — with
+          // `Expect: 100-continue` it sees only the interim 100 and a dead
+          // connection, which is indistinguishable from the server crashing.
+          res.writeHead(413, { "content-type": "application/json", connection: "close" });
+          return res.end(
+            JSON.stringify({ error: "payload_too_large", detail: `Body exceeds ${MAX_BODY_BYTES} bytes.` }),
+            () => req.destroy(),
+          );
+        }
+        chunks.push(buf);
+      }
       rawBody = Buffer.concat(chunks).toString("utf8");
       try {
         body = rawBody ? JSON.parse(rawBody) : undefined;
@@ -121,6 +159,7 @@ const server = http.createServer(async (req, res) => {
         Object.entries(req.headers).map(([k, v]) => [k, Array.isArray(v) ? v.join(",") : String(v ?? "")]),
       ),
       principal: principalFrom(req.headers),
+      clientIp: clientIpFrom(req),
     });
     // OAuth steps return a redirect intent — honor it as a real 302.
     const redirect = (result.data as { redirect?: string } | undefined)?.redirect;
@@ -128,7 +167,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(302, { Location: redirect });
       return res.end();
     }
-    res.writeHead(result.status, { "content-type": "application/json" });
+    res.writeHead(result.status, { "content-type": "application/json", ...(result.headers ?? {}) });
     return res.end(JSON.stringify(result.data));
   }
 

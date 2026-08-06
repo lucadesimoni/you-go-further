@@ -8,6 +8,49 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.6.0
+
+API hardening. Four defects that only show up under load or under attack, none
+of them visible from a passing test suite.
+
+**Fixed**
+
+- **Unbounded request bodies.** Both transports streamed a POST body into memory
+  with no ceiling — one request could exhaust the process. Capped at 1 MB, well
+  above the largest legitimate payload (an elevation profile), with a 413. The
+  first attempt at this was itself wrong: destroying the socket before flushing
+  the response meant the client saw only an interim `100 Continue` and a dead
+  connection, indistinguishable from a crash. Verified over real HTTP, with and
+  without `Expect: 100-continue`.
+- **500 responses handed out internal failure text.** `e.message` carries
+  whatever the failure happened to say: a Postgres error carries the query and
+  the host, a filesystem error a path. The caller now gets `internal_error` and a
+  reference; the detail goes to the log tagged with the same reference, so a
+  support question stays answerable.
+- **The sign-in endpoint was a membership oracle.** Answering "registration is
+  closed" only to unknown addresses let anyone type an email and learn whether
+  that person has an account. The reply is now identical either way — the only
+  difference is whether mail arrives, which only the address's owner can see.
+- **No rate limit anywhere on `/api/*`.** Asking for a sign-in link sends real
+  mail to an address the caller chose, so unlimited it is a way to flood a
+  stranger's inbox on our sending reputation. Now limited — and limited by
+  **inbox**, not by source address: a first attempt keyed on IP was caught by the
+  e2e starving its own sign-in, which is exactly what a university, a company or
+  a mobile carrier behind one NAT would have experienced. Three per address per
+  minute, thirty per source. Ingest and checkout are limited per athlete.
+
+**Added**
+
+- `ApiResponse.headers`, so the router can set `Retry-After` — the number was
+  already in the 429 body, where no HTTP client, proxy or CDN looks for it. Both
+  the app API and `/v1` now send it.
+- `ApiRequest.clientIp`, resolved by each transport. `x-forwarded-for` is trusted
+  only when `TRUST_PROXY=true`, because a client can set that header itself and
+  trusting it blindly hands every attacker a fresh bucket per request — worse
+  than no limit, because it looks like protection.
+
+630 unit tests, 43 e2e steps and the mobile parity smoke pass.
+
 ## 0.5.0
 
 Import, tested against each provider's own payload shape instead of against our
