@@ -125,7 +125,14 @@ export function byPartner(links: OutboundLink[]): { brand: string; links: Outbou
     const key = l.brand;
     groups.set(key, [...(groups.get(key) ?? []), l]);
   }
-  return [...groups.entries()].map(([brand, ls]) => ({ brand, links: ls, tracked: ls.every((l) => l.tracked) }));
+  return (
+    [...groups.entries()]
+      .map(([brand, ls]) => ({ brand, links: ls, tracked: ls.every((l) => l.tracked) }))
+      // Biggest basket first. The cart makes the leading brand its primary
+      // action, so the order has to mean something rather than following
+      // whatever sequence the athlete happened to add things in.
+      .sort((a, b) => b.links.length - a.links.length || a.brand.localeCompare(b.brand))
+  );
 }
 
 export interface AffiliateSummary {

@@ -115,8 +115,21 @@ export function CartPanel({ rec }: { rec: Recommendation }) {
         <>
           {groups.length > 0 ? (
             <div className="cart-partners">
-              {groups.map((g) => (
-                <button key={g.brand} type="button" className="btn btn-primary cart-partner" onClick={() => go(g.links[0])}>
+              {/*
+                One primary, the rest secondary.
+
+                A plan usually spans two or three brands, and every one of them
+                was a full-width filled button — three equal primaries is no
+                primary at all, just a wall. The largest basket leads; the others
+                are still one tap away and read as the alternatives they are.
+              */}
+              {groups.map((g, i) => (
+                <button
+                  key={g.brand}
+                  type="button"
+                  className={`btn ${i === 0 ? "btn-primary" : "btn-ghost"} cart-partner`}
+                  onClick={() => go(g.links[0])}
+                >
                   {t("shop.orderAt", { brand: g.brand })}
                 </button>
               ))}

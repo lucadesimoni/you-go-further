@@ -147,6 +147,8 @@ export const de: Dictionary = {
   "plan.whyThese": "Warum diese — Inhaltsstoffe & Kombination",
   "plan.notes": "Hinweise & Einschränkungen",
   "plan.house": "Eigenmarke",
+  "plan.multiTransportable": "2:1-Kohlenhydrate",
+  "plan.showAllCues": "Alle {count} Hinweise zeigen",
   "plan.simulate": "Simulieren",
   "plan.reset": "Zurücksetzen",
   "plan.shopThisPlan": "Diesen Plan einkaufen",

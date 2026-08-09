@@ -173,3 +173,36 @@ describe("normalizeProgram", () => {
     expect(p.cookieDays).toBe(30);
   });
 });
+
+describe("partner ordering", () => {
+  it("puts the biggest basket first, so the cart's primary action means something", () => {
+    const link = (brand: string, productId: string) => ({
+      productId,
+      brand,
+      name: productId,
+      url: `https://example.ch/${productId}`,
+      tracked: false,
+    });
+    const groups = byPartner([
+      link("Winforce", "w1"),
+      link("Sponser", "s1"),
+      link("Sponser", "s2"),
+      link("Sponser", "s3"),
+    ]);
+    expect(groups[0].brand).toBe("Sponser");
+    expect(groups[0].links).toHaveLength(3);
+  });
+
+  it("breaks a tie by name, so the order is stable rather than incidental", () => {
+    const link = (brand: string, productId: string) => ({
+      productId,
+      brand,
+      name: productId,
+      url: "https://example.ch/x",
+      tracked: false,
+    });
+    const a = byPartner([link("Winforce", "w"), link("Sponser", "s")]).map((g) => g.brand);
+    const b = byPartner([link("Sponser", "s"), link("Winforce", "w")]).map((g) => g.brand);
+    expect(a).toEqual(b);
+  });
+});

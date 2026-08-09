@@ -252,15 +252,28 @@ export function Planner({
                       </span>
                       <span className="serving">{p.servingLabel}</span>
                     </div>
-                    <div className="tags">
-                      {p.carbsG > 1 && <span className="tag">{p.carbsG} g carb</span>}
-                      {p.sodiumMg > 0 && <span className="tag">{p.sodiumMg} mg Na</span>}
-                      {p.proteinG ? <span className="tag">{p.proteinG} g protein</span> : null}
-                      {p.caffeineMg ? <span className="tag caf">{p.caffeineMg} mg caffeine</span> : null}
-                      {p.multiTransportable && <span className="tag">2:1 carbs</span>}
-                    </div>
+                    {/* One quiet line instead of five coloured chips.
+                        Six products on a plan meant thirty chips competing with
+                        the numbers that actually decide the session — the macros
+                        are still all here, they have simply stopped shouting. */}
+                    <p className="product-macros">
+                      {[
+                        p.carbsG > 1 ? `${p.carbsG} g carb` : null,
+                        p.sodiumMg > 0 ? `${p.sodiumMg} mg sodium` : null,
+                        p.proteinG ? `${p.proteinG} g protein` : null,
+                        p.caffeineMg ? `${p.caffeineMg} mg caffeine` : null,
+                        p.multiTransportable ? t("plan.multiTransportable") : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                    {/* Kept: "fast carbs on the move, take with water" is usage
+                        guidance, not marketing — it is the chips that were the
+                        noise, not this. */}
                     {p.notes && <p className="product-note">{p.notes}</p>}
-                    <BuyLink product={p} />
+                    <div className="product-foot">
+                      <BuyLink product={p} />
+                    </div>
                   </li>
                 ))}
               </ul>

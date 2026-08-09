@@ -142,6 +142,8 @@ export const en = {
   "plan.whyThese": "Why these — ingredients & combo",
   "plan.notes": "Notes & caveats",
   "plan.house": "house",
+  "plan.multiTransportable": "2:1 carbs",
+  "plan.showAllCues": "Show all {count} cues",
   "plan.simulate": "Simulate",
   "plan.reset": "Reset",
   "plan.shopThisPlan": "Shop this plan",

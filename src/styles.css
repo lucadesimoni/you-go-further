@@ -120,6 +120,18 @@
    */
   --chart-alert: var(--warn-ink);
 
+  /**
+   * Links that are not the point of the screen.
+   *
+   * The accent had become the colour of *everything* — section rules, primary
+   * buttons, and every inline link, six of them on one plan. An accent used six
+   * times is not an accent, it is the body text colour with extra steps. These
+   * read as text and earn their colour on hover, which leaves the red to mean
+   * "this is the action".
+   */
+  --link: var(--text);
+  --link-hover: var(--accent-ink);
+
   /* Focus ring, tinted per theme so it stays visible on either surface. */
   --focus-ring: rgba(255, 255, 255, 0.15);
   --scrim: rgba(0, 0, 0, 0.6);
@@ -562,6 +574,41 @@ input[type="range"] {
   margin: 8px 0 0;
   font-size: var(--text-base);
   color: var(--muted);
+}
+
+/* The macros, as one quiet line rather than a row of chips. */
+.product-macros {
+  margin: 4px 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.product-macros:empty {
+  display: none;
+}
+.product-foot {
+  margin-top: var(--space-2);
+}
+
+/* A control, not orphaned text: it sits on the list it opens.
+   Qualified with `.link-btn` because that class resets the border and is
+   defined further down the sheet, so an unqualified rule here loses. */
+.link-btn.tl-more {
+  /* Sized to its text. Stretched across the panel it read as another row of
+     the list rather than the control that opens it. */
+  align-self: flex-start;
+  width: fit-content;
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.link-btn.tl-more:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  text-decoration: none;
 }
 
 .notes h4 {
@@ -1833,8 +1880,9 @@ code {
   margin-top: 4px;
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--accent-ink);
+  color: var(--link);
   text-decoration: none;
+  text-underline-offset: 3px;
   /* It is a <button> when the hand-off is recorded server-side and an <a>
      otherwise; both must look like the same link. */
   background: none;
@@ -1844,6 +1892,7 @@ code {
   font-family: inherit;
 }
 .product-shop:hover {
+  color: var(--link-hover);
   text-decoration: underline;
 }
 
@@ -2310,7 +2359,9 @@ code {
 .link-btn {
   background: none;
   border: none;
-  color: var(--accent-ink);
+  /* Quiet by default. On Home this class appears seven times in one view; in
+     the accent it made the screen look like a list of warnings. */
+  color: var(--link);
   font-weight: 600;
   font-size: var(--text-base);
   cursor: pointer;
@@ -2321,7 +2372,7 @@ code {
   display: inline-flex;
   align-items: center;
 }
-.link-btn:hover { text-decoration: underline; }
+.link-btn:hover { color: var(--link-hover); text-decoration: underline; }
 
 /* --- Planner: notes as a low-emphasis disclosure (less overloaded) --- */
 .notes-details > summary {
@@ -2727,7 +2778,23 @@ code {
   .home-hero { align-items: flex-start; }
   .home-readiness-value { font-size: var(--text-3xl); }
   .home-next-title { font-size: var(--text-xl); }
-  .home-next-actions .btn { flex: 1 1 100%; }
+  /*
+   * "Your next move" is singular. Three equal full-width buttons said the
+   * opposite — a menu, not a next step. The primary keeps the full width; the
+   * alternatives share the row below it and read as alternatives.
+   */
+  .home-next-actions .btn { flex: 1 1 calc(50% - var(--space-4) / 2); }
+  .home-next-actions .btn-primary { flex: 1 1 100%; }
+  /*
+   * A section head is a heading and a status pill. On a narrow screen they
+   * fought: the pill wrapped onto two lines and pushed the heading into two of
+   * its own. Stacking keeps both on one line each.
+   */
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
   /* On a phone the row stacks: date + sport, then figures, then the action. */
   .home-session { grid-template-columns: 56px minmax(0, 1fr); }
   .home-session-figs { grid-column: 1 / -1; white-space: normal; }
@@ -2884,7 +2951,6 @@ code {
 }
 .pill-todo { color: var(--warn-ink); border-color: var(--warn-line); }
 .pill-done { color: var(--post-ink); border-color: var(--success-line); }
-.link-strong { color: var(--text); }
 .home-session-actions {
   justify-self: end;
   display: flex;

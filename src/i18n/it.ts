@@ -147,6 +147,8 @@ export const it: Dictionary = {
   "plan.whyThese": "Perché questi — ingredienti e abbinamento",
   "plan.notes": "Note e limiti",
   "plan.house": "propria",
+  "plan.multiTransportable": "carboidrati 2:1",
+  "plan.showAllCues": "Mostra tutti i {count} promemoria",
   "plan.simulate": "Simulare",
   "plan.reset": "Azzerare",
   "plan.shopThisPlan": "Ordinare questo piano",

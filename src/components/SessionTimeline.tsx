@@ -47,18 +47,40 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
     };
   }, [playing, schedule.totalMin]);
 
+  const [showAll, setShowAll] = useState(false);
   const actionable = useMemo(() => schedule.cues.filter((c) => c.kind !== "start" && c.kind !== "finish"), [schedule]);
   const nextCue = schedule.cues.find((c) => c.atMin > elapsed && c.kind !== "start");
   const dueCue = [...schedule.cues].reverse().find((c) => c.atMin <= elapsed && c.kind !== "start" && c.kind !== "finish");
   const justDue = dueCue && elapsed - dueCue.atMin <= 1;
   const pct = schedule.totalMin ? Math.min(100, (elapsed / schedule.totalMin) * 100) : 0;
 
+  /**
+   * What to show of the list: the start, the next few cues, and the finish.
+   *
+   * Anchored on the clock rather than on the top of the array, so simulating the
+   * session walks the window forward instead of scrolling away from it.
+   */
+  const PREVIEW = 4;
+  const visibleCues = useMemo(() => {
+    const all = schedule.cues.map((cue, i) => ({ cue, i }));
+    if (showAll || all.length <= PREVIEW + 2) return all;
+    const upcoming = all.filter(({ cue }) => cue.atMin > elapsed || cue.kind === "start");
+    const window = upcoming.slice(0, PREVIEW);
+    const last = all[all.length - 1];
+    // Always keep the finish in view: it is the one the athlete plans around.
+    return window.some(({ i }) => i === last.i) ? window : [...window, last];
+  }, [schedule.cues, showAll, elapsed]);
+  const hiddenCount = schedule.cues.length - visibleCues.length;
+
   return (
     <div className="panel timeline">
       <div className="section-head">
         <h3 style={{ margin: 0, fontSize: 17 }}>In-session schedule</h3>
         <div className="tl-controls">
-          <button type="button" className="btn btn-primary" onClick={() => setPlaying((p) => !p)}>
+          {/* A rehearsal control, not the point of the screen: the accent
+              belongs to ordering and logging, which is what the athlete is
+              actually here to do. */}
+          <button type="button" className="btn btn-ghost" onClick={() => setPlaying((p) => !p)}>
             {playing ? t("plan.pause") : elapsed >= schedule.totalMin ? t("plan.replay") : t("plan.simulate")}
           </button>
           <button
@@ -108,9 +130,16 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
         ))}
       </div>
 
-      {/* Cue list */}
+      {/*
+        The cue list, minute by minute.
+
+        A four-hour race produces two dozen rows, and all of them open at once
+        made the plan look like a spreadsheet — the athlete only ever needs the
+        next few. The rest is still one click away, and once the simulation is
+        running the list follows the clock rather than the fold.
+      */}
       <ul className="tl-list">
-        {schedule.cues.map((c, i) => {
+        {visibleCues.map(({ cue: c, i }) => {
           const done = c.atMin <= elapsed;
           return (
             <li key={i} className={`tl-row${done ? " done" : ""}${dueCue === c && justDue ? " active" : ""}`}>
@@ -125,6 +154,11 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
           );
         })}
       </ul>
+      {hiddenCount > 0 && (
+        <button type="button" className="link-btn tl-more" onClick={() => setShowAll(true)}>
+          {t("plan.showAllCues", { count: schedule.cues.length })}
+        </button>
+      )}
 
       <div className="tl-foot">
         <span>

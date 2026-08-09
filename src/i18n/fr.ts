@@ -149,6 +149,8 @@ export const fr: Dictionary = {
   "plan.whyThese": "Pourquoi ceux-ci — composition et association",
   "plan.notes": "Remarques et limites",
   "plan.house": "maison",
+  "plan.multiTransportable": "glucides 2:1",
+  "plan.showAllCues": "Afficher les {count} rappels",
   "plan.simulate": "Simuler",
   "plan.reset": "Réinitialiser",
   "plan.shopThisPlan": "Commander ce plan",
