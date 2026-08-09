@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { resolveConfirm, subscribeConfirm, type ConfirmState } from "../ui/confirm";
 import { useFocusTrap } from "../ui/useFocusTrap";
+import { useT } from "../i18n";
 
 /** Renders the promise-based confirm dialog. Mount once near the app root. */
 export function ConfirmHost() {
+  const t = useT();
   const [state, setState] = useState<ConfirmState>({ open: false, opts: { title: "" } });
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, state.open);
@@ -36,7 +38,7 @@ export function ConfirmHost() {
         {message && <p className="detail">{message}</p>}
         <div className="modal-actions">
           <button type="button" className="btn btn-ghost" onClick={() => resolveConfirm(false)}>
-            {cancelLabel ?? "Cancel"}
+            {cancelLabel ?? t("common.cancel")}
           </button>
           <button
             type="button"
@@ -44,7 +46,7 @@ export function ConfirmHost() {
             onClick={() => resolveConfirm(true)}
             autoFocus
           >
-            {confirmLabel ?? "Confirm"}
+            {confirmLabel ?? t("common.confirm")}
           </button>
         </div>
       </div>

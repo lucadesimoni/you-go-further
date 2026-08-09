@@ -75,7 +75,7 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
   return (
     <div className="panel timeline">
       <div className="section-head">
-        <h3 style={{ margin: 0, fontSize: 17 }}>In-session schedule</h3>
+        <h3 style={{ margin: 0, fontSize: 17 }}>{t("schedule.title")}</h3>
         <div className="tl-controls">
           {/* A rehearsal control, not the point of the screen: the accent
               belongs to ordering and logging, which is what the athlete is
@@ -105,14 +105,14 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
         <div className="tl-cue">
           {justDue && dueCue ? (
             <>
-              <strong>Now:</strong> {dueCue.label}
+              <strong>{t("schedule.now")}</strong> {dueCue.label}
             </>
           ) : nextCue ? (
             <>
               <strong>Next at {formatClock(nextCue.atMin)}:</strong> {nextCue.label}
             </>
           ) : (
-            <strong>Session complete — refuel now.</strong>
+            <strong>{t("schedule.complete")}</strong>
           )}
         </div>
       </div>
@@ -148,7 +148,7 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
               <span className="tl-kind">{KIND_LABEL[c.kind]}</span>
               <span className="tl-label">
                 {c.label}
-                {c.sodiumMg ? <span className="tl-na"> · {c.sodiumMg} mg Na</span> : null}
+                {c.sodiumMg ? <span className="tl-na"> · {t("unit.sodium", { n: c.sodiumMg })}</span> : null}
               </span>
             </li>
           );
@@ -162,10 +162,10 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
 
       <div className="tl-foot">
         <span>
-          {schedule.totalCarbG} g carb · {schedule.totalFluidMl} ml planned across the session
+          {t("schedule.planned", { carb: schedule.totalCarbG, fluid: schedule.totalFluidMl })}
         </span>
-        <button type="button" className="btn btn-ghost" disabled title="Pushes to your watch via Garmin Connect IQ in production">
-          Send to watch
+        <button type="button" className="btn btn-ghost" disabled title={t("schedule.sendToWatchHint")}>
+          {t("schedule.sendToWatch")}
         </button>
       </div>
     </div>

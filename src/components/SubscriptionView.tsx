@@ -2,14 +2,15 @@ import { useState } from "react";
 import { PLANS, TIER_ORDER, type Tier } from "../subscription";
 import { toast } from "../ui/toast";
 import { api, isApiConfigured } from "../api/client";
+import { useT, type TranslationKey } from "../i18n";
 
-const FEATURE_ROWS: { key: keyof (typeof PLANS)["free"]["features"]; label: string }[] = [
-  { key: "maxConnectedProviders", label: "Connected services" },
-  { key: "historyDays", label: "History (days)" },
-  { key: "autoSync", label: "Auto-sync" },
-  { key: "loadAnalytics", label: "Load analytics" },
-  { key: "dataExport", label: "Data export" },
-  { key: "aiInsights", label: "AI insights" },
+const FEATURE_ROWS: { key: keyof (typeof PLANS)["free"]["features"]; label: TranslationKey }[] = [
+  { key: "maxConnectedProviders", label: "feature.connectedServices" },
+  { key: "historyDays", label: "feature.historyDays" },
+  { key: "autoSync", label: "feature.autoSync" },
+  { key: "loadAnalytics", label: "feature.loadAnalytics" },
+  { key: "dataExport", label: "feature.dataExport" },
+  { key: "aiInsights", label: "feature.aiInsights" },
 ];
 const cell = (v: unknown) => (typeof v === "boolean" ? (v ? "✓" : "—") : String(v));
 
@@ -23,20 +24,21 @@ export function SubscriptionView({
   onChoose: (t: Tier) => void;
   canBilling: boolean;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState<Tier | null>(null);
   const live = isApiConfigured();
 
   // Paid plans go through the payment provider; the tier only moves once the
   // signed webhook confirms payment. Free (and the client-only build) switch directly.
-  const choose = async (t: Tier) => {
-    if (!live || PLANS[t].priceChfPerMonth <= 0) {
-      onChoose(t);
-      toast.success(`Switched to ${PLANS[t].name}`);
+  const choose = async (next: Tier) => {
+    if (!live || PLANS[next].priceChfPerMonth <= 0) {
+      onChoose(next);
+      toast.success(t("sub.switched", { plan: PLANS[next].name }));
       return;
     }
-    setBusy(t);
+    setBusy(next);
     try {
-      const res = await api.checkoutSubscription(t, window.location.href);
+      const res = await api.checkoutSubscription(next, window.location.href);
       window.location.href = res.url;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not start checkout");
@@ -48,7 +50,7 @@ export function SubscriptionView({
     <main className="dash">
       <section className="panel">
         <div className="section-head">
-          <h2>Subscription</h2>
+          <h2>{t("sub.title")}</h2>
           <span className="pill">Current: {PLANS[tier].name}</span>
         </div>
         <p className="detail">
@@ -58,11 +60,11 @@ export function SubscriptionView({
         </p>
 
         <div className="plan-cards">
-          {TIER_ORDER.map((t) => {
-            const plan = PLANS[t];
-            const current = t === tier;
+          {TIER_ORDER.map((tierId) => {
+            const plan = PLANS[tierId];
+            const current = tierId === tier;
             return (
-              <div key={t} className={`plan-card${current ? " active" : ""}`}>
+              <div key={tierId} className={`plan-card${current ? " active" : ""}`}>
                 <div className="plan-card-head">
                   <span className="plan-card-name">
                     {plan.name}
@@ -76,7 +78,7 @@ export function SubscriptionView({
                 <ul className="plan-card-feats">
                   {FEATURE_ROWS.map((row) => (
                     <li key={row.key}>
-                      <span>{row.label}</span>
+                      <span>{t(row.label)}</span>
                       <span>{cell(plan.features[row.key])}</span>
                     </li>
                   ))}
@@ -85,12 +87,12 @@ export function SubscriptionView({
                   <button
                     type="button"
                     className={`btn ${current ? "btn-ghost" : "btn-primary"} plan-card-btn`}
-                    onClick={() => choose(t)}
+                    onClick={() => choose(tierId)}
                     disabled={current || busy !== null}
                   >
                     {current
                       ? "Current plan"
-                      : busy === t
+                      : busy === tierId
                         ? "Starting checkout…"
                         : plan.priceChfPerMonth === 0
                           ? "Downgrade"

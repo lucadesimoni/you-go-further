@@ -33,7 +33,7 @@ export function NutritionGuide() {
           than letting a German reader wonder whether something is broken. */}
       {lang === "de" && <p className="detail">{t("guide.englishOnly")}</p>}
 
-      <div className="guide-filters" role="group" aria-label="Filter by topic">
+      <div className="guide-filters" role="group" aria-label={t("guide.filterByTopic")}>
         <button
           type="button"
           className={`health-chip${category === "all" ? " on" : ""}`}
@@ -114,7 +114,7 @@ export function NutritionGuide() {
                   </div>
 
                   <p className="guide-evidence">
-                    <strong>Evidence:</strong> {a.evidence}
+                    <strong>{t("guide.evidence")}</strong> {a.evidence}
                   </p>
                 </div>
               )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, isApiConfigured, type AdminOverview, type HealthResponse } from "../api/client";
 import type { Role } from "../auth";
+import { useT } from "../i18n";
 
 type State =
   | { kind: "client-side" }
@@ -14,6 +15,7 @@ type State =
  * Falls back gracefully to a "client-side" note when no API is configured.
  */
 export function ServerStatus({ role }: { role: Role }) {
+  const t = useT();
   const [state, setState] = useState<State>({ kind: isApiConfigured() ? "loading" : "client-side" });
   const [seeded, setSeeded] = useState(false);
 
@@ -42,11 +44,11 @@ export function ServerStatus({ role }: { role: Role }) {
     return (
       <section className="panel">
         <div className="section-head">
-          <h2>Backend</h2>
+          <h2>{t("server.backend")}</h2>
           <span className="pill">client-side</span>
         </div>
         <p className="detail" style={{ margin: 0 }}>
-          Running fully in the browser against the shared domain modules. Set <code>apiBaseUrl</code>{" "}
+          {t("server.browserOnly")} Set <code>apiBaseUrl</code>{" "}
           (see <code>docs/deployment.md</code>) to route through the HTTP API server instead — the
           same engine, analysis, and RBAC behind a network boundary.
         </p>
@@ -57,13 +59,13 @@ export function ServerStatus({ role }: { role: Role }) {
   return (
     <section className="panel">
       <div className="section-head">
-        <h2>Backend</h2>
+        <h2>{t("server.backend")}</h2>
         <span className={`pill ${state.kind === "ok" ? "pill-live" : ""}`}>
           {state.kind === "ok" ? "● live API" : state.kind === "error" ? "error" : "connecting…"}
         </span>
       </div>
 
-      {state.kind === "loading" && <p className="detail">Contacting the API…</p>}
+      {state.kind === "loading" && <p className="detail">{t("server.contacting")}</p>}
       {state.kind === "error" && <p className="detail">Could not reach the API: {state.message}</p>}
 
       {state.kind === "ok" && (
@@ -71,25 +73,25 @@ export function ServerStatus({ role }: { role: Role }) {
           <div className="targets plain-grid">
             <div className="stat">
               <span className="stat-value">{state.health.status === "ok" ? "OK" : state.health.status}</span>
-              <span className="stat-label">API health</span>
+              <span className="stat-label">{t("server.apiHealth")}</span>
             </div>
             <div className="stat">
               <span className="stat-value">{state.health.environment}</span>
-              <span className="stat-label">Environment</span>
+              <span className="stat-label">{t("server.environment")}</span>
             </div>
             <div className="stat">
               <span className="stat-value">{state.overview.deployment.activitiesStored}</span>
-              <span className="stat-label">Rows in store</span>
+              <span className="stat-label">{t("server.rowsInStore")}</span>
             </div>
             <div className="stat">
               <span className="stat-value">v{state.health.version}</span>
-              <span className="stat-label">Server version</span>
+              <span className="stat-label">{t("server.version")}</span>
             </div>
           </div>
           <div className="tl-foot mt-5">
-            <span>Served by the HTTP API — data below is fetched live over the network.</span>
+            <span>{t("server.servedByApi")}</span>
             <button type="button" className="btn btn-primary" onClick={seed}>
-              Seed sample data
+              {t("server.seedSample")}
             </button>
           </div>
         </>

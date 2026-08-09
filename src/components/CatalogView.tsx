@@ -5,17 +5,18 @@ import { catalogPersistence, deleteProduct, loadCatalog, saveProduct } from "../
 import { toast } from "../ui/toast";
 import { confirm } from "../ui/confirm";
 import { useFocusTrap } from "../ui/useFocusTrap";
-import { useT } from "../i18n";
+import { useT, type TranslationKey } from "../i18n";
 import { BuyLink } from "./BuyLink";
 
-const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  "drink-mix": "Drink mix",
-  gel: "Gel",
-  bar: "Bar",
-  electrolyte: "Electrolyte",
-  recovery: "Recovery",
+/** Category names, keyed so the library reads in the athlete's language. */
+const CATEGORY_KEY: Record<ProductCategory, TranslationKey> = {
+  "drink-mix": "cat.drinkMix",
+  gel: "cat.gel",
+  bar: "cat.bar",
+  electrolyte: "cat.electrolyte",
+  recovery: "cat.recovery",
 };
-const ALL_CATEGORIES = Object.keys(CATEGORY_LABELS) as ProductCategory[];
+const ALL_CATEGORIES = Object.keys(CATEGORY_KEY) as ProductCategory[];
 const ALL_PHASES: Phase[] = ["pre", "during", "post"];
 
 type Draft = Partial<Product>;
@@ -87,9 +88,9 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
 
   const remove = async (product: Product) => {
     const ok = await confirm({
-      title: `Delete ${product.brand} ${product.name}?`,
+      title: t("catalog.deleteTitle", { brand: product.brand, name: product.name }),
       message: "It will be removed from the product library and from recommendations.",
-      confirmLabel: "Delete product",
+      confirmLabel: t("catalog.deleteProduct"),
       danger: true,
     });
     if (!ok) return;
@@ -112,18 +113,17 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
       <section className="panel">
         <div className="section-head">
           <h2>{t("catalog.title")}</h2>
-          <span className="pill">{catalog.length} products</span>
+          <span className="pill">{t("catalog.count", { count: catalog.length })}</span>
         </div>
         <p className="detail">
-          {brands.join(" · ")} — the library every recommendation draws from. Tap a card for when to
-          use it.{" "}
+          {t("catalog.intro", { brands: brands.join(" · ") })}{" "}
           {canEdit ? (
             <>
-              <strong>{customCount}</strong> house product{customCount === 1 ? "" : "s"} ·{" "}
-              {catalogPersistence.mode() === "server" ? "saved on the server" : "saved in this browser"}.
+              {t("catalog.houseCount", { count: customCount })} ·{" "}
+              {catalogPersistence.mode() === "server" ? t("catalog.savedServer") : t("catalog.savedBrowser")}.
             </>
           ) : (
-            <>Read-only — a nutritionist or admin curates it.</>
+            <>{t("catalog.readOnly")}</>
           )}
         </p>
 
@@ -141,11 +141,11 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
           style={{ gridTemplateColumns: `repeat(${categories.length + 1}, 1fr)`, marginBottom: 14 }}
         >
           <button type="button" className={category === "all" ? "seg active" : "seg"} onClick={() => setCategory("all")}>
-            All
+            {t("cat.all")}
           </button>
           {categories.map((c) => (
             <button key={c} type="button" className={category === c ? "seg active" : "seg"} onClick={() => setCategory(c)}>
-              {CATEGORY_LABELS[c]}
+              {t(CATEGORY_KEY[c])}
             </button>
           ))}
         </div>
@@ -158,13 +158,13 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                   <strong>{p.brand}</strong> {p.name}
                   {p.custom && <span className="tag tag-house">house</span>}
                 </span>
-                <span className="serving">{CATEGORY_LABELS[p.category]}</span>
+                <span className="serving">{t(CATEGORY_KEY[p.category])}</span>
               </div>
               <div className="tags">
-                {p.carbsG > 1 && <span className="tag">{p.carbsG} g carb</span>}
-                {p.sodiumMg > 0 && <span className="tag">{p.sodiumMg} mg Na</span>}
-                {p.proteinG ? <span className="tag">{p.proteinG} g protein</span> : null}
-                {p.caffeineMg ? <span className="tag caf">{p.caffeineMg} mg caffeine</span> : null}
+                {p.carbsG > 1 && <span className="tag">{t("unit.carb", { n: p.carbsG })}</span>}
+                {p.sodiumMg > 0 && <span className="tag">{t("unit.sodium", { n: p.sodiumMg })}</span>}
+                {p.proteinG ? <span className="tag">{t("unit.protein", { n: p.proteinG })}</span> : null}
+                {p.caffeineMg ? <span className="tag caf">{t("unit.caffeine", { n: p.caffeineMg })}</span> : null}
                 {p.multiTransportable && <span className="tag">2:1 carbs</span>}
                 {p.phases.map((ph) => (
                   <span key={ph} className="tag">
@@ -188,7 +188,7 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                       </p>
                       {use.avoidWhen.length > 0 && (
                         <p className="usage-line">
-                          <span className="usage-label avoid">Avoid</span>
+                          <span className="usage-label avoid">{t("catalog.avoid")}</span>
                           {use.avoidWhen.join(" · ")}
                         </p>
                       )}
@@ -205,16 +205,16 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                     onClick={() => setDraft({ ...p })}
                     disabled={busy}
                   >
-                    Edit
+                    {t("catalog.edit")}
                   </button>
                   <button
                     type="button"
                     className="btn btn-ghost btn-danger"
                     onClick={() => remove(p)}
                     disabled={busy || (!p.custom && CATALOG.some((b) => b.id === p.id))}
-                    title={!p.custom ? "Built-ins can't be deleted — Edit to override values" : "Delete house product"}
+                    title={!p.custom ? t("catalog.builtInHint") : t("catalog.deleteHouseHint")}
                   >
-                    Delete
+                    {t("catalog.delete")}
                   </button>
                 </div>
               )}
@@ -234,33 +234,33 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
             onClick={(e) => e.stopPropagation()}
           >
             <div className="section-head">
-              <h3 id="product-dialog-title">{draft.id ? "Edit product" : "Add Swiss product"}</h3>
-              <span className="pill">Swiss only</span>
+              <h3 id="product-dialog-title">{draft.id ? t("catalog.editProduct") : t("catalog.addProduct")}</h3>
+              <span className="pill">{t("catalog.swissOnly")}</span>
             </div>
             <div className="field-row">
               <div className="field">
-                <label htmlFor="p-brand">Brand</label>
+                <label htmlFor="p-brand">{t("catalog.brand")}</label>
                 <input id="p-brand" value={draft.brand ?? ""} onChange={(e) => set("brand", e.target.value)} placeholder="e.g. MOOV" />
               </div>
               <div className="field">
-                <label htmlFor="p-name">Product name</label>
+                <label htmlFor="p-name">{t("catalog.productName")}</label>
                 <input id="p-name" value={draft.name ?? ""} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Hydration" />
               </div>
             </div>
             <div className="field-row">
               <div className="field">
-                <label htmlFor="p-cat">Category</label>
+                <label htmlFor="p-cat">{t("catalog.category")}</label>
                 <select id="p-cat" value={draft.category ?? "drink-mix"} onChange={(e) => set("category", e.target.value as ProductCategory)}>
                   {ALL_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
-                      {CATEGORY_LABELS[c]}
+                      {t(CATEGORY_KEY[c])}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="field">
-                <span className="group-label">Phases</span>
-                <div className="segmented" role="group" aria-label="Phases">
+                <span className="group-label">{t("catalog.phases")}</span>
+                <div className="segmented" role="group" aria-label={t("catalog.phases")}>
                   {ALL_PHASES.map((ph) => (
                     <button
                       key={ph}
@@ -276,50 +276,50 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
             </div>
             <div className="field-row">
               <div className="field">
-                <label htmlFor="p-carb">Carbs (g)</label>
+                <label htmlFor="p-carb">{t("catalog.carbsG")}</label>
                 <input id="p-carb" type="number" value={draft.carbsG ?? 0} onChange={(e) => set("carbsG", Number(e.target.value))} />
               </div>
               <div className="field">
-                <label htmlFor="p-na">Sodium (mg)</label>
+                <label htmlFor="p-na">{t("catalog.sodiumMg")}</label>
                 <input id="p-na" type="number" value={draft.sodiumMg ?? 0} onChange={(e) => set("sodiumMg", Number(e.target.value))} />
               </div>
             </div>
             <div className="field-row">
               <div className="field">
-                <label htmlFor="p-pro">Protein (g, optional)</label>
+                <label htmlFor="p-pro">{t("catalog.proteinG")}</label>
                 <input id="p-pro" type="number" value={draft.proteinG ?? ""} onChange={(e) => set("proteinG", e.target.value === "" ? undefined : Number(e.target.value))} />
               </div>
               <div className="field">
-                <label htmlFor="p-caf">Caffeine (mg, optional)</label>
+                <label htmlFor="p-caf">{t("catalog.caffeineMg")}</label>
                 <input id="p-caf" type="number" value={draft.caffeineMg ?? ""} onChange={(e) => set("caffeineMg", e.target.value === "" ? undefined : Number(e.target.value))} />
               </div>
             </div>
             <div className="field-row">
               <div className="field">
-                <label htmlFor="p-serve">Serving</label>
+                <label htmlFor="p-serve">{t("catalog.serving")}</label>
                 <input id="p-serve" value={draft.servingLabel ?? ""} onChange={(e) => set("servingLabel", e.target.value)} placeholder="e.g. 40 g in 500 ml" />
               </div>
               <div className="field">
-                <label htmlFor="p-price">Price (CHF, optional)</label>
+                <label htmlFor="p-price">{t("catalog.priceChf")}</label>
                 <input id="p-price" type="number" step="0.1" value={draft.priceChf ?? ""} onChange={(e) => set("priceChf", e.target.value === "" ? undefined : Number(e.target.value))} />
               </div>
             </div>
             <div className="field">
-              <label htmlFor="p-shop">Shop URL (optional)</label>
+              <label htmlFor="p-shop">{t("catalog.shopUrl")}</label>
               <input id="p-shop" value={draft.shopUrl ?? ""} onChange={(e) => set("shopUrl", e.target.value)} placeholder="https://…" />
             </div>
             <label className="checkbox">
               <input type="checkbox" checked={Boolean(draft.multiTransportable)} onChange={(e) => set("multiTransportable", e.target.checked)} />
-              <span>Multiple transportable carbs (glucose + fructose, absorbs 60 g/h+)</span>
+              <span>{t("catalog.multiTransportable")}</span>
             </label>
             <div className="field">
-              <label htmlFor="p-notes">Notes (optional)</label>
+              <label htmlFor="p-notes">{t("catalog.notes")}</label>
               <input id="p-notes" value={draft.notes ?? ""} onChange={(e) => set("notes", e.target.value)} />
             </div>
             {error && <p className="auth-error">{error}</p>}
             <div className="modal-actions">
               <button type="button" className="btn btn-ghost" onClick={() => setDraft(null)} disabled={busy}>
-                Cancel
+                {t("catalog.cancel")}
               </button>
               <button type="button" className="btn btn-primary" onClick={submit} disabled={busy}>
                 {busy ? "Saving…" : "Save product"}

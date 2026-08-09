@@ -3,6 +3,7 @@ import type { ProviderId } from "../model";
 import { generateSampleActivities } from "../providers";
 import { analyze } from "../analysis";
 import { lastNDays } from "../data";
+import { useT } from "../i18n";
 
 const ROSTER: { name: string; provider: ProviderId; weightKg: number; maxHr: number }[] = [
   { name: "Lena Brunner", provider: "garmin", weightKg: 58, maxHr: 194 },
@@ -21,6 +22,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 /** Coach / nutritionist roster: per-athlete load status and weekly fuel needs. */
 export function TeamView({ canExport }: { canExport: boolean }) {
+  const t = useT();
   const now = useMemo(() => new Date(), []);
   const [open, setOpen] = useState<string | null>(null);
 
@@ -41,7 +43,7 @@ export function TeamView({ canExport }: { canExport: boolean }) {
     <main className="dash">
       <section className="panel">
         <div className="section-head">
-          <h2>Team</h2>
+          <h2>{t("team.title")}</h2>
           <span className="pill">
             {rows.length} athletes · {flagged} flagged
           </span>
@@ -59,7 +61,7 @@ export function TeamView({ canExport }: { canExport: boolean }) {
                 <button type="button" className="roster-head" onClick={() => setOpen(isOpen ? null : r.name)}>
                   <span className="roster-name">{r.name}</span>
                   <span className="roster-meta">
-                    {r.report.totalActivities} sessions · {r.report.totalHours} h
+                    {t("team.sessionsHours", { sessions: r.report.totalActivities, hours: r.report.totalHours })}
                   </span>
                   <span className={`acwr-badge acwr-${r.report.acwr.status}`}>
                     {STATUS_LABEL[r.report.acwr.status]} {r.report.acwr.ratio || "—"}
@@ -78,15 +80,15 @@ export function TeamView({ canExport }: { canExport: boolean }) {
                       </div>
                       <div className="stat">
                         <span className="stat-value">{r.report.nutrition.weeklyDuringCarbG} g</span>
-                        <span className="stat-label">Weekly carbs</span>
+                        <span className="stat-label">{t("team.weeklyCarbs")}</span>
                       </div>
                       <div className="stat">
                         <span className="stat-value">{r.report.nutrition.avgCarbPerHourG} g/h</span>
-                        <span className="stat-label">Avg fuel rate</span>
+                        <span className="stat-label">{t("team.avgFuelRate")}</span>
                       </div>
                     </div>
                     <p className="detail note-top">
-                      {r.report.nutrition.fuelledSessions} of {r.report.nutrition.totalSessions} sessions this week need
+                      {t("team.needMore", { fuelled: r.report.nutrition.fuelledSessions, total: r.report.nutrition.totalSessions })}
                       in-session fuel. Source: {r.provider}.
                     </p>
                   </div>
@@ -98,7 +100,7 @@ export function TeamView({ canExport }: { canExport: boolean }) {
 
         {canExport && (
           <p className="upgrade-note">
-            Export the full team dataset from the <strong>Admin</strong> tab (Elite).
+            {t("team.exportNote")} <strong>{t("team.admin")}</strong> tab (Elite).
           </p>
         )}
       </section>

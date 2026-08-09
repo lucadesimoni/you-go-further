@@ -1,24 +1,19 @@
 import { useState } from "react";
 import type { AdaptationInsight, EnergyRating, GiRating, SessionFeedback } from "../feedback";
+import { useT } from "../i18n";
 
-const GI_OPTS: { value: GiRating; label: string }[] = [
-  { value: "none", label: "None" },
-  { value: "mild", label: "Mild" },
-  { value: "severe", label: "Severe" },
-];
-const ENERGY_OPTS: { value: EnergyRating; label: string }[] = [
-  { value: "bonked", label: "Bonked" },
-  { value: "faded", label: "Faded" },
-  { value: "steady", label: "Steady" },
-  { value: "strong", label: "Strong" },
-];
+/* The same ratings the debrief uses, so one vocabulary describes a session
+   whether it is being logged or reviewed. */
+const GI_OPTS: GiRating[] = ["none", "mild", "severe"];
+const ENERGY_OPTS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
 
-const CONF_LABEL: Record<AdaptationInsight["confidence"], string> = {
-  none: "no data yet",
-  low: "low confidence",
-  medium: "building confidence",
-  high: "high confidence",
-};
+/** Confidence, keyed rather than spelled out, so it reads in every language. */
+const CONF_KEY = {
+  none: "log.confNone",
+  low: "log.confLow",
+  medium: "log.confMedium",
+  high: "log.confHigh",
+} as const;
 
 /**
  * "Log & learn" — the feedback loop. The athlete records how a session went; the
@@ -37,6 +32,7 @@ export function FeedbackPanel({
   onReset: () => void;
   persistence: "server" | "local";
 }) {
+  const t = useT();
   const [gi, setGi] = useState<GiRating>("none");
   const [energy, setEnergy] = useState<EnergyRating>("steady");
   const [justLogged, setJustLogged] = useState(false);
@@ -50,37 +46,37 @@ export function FeedbackPanel({
   return (
     <div className="panel feedback">
       <div className="section-head">
-        <h3 style={{ margin: 0, fontSize: 17 }}>Log &amp; learn</h3>
+        <h3 style={{ margin: 0, fontSize: 17 }}>{t("log.title")}</h3>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span className={`pill${persistence === "server" ? " pill-live" : ""}`}>
-            {persistence === "server" ? "● synced to account" : "saved on this device"}
+            {persistence === "server" ? t("log.synced") : t("profile.savedLocally")}
           </span>
           {feedbacks.length > 0 && (
             <button type="button" className="btn btn-ghost" onClick={onReset}>
-              Clear
+              {t("log.clear")}
             </button>
           )}
         </div>
       </div>
-      <p className="detail">Tell us how the session went — the plan above learns from it.</p>
+      <p className="detail">{t("log.sub")}</p>
 
       <div className="fb-row">
         <div className="field">
-          <span className="group-label">Gut / GI</span>
+          <span className="group-label">{t("log.gut")}</span>
           <div className="segmented" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
             {GI_OPTS.map((o) => (
-              <button key={o.value} type="button" className={gi === o.value ? "seg active" : "seg"} onClick={() => setGi(o.value)}>
-                {o.label}
+              <button key={o} type="button" className={gi === o ? "seg active" : "seg"} onClick={() => setGi(o)}>
+                {t(`debrief.gi.${o}`)}
               </button>
             ))}
           </div>
         </div>
         <div className="field">
-          <span className="group-label">Energy</span>
+          <span className="group-label">{t("log.energy")}</span>
           <div className="segmented">
             {ENERGY_OPTS.map((o) => (
-              <button key={o.value} type="button" className={energy === o.value ? "seg active" : "seg"} onClick={() => setEnergy(o.value)}>
-                {o.label}
+              <button key={o} type="button" className={energy === o ? "seg active" : "seg"} onClick={() => setEnergy(o)}>
+                {t(`debrief.energy.${o}`)}
               </button>
             ))}
           </div>
@@ -94,9 +90,9 @@ export function FeedbackPanel({
       {/* What we learned */}
       <div className={`fb-insight${insight.samples > 0 ? " on" : ""}`}>
         <div className="fb-insight-head">
-          <strong>What we learned</strong>
+          <strong>{t("log.learned")}</strong>
           <span className="pill">
-            {insight.samples} logged · {CONF_LABEL[insight.confidence]}
+            {insight.samples} logged · {t(CONF_KEY[insight.confidence])}
           </span>
         </div>
         <div className="fb-badges">

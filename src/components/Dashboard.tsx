@@ -343,17 +343,17 @@ export function Dashboard({
             <span className="pill">from your devices</span>
           </div>
           <div className="targets plain-grid">
-            <Stat label="Readiness" value={physiology.readiness !== undefined ? `${physiology.readiness}/100` : "—"} />
+            <Stat label={t("signals.readiness")} value={physiology.readiness !== undefined ? `${physiology.readiness}/100` : "—"} />
             <Stat
-              label="Overnight HRV"
+              label={t("signals.hrv")}
               value={physiology.hrvMs ? `${physiology.hrvMs} ms` : "—"}
               note={hrvStatus !== "—" ? hrvStatus : undefined}
               // HRV below baseline is the one worth flagging; at or above it is
               // not news, so it stays neutral rather than congratulating anyone.
               tone={hrvStatus === "below baseline" ? "watch" : "muted"}
             />
-            <Stat label="Resting HR" value={physiology.restingHr ? `${physiology.restingHr} bpm` : "—"} />
-            <Stat label="Sleep" value={physiology.sleepScore ? `${physiology.sleepScore}/100` : "—"} />
+            <Stat label={t("signals.restingHr")} value={physiology.restingHr ? `${physiology.restingHr} bpm` : "—"} />
+            <Stat label={t("signals.sleep")} value={physiology.sleepScore ? `${physiology.sleepScore}/100` : "—"} />
           </div>
           <Explain>
             <p>
@@ -401,7 +401,7 @@ export function Dashboard({
               ))}
             </div>
           )}
-          <Suspense fallback={<p className="detail">Loading map…</p>}>
+          <Suspense fallback={<p className="detail">{t("map.loading")}</p>}>
             <RouteMap activity={routedActivity} />
           </Suspense>
           {routedActivity.route && (
@@ -428,13 +428,13 @@ export function Dashboard({
           <h2>{t("connect.trainingAnalysis")}</h2>
           {exportEnabled && activities.length > 0 && (
             <button type="button" className="btn btn-ghost" onClick={exportData}>
-              Export NDJSON
+              {t("dash.exportNdjson")}
             </button>
           )}
         </div>
 
         {!report ? (
-          <p className="detail">Connect a service to sync activities and see your analysis.</p>
+          <p className="detail">{t("dash.connectPrompt")}</p>
         ) : (
           <>
             <div className="targets plain-grid">
@@ -459,7 +459,7 @@ export function Dashboard({
                   </div>
                 </div>
 
-                <h4 className="chart-title">Weekly training load</h4>
+                <h4 className="chart-title">{t("dash.weeklyLoad")}</h4>
                 <div className="bars">
                   {report.weeks.slice(-10).map((w) => (
                     <div className="bar-col" key={w.weekStart} title={`${w.weekStart}: load ${w.load}, ${w.durationHr} h`}>
@@ -470,7 +470,8 @@ export function Dashboard({
                 </div>
 
                 <div className="nutrition-demand">
-                  This week: <strong>{report.nutrition.fuelledSessions}</strong> of {report.nutrition.totalSessions} sessions
+                  {t("dash.thisWeek")} <strong>{report.nutrition.fuelledSessions}</strong>{" "}
+                  {t("dash.ofSessions", { total: report.nutrition.totalSessions })}
                   need in-session fuel · avg <strong>{report.nutrition.avgCarbPerHourG} g/h</strong> · total{" "}
                   <strong>{report.nutrition.weeklyDuringCarbG} g</strong> carbohydrate on the bike/run.
                 </div>
@@ -478,11 +479,11 @@ export function Dashboard({
             ) : (
               <div className="locked">
                 <p>
-                  <strong>Load analytics & weekly trends</strong> — acute:chronic workload, injury-risk flags and the full
+                  <strong>{t("dash.loadAnalyticsPitch")}</strong> — acute:chronic workload, injury-risk flags and the full
                   weekly load chart.
                 </p>
                 <p className="detail">
-                  Available on <strong>{PLANS[requiredTierFor("loadAnalytics") ?? "pro"].name}</strong> and up.
+                  {t("dash.availableOn", { tier: PLANS[requiredTierFor("loadAnalytics") ?? "pro"].name })}
                 </p>
               </div>
             )}

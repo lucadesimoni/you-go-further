@@ -53,6 +53,15 @@ describe("dictionary parity", () => {
         "load.fitness", // "Fitness" is the same word in German
         "load.form", // as is "Form"
         "load.fatigue", // and "Fatigue" in French
+        "route.wind", // "Wind" is the same word in German
+        "admin.status", // "Status" is the same word in German
+        "server.backend", // "Backend" is untranslated everywhere on purpose
+        "team.title", // "Team" is the same word in German
+        "admin.commissionPct", // "Commission %" is the same in French
+        "catalog.phases", // as is "Phases"
+        "catalog.proteinG", // "Protein (g, optional)" is word-for-word the same in German
+        "catalog.sodiumMg", // "Sodium (mg)" is the same in French
+        "cat.gel", // "Gel" is the same word in all four
       ]);
       const identical = keys.filter((k) => !allowedIdentical.has(k) && dict[k] === en[k]);
       expect(identical).toEqual([]);

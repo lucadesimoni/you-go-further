@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { idealOffering, type FuellingTarget, type AthleteInput, type Product } from "../engine";
+import { useT } from "../i18n";
 
 /**
  * Slot-by-slot view of the "ideal offering" algorithm: for each functional slot
@@ -16,6 +17,7 @@ export function OfferingPanel({
   target: FuellingTarget;
   catalog: Product[];
 }) {
+  const t = useT();
   const offering = useMemo(() => idealOffering(input, target, catalog), [input, target, catalog]);
   const active = offering.slots.filter((s) => s.needed && s.pick);
 
@@ -24,7 +26,7 @@ export function OfferingPanel({
   return (
     <details className="panel offering">
       <summary className="offering-summary">
-        <span>How this offering was chosen</span>
+        <span>{t("offering.title")}</span>
         <span className="offering-hint">{active.length} slots · scored across your Swiss library</span>
       </summary>
 
@@ -58,7 +60,7 @@ export function OfferingPanel({
 
             {s.alternatives.length > 0 && (
               <div className="offering-alts">
-                <span className="offering-alts-label">Also considered</span>
+                <span className="offering-alts-label">{t("offering.alsoConsidered")}</span>
                 {s.alternatives.map((a) => (
                   <span key={a.product.id} className="offering-alt">
                     {a.product.brand} {a.product.name}

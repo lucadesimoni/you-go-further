@@ -81,14 +81,14 @@ export function CartPanel({ rec }: { rec: Recommendation }) {
     <div className="panel cart">
       <div className="section-head">
         <h3 style={{ margin: 0, fontSize: 17 }}>{t("plan.shopThisPlan")}</h3>
-        <div className="cart-sessions" role="group" aria-label="Sessions">
-          <button type="button" className="step" onClick={() => setSessions((s) => Math.max(1, s - 1))} aria-label="Fewer sessions">
+        <div className="cart-sessions" role="group" aria-label={t("cart.sessions")}>
+          <button type="button" className="step" onClick={() => setSessions((s) => Math.max(1, s - 1))} aria-label={t("cart.fewer")}>
             −
           </button>
           <span className="step-val">
             {sessions} session{sessions > 1 ? "s" : ""}
           </span>
-          <button type="button" className="step" onClick={() => setSessions((s) => Math.min(20, s + 1))} aria-label="More sessions">
+          <button type="button" className="step" onClick={() => setSessions((s) => Math.min(20, s + 1))} aria-label={t("cart.more")}>
             +
           </button>
         </div>
@@ -107,7 +107,7 @@ export function CartPanel({ rec }: { rec: Recommendation }) {
       </ul>
 
       <div className="cart-total">
-        <span>{cart.itemCount} items</span>
+        <span>{t("cart.items", { count: cart.itemCount })}</span>
         <span className="cart-subtotal">CHF {cart.subtotalChf.toFixed(2)}</span>
       </div>
 

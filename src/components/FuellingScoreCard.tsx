@@ -111,7 +111,7 @@ export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore
         </ol>
         {onLearnMore && (
           <button type="button" className="link-btn" onClick={onLearnMore}>
-            Read the guide →
+            {t("guide.readGuide")}
           </button>
         )}
       </div>

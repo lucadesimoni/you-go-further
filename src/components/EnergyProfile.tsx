@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { energyProfile, formatClock, type AthleteInput, type FuellingTarget, type FuellingSchedule } from "../engine";
+import { useT } from "../i18n";
 
 const CUE_COLOR: Record<string, string> = {
   carb: "var(--during)",
@@ -30,6 +31,7 @@ export function EnergyProfile({
   target: FuellingTarget;
   schedule: FuellingSchedule;
 }) {
+  const t = useT();
   const profile = useMemo(() => energyProfile(input, target), [input, target]);
 
   const x = (minute: number) => PAD.l + (minute / profile.durationMin) * PLOT_W;
@@ -50,16 +52,16 @@ export function EnergyProfile({
   return (
     <div className="panel energy">
       <div className="section-head">
-        <h3>Energy profile</h3>
+        <h3>{t("energy.title")}</h3>
         <span className="energy-legend">
-          <span className="lg lg-fuelled">With plan</span>
-          <span className="lg lg-unfuelled">Water only</span>
-          <span className="lg lg-fade">Fade line</span>
+          <span className="lg lg-fuelled">{t("energy.withPlan")}</span>
+          <span className="lg lg-unfuelled">{t("energy.waterOnly")}</span>
+          <span className="lg lg-fade">{t("energy.fadeLine")}</span>
         </span>
       </div>
       <p className="detail energy-headline">{profile.headline}</p>
 
-      <svg className="energy-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Carbohydrate availability across the session">
+      <svg className="energy-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t("energy.chartLabel")}>
         <defs>
           <linearGradient id="fuelFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--post)" stopOpacity="0.28" />
@@ -124,7 +126,7 @@ export function EnergyProfile({
         <span>Intake {profile.intakePerHourG > 0 ? `≈ ${profile.intakePerHourG} g/h` : "— (water)"}</span>
         <span className="energy-reserve">Finish ≈ {profile.fuelledEndPct}% in reserve</span>
       </div>
-      <p className="energy-note">Illustrative model from population estimates — not a measurement of your metabolism.</p>
+      <p className="energy-note">{t("energy.disclaimer")}</p>
     </div>
   );
 }

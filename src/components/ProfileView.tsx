@@ -200,7 +200,7 @@ export function ProfileView({ account }: { account: Account }) {
             </div>
             <div className="field">
               <label htmlFor="p-ready">
-                Training readiness <span className="value">{profile.readiness}/100</span>
+                {t("signals.trainingReadiness")} <span className="value">{profile.readiness}/100</span>
               </label>
               <input
                 id="p-ready"

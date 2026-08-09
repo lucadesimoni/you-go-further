@@ -13,12 +13,13 @@ import type { SessionInput } from "./Planner";
 import { useT } from "../i18n";
 import { Explain } from "./Explain";
 
-const TERRAIN_LABEL: Record<string, string> = {
-  flat: "Flat",
-  rolling: "Rolling",
-  hilly: "Hilly",
-  mountainous: "Mountainous",
-};
+/** Terrain bands, translated at the call site rather than baked in English. */
+const TERRAIN_KEY = {
+  flat: "terrain.flat",
+  rolling: "terrain.rolling",
+  hilly: "terrain.hilly",
+  mountainous: "terrain.mountainous",
+} as const;
 
 /**
  * Terrain (swisstopo) + weather for a planned/recorded route, and how they
@@ -70,7 +71,7 @@ export function RouteInsights({
     };
   }, [route, hintGainM, hintDistanceKm]);
 
-  if (loading) return <p className="detail geo-loading">Loading terrain &amp; weather…</p>;
+  if (loading) return <p className="detail geo-loading">{t("route.loading")}</p>;
   if (!data) return null;
   const { terrain, weather, implications } = data;
 
@@ -154,16 +155,16 @@ export function RouteInsights({
           </div>
           <div className="geo-stats">
             <div className="stat">
-              <span className="stat-value">{TERRAIN_LABEL[terrain.terrain]}</span>
-              <span className="stat-label">Profile</span>
+              <span className="stat-value">{t(TERRAIN_KEY[terrain.terrain as keyof typeof TERRAIN_KEY])}</span>
+              <span className="stat-label">{t("route.profile")}</span>
             </div>
             <div className="stat">
               <span className="stat-value">↑ {terrain.ascentM} m</span>
-              <span className="stat-label">Ascent</span>
+              <span className="stat-label">{t("route.ascent")}</span>
             </div>
             <div className="stat">
               <span className="stat-value">{terrain.maxAltM} m</span>
-              <span className="stat-label">High point</span>
+              <span className="stat-label">{t("route.highPoint")}</span>
             </div>
           </div>
         </div>
@@ -187,11 +188,11 @@ export function RouteInsights({
             </div>
             <div className="stat">
               <span className="stat-value">{weather.humidityPct}%</span>
-              <span className="stat-label">Humidity</span>
+              <span className="stat-label">{t("route.humidity")}</span>
             </div>
             <div className="stat">
               <span className="stat-value">{weather.windKmh} km/h</span>
-              <span className="stat-label">Wind</span>
+              <span className="stat-label">{t("route.wind")}</span>
             </div>
           </div>
           <p className="geo-source-note">{weather.sourceLabel}</p>

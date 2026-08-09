@@ -121,7 +121,7 @@ export function RouteMap({ activity }: { activity: Activity }) {
   }, [route, cum, durationMin, layer]);
 
   if (!route || route.length < 2) {
-    return <p className="detail">No GPS track for this session (indoor or pool swim).</p>;
+    return <p className="detail">{t("map.noTrack")}</p>;
   }
 
   const km = activity.distanceM ? (activity.distanceM / 1000).toFixed(1) : "—";

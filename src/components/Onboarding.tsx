@@ -8,6 +8,7 @@ import { api, isApiConfigured } from "../api/client";
 import { getConfig } from "../config";
 import { setOnboardStep } from "../api/onboarding";
 import { Switch } from "./Switch";
+import { useT } from "../i18n";
 
 /**
  * First-run guided journey. Stitches the product story into one flow — the
@@ -23,6 +24,7 @@ export function Onboarding({
   onFinish: () => void;
   initialStep?: number;
 }) {
+  const t = useT();
   const [step, setStepRaw] = useState(initialStep);
   const setStep = (n: number) => {
     setOnboardStep(n); // survives the OAuth round-trip
@@ -72,36 +74,31 @@ export function Onboarding({
 
         {step === 0 && (
           <>
-            <p className="kicker">Welcome, {firstName}</p>
-            <h1 className="auth-title">Fuel your body to go further</h1>
-            <p className="auth-sub">
-              The right nutrition <strong>before, during and after</strong> every session — from your own training
-              data.
-            </p>
+            <p className="kicker">{t("onboard.welcome", { name: firstName })}</p>
+            <h1 className="auth-title">{t("onboard.title")}</h1>
+            <p className="auth-sub">{t("onboard.sub")}</p>
             <div className="onboard-promise">
               <div className="onboard-promise-item">
-                <span className="badge badge-pre">before</span> Top up right, settle the gut.
+                <span className="badge badge-pre">{t("plan.phasePre")}</span> {t("onboard.before")}
               </div>
               <div className="onboard-promise-item">
-                <span className="badge badge-during">during</span> Carbs, fluid & sodium to your effort.
+                <span className="badge badge-during">{t("plan.phaseDuring")}</span> {t("onboard.during")}
               </div>
               <div className="onboard-promise-item">
-                <span className="badge badge-post">after</span> Recover and adapt faster.
+                <span className="badge badge-post">{t("plan.phasePost")}</span> {t("onboard.after")}
               </div>
             </div>
             <button type="button" className="auth-btn auth-primary" onClick={() => setStep(1)}>
-              Get started →
+              {t("onboard.getStarted")}
             </button>
           </>
         )}
 
         {step === 1 && (
           <>
-            <p className="kicker">Step 2 · Connect</p>
-            <h1 className="auth-title">Connect your training & health</h1>
-            <p className="auth-sub">
-              So plans use your real sessions, not what you type in. You can do this later.
-            </p>
+            <p className="kicker">{t("onboard.step2")}</p>
+            <h1 className="auth-title">{t("onboard.connectTitle")}</h1>
+            <p className="auth-sub">{t("onboard.connectSub")}</p>
             <div className="onboard-logos">
               {ALL_PROVIDER_IDS.map((id) => (
                 <button key={id} type="button" className="onboard-logo onboard-connect" onClick={() => connectProvider(id)}>
@@ -109,26 +106,24 @@ export function Onboarding({
                 </button>
               ))}
             </div>
-            <p className="detail">Apple Health and Google Health sync from the mobile app.</p>
+            <p className="detail">{t("onboard.deviceNote")}</p>
             <button type="button" className="auth-btn auth-primary" onClick={() => setStep(2)}>
-              Continue →
+              {t("onboard.continue")}
             </button>
             <button type="button" className="auth-link" onClick={() => setStep(2)}>
-              I'll connect later →
+              {t("onboard.later")}
             </button>
           </>
         )}
 
         {step === 2 && (
           <>
-            <p className="kicker">Step 3 · Your body</p>
-            <h1 className="auth-title">Tune it to you</h1>
-            <p className="auth-sub">
-              A few basics so every plan is personalised. You can refine these any time in Profile.
-            </p>
+            <p className="kicker">{t("onboard.step3")}</p>
+            <h1 className="auth-title">{t("onboard.bodyTitle")}</h1>
+            <p className="auth-sub">{t("onboard.bodySub")}</p>
             <div className="onboard-field">
               <label htmlFor="ob-weight">
-                Body weight <span className="value">{profile.bodyWeightKg} kg</span>
+                {t("onboard.bodyWeight")} <span className="value">{profile.bodyWeightKg} kg</span>
               </label>
               <input
                 id="ob-weight"
@@ -140,7 +135,7 @@ export function Onboarding({
               />
             </div>
             <div className="onboard-field">
-              <label htmlFor="ob-sweat">Sweat level</label>
+              <label htmlFor="ob-sweat">{t("onboard.sweatLevel")}</label>
               <select
                 id="ob-sweat"
                 value={profile.sweatLevel}
@@ -154,13 +149,13 @@ export function Onboarding({
               </select>
             </div>
             <Switch
-              label="I tolerate caffeine"
-              hint="Suggest it for long or hard efforts."
+              label={t("onboard.caffeineOk")}
+              hint={t("onboard.caffeineHint")}
               checked={profile.caffeineOk}
               onChange={(on) => set("caffeineOk", on)}
             />
             <div className="onboard-sync">
-              <span className="group-label">Sync body signals (optional)</span>
+              <span className="group-label">{t("onboard.syncSignals")}</span>
               <div className="health-platforms">
                 {HEALTH_PLATFORMS.map((p) => (
                   <button
@@ -175,27 +170,25 @@ export function Onboarding({
               </div>
             </div>
             <button type="button" className="auth-btn auth-primary" onClick={() => setStep(3)}>
-              Continue →
+              {t("onboard.continue")}
             </button>
           </>
         )}
 
         {step === 3 && (
           <>
-            <p className="kicker">You're set</p>
-            <h1 className="auth-title">Let's build your first plan</h1>
-            <p className="auth-sub">
-              Tell us the session; we'll tailor the fuelling from Swiss products.
-            </p>
+            <p className="kicker">{t("onboard.done")}</p>
+            <h1 className="auth-title">{t("onboard.doneTitle")}</h1>
+            <p className="auth-sub">{t("onboard.doneSub")}</p>
             <button type="button" className="auth-btn auth-primary" onClick={onFinish}>
-              Build my first plan →
+              {t("onboard.buildFirst")}
             </button>
           </>
         )}
 
         {step < 3 && (
           <button type="button" className="onboard-skip" onClick={onFinish}>
-            Skip setup
+            {t("onboard.skip")}
           </button>
         )}
       </div>
