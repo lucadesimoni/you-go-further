@@ -59,7 +59,7 @@ export function EnergyProfile({
           <span className="lg lg-fade">{t("energy.fadeLine")}</span>
         </span>
       </div>
-      <p className="detail energy-headline">{profile.headline}</p>
+      <p className="detail energy-headline">{t(`energy.${profile.headlineId}`, { finishPct: profile.fuelledEndPct, unfuelledPct: profile.unfuelledEndPct, at: profile.unfuelledFadeMin !== undefined ? formatClock(profile.unfuelledFadeMin) : "" })}</p>
 
       <svg className="energy-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t("energy.chartLabel")}>
         <defs>
@@ -121,10 +121,14 @@ export function EnergyProfile({
       </svg>
 
       <div className="energy-foot">
-        <span>Store ≈ {profile.storeG} g</span>
-        <span>Burn ≈ {profile.burnPerHourG} g/h</span>
-        <span>Intake {profile.intakePerHourG > 0 ? `≈ ${profile.intakePerHourG} g/h` : "— (water)"}</span>
-        <span className="energy-reserve">Finish ≈ {profile.fuelledEndPct}% in reserve</span>
+        <span>{t("energy.store", { n: profile.storeG })}</span>
+        <span>{t("energy.burn", { n: profile.burnPerHourG })}</span>
+        <span>
+          {profile.intakePerHourG > 0
+            ? t("energy.intake", { n: profile.intakePerHourG })
+            : t("energy.intakeWater")}
+        </span>
+        <span className="energy-reserve">{t("energy.reserve", { n: profile.fuelledEndPct })}</span>
       </div>
       <p className="energy-note">{t("energy.disclaimer")}</p>
     </div>

@@ -62,6 +62,7 @@ describe("dictionary parity", () => {
         "catalog.proteinG", // "Protein (g, optional)" is word-for-word the same in German
         "catalog.sodiumMg", // "Sodium (mg)" is the same in French
         "cat.gel", // "Gel" is the same word in all four
+        "cue.fluid", // a millilitre reading is "{n} ml" in every language
       ]);
       const identical = keys.filter((k) => !allowedIdentical.has(k) && dict[k] === en[k]);
       expect(identical).toEqual([]);
@@ -140,6 +141,11 @@ describe("no dead keys", () => {
       // Debrief ratings and findings: t(`debrief.gi.${g}`), t(`finding.${f.id}`).
       /^debrief\.(gi|energy)\./,
       /^finding\./,
+      // Phase prose: t(`phase.${headlineId}`), t(`phaseDetail.${detailId}`).
+      /^phase\./,
+      /^phaseDetail\./,
+      // Energy headline: t(`energy.${headlineId}`).
+      /^energy\.(water|plan)/,
       // The race forecast's badge: t(`sim.badge.${sim.verdict}`).
       /^sim\.badge\./,
     ];

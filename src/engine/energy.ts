@@ -40,6 +40,7 @@ export interface EnergyProfile {
   unfuelledFadeMin?: number;
   /** Plain-language takeaway. */
   headline: string;
+  headlineId: EnergyHeadlineId;
 }
 
 /** Carbohydrate oxidation (g/h) by intensity — total burn from all sources. */
@@ -86,7 +87,7 @@ export function energyProfile(input: AthleteInput, target: FuellingTarget): Ener
   const unfuelledFadeMin =
     unfuelledFadeMinRaw <= durationMin ? Math.round(unfuelledFadeMinRaw) : undefined;
 
-  const headline = buildHeadline({
+  const built = buildHeadline({
     durationMin,
     intakePerHourG,
     bonkPct,
@@ -105,9 +106,13 @@ export function energyProfile(input: AthleteInput, target: FuellingTarget): Ener
     fuelledEndPct,
     unfuelledEndPct,
     unfuelledFadeMin,
-    headline,
+    headline: built.text,
+    headlineId: built.id,
   };
 }
+
+/** Which sentence the chart is showing, so a UI can write it in its own language. */
+export type EnergyHeadlineId = "waterDips" | "waterFine" | "planSavesFade" | "planFinishesFresher";
 
 function buildHeadline(p: {
   durationMin: number;
@@ -116,16 +121,20 @@ function buildHeadline(p: {
   fuelledEndPct: number;
   unfuelledEndPct: number;
   unfuelledFadeMin?: number;
-}): string {
+}): { id: EnergyHeadlineId; text: string } {
   if (p.intakePerHourG === 0) {
     return p.unfuelledEndPct <= p.bonkPct
-      ? `Even this session dips toward the fade line — but it's short/easy enough that water is the sensible call.`
-      : `Short and easy enough to run on your own stores — fuel here is about comfort, not avoiding a fade.`;
+      ? { id: "waterDips", text: "Even this session dips toward the fade line — but it's short and easy enough that water is the sensible call." }
+      : { id: "waterFine", text: "Short and easy enough to run on your own stores — fuel here is about comfort, not avoiding a fade." };
   }
   if (p.unfuelledFadeMin !== undefined) {
-    return `On water alone you'd hit the fade line around ${formatClock(
-      p.unfuelledFadeMin,
-    )} — the plan keeps you above it to the finish with ~${p.fuelledEndPct}% in reserve.`;
+    return {
+      id: "planSavesFade",
+      text: `On water alone you'd hit the fade line around ${formatClock(p.unfuelledFadeMin)} — the plan keeps you above it to the finish with ~${p.fuelledEndPct}% in reserve.`,
+    };
   }
-  return `You'd finish either way, but the plan lands you at ~${p.fuelledEndPct}% vs ~${p.unfuelledEndPct}% — fresher legs and a faster recovery.`;
+  return {
+    id: "planFinishesFresher",
+    text: `You'd finish either way, but the plan lands you at ~${p.fuelledEndPct}% vs ~${p.unfuelledEndPct}% — fresher legs and a faster recovery.`,
+  };
 }

@@ -136,10 +136,34 @@ export interface FuellingTarget {
   sodiumSource: Provenance;
 }
 
+/** Which sentence a phase is showing, so a UI can write it in its own language. */
+export type PhaseHeadlineId = "preCarb" | "duringHydrationOnly" | "duringCarb" | "postCarbProtein";
+export type PhaseDetailId =
+  | "preLight"
+  | "preStandard"
+  | "duringHydrationOnly"
+  | "duringHydrationSodium"
+  | "duringCarb"
+  | "duringCarbMulti"
+  | "postLight"
+  | "postStandard";
+
 export interface PhasePlan {
   phase: Phase;
+  /** English, for API consumers and anything without a dictionary. */
   headline: string;
   detail: string;
+  /**
+   * The same two sentences as data.
+   *
+   * The engine assembles prose because an API consumer needs *something*
+   * readable, but a sentence it built cannot be translated afterwards — so the
+   * id and its numbers travel alongside, and every surface with a dictionary
+   * renders those instead.
+   */
+  headlineId: PhaseHeadlineId;
+  detailId: PhaseDetailId;
+  values: Record<string, number>;
   /** Recommended products for this phase, best match first. */
   products: Product[];
   /** Plain-language reasons this phase's products/combo were selected. */

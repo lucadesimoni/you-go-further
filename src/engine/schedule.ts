@@ -23,8 +23,28 @@ export interface FuellingCue {
   fluidMl?: number;
   sodiumMg?: number;
   caffeine?: boolean;
+  /**
+   * English, for API consumers and anything without a dictionary.
+   *
+   * A surface that has one should render {@link FuellingCue.parts} instead: the
+   * engine has no business deciding which language an athlete reads, and a
+   * sentence it assembled cannot be translated after the fact.
+   */
   label: string;
+  /**
+   * The same instruction as data — what to take, in what unit, how much.
+   * A UI joins these in its own language.
+   */
+  parts: CuePart[];
 }
+
+/** One item of an instruction: "25 g carb", "140 ml", "caffeine". */
+export type CuePart =
+  | { kind: "carb"; grams: number }
+  | { kind: "fluid"; millilitres: number }
+  | { kind: "caffeine" }
+  | { kind: "startTopUp" }
+  | { kind: "finishRecovery" };
 
 export interface FuellingSchedule {
   totalMin: number;
@@ -103,21 +123,33 @@ export function buildSchedule(input: AthleteInput, opts: ScheduleOptions = {}): 
     atMin: 0,
     kind: "start",
     label: "Start topped up — sip ~5–7 ml/kg fluid in the 2 h before.",
+    parts: [{ kind: "startTopUp" }],
   });
 
   for (const [atMin, a] of [...acc.entries()].sort((x, y) => x[0] - y[0])) {
-    const parts: string[] = [];
-    if (a.carbG) parts.push(`${a.carbG} g carb`);
-    if (a.fluidMl) parts.push(`${a.fluidMl} ml`);
-    if (a.caffeine) parts.push("caffeine");
+    const words: string[] = [];
+    const parts: CuePart[] = [];
+    if (a.carbG) {
+      words.push(`${a.carbG} g carb`);
+      parts.push({ kind: "carb", grams: a.carbG });
+    }
+    if (a.fluidMl) {
+      words.push(`${a.fluidMl} ml`);
+      parts.push({ kind: "fluid", millilitres: a.fluidMl });
+    }
+    if (a.caffeine) {
+      words.push("caffeine");
+      parts.push({ kind: "caffeine" });
+    }
     const kind: CueKind = a.carbG ? "carb" : a.caffeine && !a.fluidMl ? "caffeine" : "drink";
-    cues.push({ atMin, kind, ...a, label: parts.join(" + ") });
+    cues.push({ atMin, kind, ...a, label: words.join(" + "), parts });
   }
 
   cues.push({
     atMin: totalMin,
     kind: "finish",
     label: "Finish — start recovery (carb + protein) within ~60 min.",
+    parts: [{ kind: "finishRecovery" }],
   });
 
   return {

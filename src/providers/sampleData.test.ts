@@ -104,11 +104,18 @@ describe("sample data is physiologically coherent", () => {
   it("includes sessions with no GPS at all, because real weeks have them", () => {
     // A plan has to cope with a session that has no route. Data in which every
     // session has a track never exercises that path.
+    //
+    // Swims are excluded from the share: a pool swim carries no GPS by
+    // definition, so counting it as "indoor drift" made this assertion depend
+    // on how many swims a given seed happened to draw — which is why it failed
+    // intermittently rather than never.
     for (const p of providers) {
       const acts = generateSampleActivities(p, after, before);
       const withoutRoute = acts.filter((a) => !a.route || a.route.length === 0);
       expect(withoutRoute.length, `${p} has no indoor sessions at all`).toBeGreaterThan(0);
-      expect(withoutRoute.length, `${p} is almost all indoor`).toBeLessThan(acts.length * 0.5);
+      const land = acts.filter((a) => a.sport !== "swim");
+      const landIndoor = land.filter((a) => !a.route || a.route.length === 0);
+      expect(landIndoor.length, `${p} is almost all indoor`).toBeLessThan(land.length * 0.5);
     }
   });
 

@@ -27,7 +27,7 @@ export function OfferingPanel({
     <details className="panel offering">
       <summary className="offering-summary">
         <span>{t("offering.title")}</span>
-        <span className="offering-hint">{active.length} slots · scored across your Swiss library</span>
+        <span className="offering-hint">{t("offering.hint", { count: active.length })}</span>
       </summary>
 
       <p className="offering-headline">{offering.headline}</p>

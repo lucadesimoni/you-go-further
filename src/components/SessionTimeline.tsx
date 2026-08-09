@@ -19,8 +19,38 @@ const SIM_TICK_MS = 160;
  * session on an accelerated clock, highlighting the cue that's due now and the
  * one coming next — the same loop a watch data-field would drive in real time.
  */
+
+/**
+ * A cue as a sentence in the reader's language.
+ *
+ * The engine hands over what to take, not how to say it — an English sentence
+ * it assembled cannot be translated after the fact, and choosing the athlete's
+ * language was never the engine's job.
+ */
+function useCueText(): (cue: FuellingCue) => string {
+  const t = useT();
+  return (cue) =>
+    cue.parts
+      .map((part) => {
+        switch (part.kind) {
+          case "carb":
+            return t("unit.carb", { n: part.grams });
+          case "fluid":
+            return t("cue.fluid", { n: part.millilitres });
+          case "caffeine":
+            return t("cue.caffeine");
+          case "startTopUp":
+            return t("cue.startTopUp");
+          case "finishRecovery":
+            return t("cue.finishRecovery");
+        }
+      })
+      .join(" + ");
+}
+
 export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
   const t = useT();
+  const cueText = useCueText();
   const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -105,11 +135,11 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
         <div className="tl-cue">
           {justDue && dueCue ? (
             <>
-              <strong>{t("schedule.now")}</strong> {dueCue.label}
+              <strong>{t("schedule.now")}</strong> {cueText(dueCue)}
             </>
           ) : nextCue ? (
             <>
-              <strong>Next at {formatClock(nextCue.atMin)}:</strong> {nextCue.label}
+              <strong>Next at {formatClock(nextCue.atMin)}:</strong> {cueText(nextCue)}
             </>
           ) : (
             <strong>{t("schedule.complete")}</strong>
@@ -125,7 +155,7 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
             key={i}
             className={`tl-marker tl-${c.kind}${c.atMin <= elapsed ? " passed" : ""}`}
             style={{ left: `${(c.atMin / schedule.totalMin) * 100}%` }}
-            title={`${formatClock(c.atMin)} · ${c.label}`}
+            title={`${formatClock(c.atMin)} · ${cueText(c)}`}
           />
         ))}
       </div>
@@ -147,7 +177,7 @@ export function SessionTimeline({ schedule }: { schedule: FuellingSchedule }) {
               <span className="tl-time">{formatClock(c.atMin)}</span>
               <span className="tl-kind">{KIND_LABEL[c.kind]}</span>
               <span className="tl-label">
-                {c.label}
+                {cueText(c)}
                 {c.sodiumMg ? <span className="tl-na"> · {t("unit.sodium", { n: c.sodiumMg })}</span> : null}
               </span>
             </li>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Product } from "../engine";
 import { api, isApiConfigured } from "../api/client";
+import { useT } from "../i18n";
 
 /**
  * "Buy at <brand>" — the single highest-intent click in the app.
@@ -16,7 +17,8 @@ import { api, isApiConfigured } from "../api/client";
  */
 export function BuyLink({ product, className = "product-shop" }: { product: Product; className?: string }) {
   const [busy, setBusy] = useState(false);
-  const label = `Buy at ${product.brand} ↗`;
+  const t = useT();
+  const label = t("shop.buyAt", { brand: product.brand });
 
   if (!isApiConfigured() || !product.shopUrl) {
     if (!product.shopUrl) return null;

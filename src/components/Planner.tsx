@@ -238,9 +238,9 @@ export function Planner({
           <div className="panel phase" key={phase.phase}>
             <div className="phase-head">
               <span className={`badge badge-${phase.phase}`}>{t(PHASE_KEYS[phase.phase])}</span>
-              <h3>{phase.headline}</h3>
+              <h3>{t(`phase.${phase.headlineId}`, phase.values)}</h3>
             </div>
-            <p className="detail">{phase.detail}</p>
+            <p className="detail">{t(`phaseDetail.${phase.detailId}`, phase.values)}</p>
             {phase.products.length > 0 && (
               <ul className="products">
                 {phase.products.map((p) => (
@@ -258,10 +258,10 @@ export function Planner({
                         are still all here, they have simply stopped shouting. */}
                     <p className="product-macros">
                       {[
-                        p.carbsG > 1 ? `${p.carbsG} g carb` : null,
-                        p.sodiumMg > 0 ? `${p.sodiumMg} mg sodium` : null,
-                        p.proteinG ? `${p.proteinG} g protein` : null,
-                        p.caffeineMg ? `${p.caffeineMg} mg caffeine` : null,
+                        p.carbsG > 1 ? t("unit.carb", { n: p.carbsG }) : null,
+                        p.sodiumMg > 0 ? t("unit.sodium", { n: p.sodiumMg }) : null,
+                        p.proteinG ? t("unit.protein", { n: p.proteinG }) : null,
+                        p.caffeineMg ? t("unit.caffeine", { n: p.caffeineMg }) : null,
                         p.multiTransportable ? t("plan.multiTransportable") : null,
                       ]
                         .filter(Boolean)

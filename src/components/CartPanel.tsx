@@ -86,7 +86,7 @@ export function CartPanel({ rec }: { rec: Recommendation }) {
             −
           </button>
           <span className="step-val">
-            {sessions} session{sessions > 1 ? "s" : ""}
+            {t("cart.sessionCount", { count: sessions })}
           </span>
           <button type="button" className="step" onClick={() => setSessions((s) => Math.min(20, s + 1))} aria-label={t("cart.more")}>
             +

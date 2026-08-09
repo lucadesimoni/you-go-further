@@ -171,6 +171,9 @@ function buildPhases(input: AthleteInput, target: FuellingTarget, catalog: Produ
       input.goal === "weight-loss"
         ? "Keep it light and mostly carbohydrate; enough to work hard without a big pre-load."
         : "A carbohydrate-focused meal or snack, low in fat and fibre, timed 1–3 h out. Sip 5–7 ml/kg fluid beforehand.",
+    headlineId: "preCarb",
+    detailId: input.goal === "weight-loss" ? "preLight" : "preStandard",
+    values: { carbG: pre },
     products: prePicks.slice(0, 2),
     rationale: preSlot ? reasonsFor(preSlot) : [],
   });
@@ -202,6 +205,21 @@ function buildPhases(input: AthleteInput, target: FuellingTarget, catalog: Produ
         ? `Hydration only · ~${target.fluidPerHourMl} ml/h`
         : `${target.carbPerHourG} g carb/h · ${target.fluidPerHourMl} ml/h`,
     detail: duringDetail,
+    headlineId: target.carbPerHourG === 0 ? "duringHydrationOnly" : "duringCarb",
+    detailId:
+      target.carbPerHourG === 0
+        ? needsExtraSodium(input)
+          ? "duringHydrationSodium"
+          : "duringHydrationOnly"
+        : target.requiresMultiTransportable
+          ? "duringCarbMulti"
+          : "duringCarb",
+    values: {
+      carbPerHourG: target.carbPerHourG,
+      carbTotalG: target.carbTotalG,
+      fluidPerHourMl: target.fluidPerHourMl,
+      sodiumPerLitreMg: target.sodiumPerLitreMg,
+    },
     products: duringProducts.slice(0, 3),
     rationale: duringRationale.slice(0, 3),
   });
@@ -216,6 +234,9 @@ function buildPhases(input: AthleteInput, target: FuellingTarget, catalog: Produ
       input.goal === "weight-loss"
         ? "Prioritise protein for recovery and keep post-session carbs modest to preserve the energy deficit."
         : "Refuel within ~60 min, especially before another session inside 24 h. Combine carbohydrate and protein, and replace fluids at ~1.5× losses.",
+    headlineId: "postCarbProtein",
+    detailId: input.goal === "weight-loss" ? "postLight" : "postStandard",
+    values: { carbG: postCarb, proteinG: postProtein },
     products: postPicks.slice(0, 2),
     rationale: postSlot ? reasonsFor(postSlot) : [],
   });

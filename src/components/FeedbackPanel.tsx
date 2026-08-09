@@ -84,7 +84,7 @@ export function FeedbackPanel({
       </div>
 
       <button type="button" className={`btn btn-primary${justLogged ? " done" : ""}`} onClick={log}>
-        {justLogged ? "✓ Logged — plan updated" : "Log this session"}
+        {justLogged ? t("log.logged") : t("log.logSession")}
       </button>
 
       {/* What we learned */}
