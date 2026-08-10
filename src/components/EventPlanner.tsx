@@ -62,6 +62,12 @@ export function EventPlanner({
   });
   const [finishMin, setFinishMin] = useState<number | null>(null);
   const [plan, setPlan] = useState<EventPlan | null>(null);
+  /**
+   * Race day and the build are two different questions, and stacking them made
+   * one panel four screens deep. An athlete nine weeks out wants the plan; one
+   * on the Thursday before wants what to carry.
+   */
+  const [view, setView] = useState<"raceDay" | "training">("raceDay");
 
   const upcoming = useMemo(() => upcomingEvents(), []);
   const event: SwissEvent | undefined = eventId ? eventById(eventId) : undefined;
@@ -193,6 +199,21 @@ export function EventPlanner({
             {plan.estimateSource === "derived" && <p className="detail">{t("event.finishDerived")}</p>}
           </div>
 
+          {view === "raceDay" && (<>
+          <nav className="event-views" aria-label={t("event.title")}>
+            {(["raceDay", "training"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                className={view === v ? "event-view active" : "event-view"}
+                aria-pressed={view === v}
+                onClick={() => setView(v)}
+              >
+                {t(v === "raceDay" ? "event.tabRaceDay" : "event.tabTraining")}
+              </button>
+            ))}
+          </nav>
+
           <div className="event-cols">
             <div className="geo-block">
               <div className="geo-head">
@@ -267,32 +288,6 @@ export function EventPlanner({
             </ul>
           </div>
 
-          {/* The build to race day. It comes before the carry legs because the
-              athlete's problem between now and September is the training —
-              what to carry is a race-morning question. */}
-          {(() => {
-            const training = buildTrainingPlan({
-              event,
-              estimatedMin: plan.estimatedMin,
-              raceCarbPerHourG: plan.target.carbPerHourG,
-              activities,
-            });
-            return hasUsefulPlan(training) ? (
-              <TrainingPlanView
-                plan={training}
-                fuelling={{
-                  event,
-                  bodyWeightKg: loadProfile().bodyWeightKg,
-                  sweatLevel: loadProfile().sweatLevel,
-                  caffeineOk: loadProfile().caffeineOk,
-                  conditions: plan.weather.peakConditions,
-                  feedback,
-                }}
-                feedback={feedback}
-                activities={activities}
-              />
-            ) : null;
-          })()}
 
           {plan.legs.length > 0 ? (
             <div className="event-legs">
@@ -335,6 +330,31 @@ export function EventPlanner({
           ) : (
             <p className="detail event-nolegs">{t("event.noLegs")}</p>
           )}
+          </>)}
+
+          {view === "training" && (() => {
+            const training = buildTrainingPlan({
+              event,
+              estimatedMin: plan.estimatedMin,
+              raceCarbPerHourG: plan.target.carbPerHourG,
+              activities,
+            });
+            return hasUsefulPlan(training) ? (
+              <TrainingPlanView
+                plan={training}
+                fuelling={{
+                  event,
+                  bodyWeightKg: loadProfile().bodyWeightKg,
+                  sweatLevel: loadProfile().sweatLevel,
+                  caffeineOk: loadProfile().caffeineOk,
+                  conditions: plan.weather.peakConditions,
+                  feedback,
+                }}
+                feedback={feedback}
+                activities={activities}
+              />
+            ) : null;
+          })()}
 
           {onPlan && (
             <button

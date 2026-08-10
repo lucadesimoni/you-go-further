@@ -32,6 +32,15 @@ import { saveAccount } from "./auth";
 import { useI18n, type TranslationKey } from "./i18n";
 import { useTheme } from "./theme/useTheme";
 
+/** The three jobs the Plan screen does, one at a time. */
+export type PlanMode = "race" | "route" | "session";
+
+const PLAN_MODES: { id: PlanMode; labelKey: TranslationKey; blurbKey: TranslationKey }[] = [
+  { id: "race", labelKey: "plan.modeRace", blurbKey: "plan.modeRaceWhy" },
+  { id: "route", labelKey: "plan.modeRoute", blurbKey: "plan.modeRouteWhy" },
+  { id: "session", labelKey: "plan.modeSession", blurbKey: "plan.modeSessionWhy" },
+];
+
 interface TabDef {
   id: string;
   /** Translation key — the label is resolved at render, so it follows the language. */
@@ -62,6 +71,14 @@ export function App() {
   const [storedTier, setStoredTier] = useState<Tier>(account?.tier ?? "free");
   const tier = effectiveTier(storedTier, config.subscriptionsEnabled);
   const [tab, setTab] = useState<string>("home");
+  /**
+   * Which of the three planning jobs the Plan screen is doing.
+   *
+   * They used to be stacked: a named race, a GPX import and the session planner
+   * on one page, 6.7 screens deep with 53 controls. Three different jobs, and an
+   * athlete opening the screen wants one of them — so it shows one.
+   */
+  const [planMode, setPlanMode] = useState<PlanMode>("race");
   // One-shot planner prefill, e.g. from "Plan for this route" in Connect.
   const [plannerPrefill, setPlannerPrefill] = useState<Partial<SessionInput>>();
   const [onboarding, setOnboarding] = useState(false);
@@ -221,6 +238,9 @@ export function App() {
   const planFor = useCallback((prefill: Partial<SessionInput>) => {
     setPlannerPrefill(prefill);
     setTab("plan");
+    // The planner has to be on screen to receive it. Carrying a race into a
+    // planner that is not rendered is the same silent nothing as before.
+    setPlanMode("session");
     requestAnimationFrame(() =>
       document.getElementById("session-planner")?.scrollIntoView({ behavior: "smooth", block: "start" }),
     );
@@ -367,7 +387,10 @@ export function App() {
             activities={activities}
             feedback={feedback}
             hasSyncedData={hasSyncedData}
-            onNavigate={setTab}
+            onNavigate={(next, mode) => {
+              if (mode) setPlanMode(mode);
+              setTab(next);
+            }}
             onReviewSession={(a) => {
               // Straight to the debrief for that run, not to a generic screen
               // the athlete then has to search through.
@@ -386,32 +409,47 @@ export function App() {
         )}
         {tab === "plan" && (
           <>
-            {/* A named race first, because that is the question athletes
-                actually arrive with — "the Jungfrau-Marathon is in nine weeks"
-                — and its answer depends on a date the GPX below does not carry. */}
-            <EventPlanner
-              activities={activities}
-              feedback={feedback}
-              onPlan={(prefill) => {
-                planFor(prefill);
-                toast.info(t("toast.planningRace"));
-              }}
-            />
-            {/* The Phase-1 moment: a race you have not run yet, fuelled. It sits
-                above the session planner because it is the reason to open this
-                screen — planning a training session is the everyday case. */}
-            <RaceImport
-              onPlan={(prefill) => {
-                planFor(prefill);
-                toast.info(t("toast.planningRoute"));
-              }}
-            />
-            <Planner
-              initial={plannerPrefill}
-              role={account.role}
-              onEditProfile={() => setTab("profile")}
-              onPrefillUsed={clearPrefill}
-            />
+            <nav className="plan-modes" aria-label={t("plan.whatToPlan")}>
+              {PLAN_MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={planMode === m.id ? "plan-mode active" : "plan-mode"}
+                  aria-pressed={planMode === m.id}
+                  onClick={() => setPlanMode(m.id)}
+                >
+                  <span className="plan-mode-name">{t(m.labelKey)}</span>
+                  <span className="plan-mode-why">{t(m.blurbKey)}</span>
+                </button>
+              ))}
+            </nav>
+
+            {planMode === "race" && (
+              <EventPlanner
+                activities={activities}
+                feedback={feedback}
+                onPlan={(prefill) => {
+                  planFor(prefill);
+                  toast.info(t("toast.planningRace"));
+                }}
+              />
+            )}
+            {planMode === "route" && (
+              <RaceImport
+                onPlan={(prefill) => {
+                  planFor(prefill);
+                  toast.info(t("toast.planningRoute"));
+                }}
+              />
+            )}
+            {planMode === "session" && (
+              <Planner
+                initial={plannerPrefill}
+                role={account.role}
+                onEditProfile={() => setTab("profile")}
+                onPrefillUsed={clearPrefill}
+              />
+            )}
           </>
         )}
         {tab === "progress" && progress && (

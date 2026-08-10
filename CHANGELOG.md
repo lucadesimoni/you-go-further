@@ -8,6 +8,21 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.10.1
+
+**Fixed**
+
+- **The Plan screen did three jobs at once.** A named race, a GPX import and the
+  session planner were stacked on one page: 6.7 screens deep, 13 panels, 53
+  controls. They are three different questions and an athlete arrives with one
+  of them, so the screen now asks which — a race, a route, or a session — and
+  shows that one. The race view is 1.1 screens with 8 controls. Home's "Plan a
+  session" and "Plan a race" buttons, which already existed and both landed on
+  the same wall, now land on the right one.
+- **The race panel stacked race day and the build.** Nine weeks out an athlete
+  wants the plan; on the Thursday before they want what to carry. Those are now
+  two views rather than four screens of scrolling.
+
 ## 0.10.0
 
 **Added**

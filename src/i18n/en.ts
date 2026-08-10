@@ -779,6 +779,17 @@ export const en = {
   "train.learn.longRunGap": "Your longest recent session is {longest} min and the plan builds to {peak}. That is a real step up; take the cut-back weeks seriously.",
   "train.learn.rateStepLarge": "The carbohydrate rate climbs by up to {step} g/h between weeks. If that sits badly, hold a week rather than pushing through.",
   "train.learn.practiseProducts": "Use the exact products you will race with on all {sessions} long days. Flavour fatigue and an unfamiliar gel are race-day problems you can solve now.",
+
+  // ---- Plan screen: one job at a time --------------------------------------
+  "plan.whatToPlan": "What are you planning?",
+  "plan.modeRace": "A race",
+  "plan.modeRaceWhy": "A date, a build, and race-day fuelling",
+  "plan.modeRoute": "A route",
+  "plan.modeRouteWhy": "A GPX, fuelled by its terrain",
+  "plan.modeSession": "A session",
+  "plan.modeSessionWhy": "Today's training, fuelled",
+  "event.tabRaceDay": "Race day",
+  "event.tabTraining": "Training plan",
 } as const;
 
 export type TranslationKey = keyof typeof en;

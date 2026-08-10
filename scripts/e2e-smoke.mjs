@@ -42,6 +42,21 @@ const step = async (label, fn) => {
   }
 };
 
+
+/**
+ * Pick which job the Plan screen is doing.
+ *
+ * The screen used to stack a named race, a GPX import and the session planner —
+ * 6.7 screens and 53 controls. It now shows one at a time and remembers the
+ * last choice, so a test that wants a particular one has to ask for it.
+ */
+const planMode = async (name) => {
+  await page.click('button.topnav-tab:has-text("Plan")');
+  await page.waitForSelector(".plan-modes", { timeout: 15000 });
+  await page.click(`.plan-mode:has-text("${name}")`);
+  await page.waitForTimeout(600);
+};
+
 const email = `smoke-${Date.now()}@club.ch`;
 
 console.log("── what is deployed ──");
@@ -285,7 +300,7 @@ await step("a weight set in the profile reaches the plan and the analysis", asyn
   await page.waitForTimeout(2000);
   const connect = await page.locator(".from-profile span").first().innerText();
   if (!/83 kg/.test(connect)) throw new Error(`connect ignored the profile: ${connect}`);
-  await page.click('button.topnav-tab:has-text("Plan")');
+  await planMode("A session");
   await page.waitForTimeout(1200);
   const plan = await page.locator(".from-profile span").first().innerText();
   if (!/83 kg/.test(plan)) throw new Error(`planner ignored the profile: ${plan}`);
@@ -293,7 +308,7 @@ await step("a weight set in the profile reaches the plan and the analysis", asyn
 
 console.log("── commerce ──");
 await step("a hand-off to a partner shop is recorded, so commission can be reconciled", async () => {
-  await page.click('button.topnav-tab:has-text("Plan")');
+  await planMode("A session");
   await page.waitForSelector("text=Shop this plan");
   await page.waitForSelector(".cart-partner", { timeout: 15000 });
 
@@ -337,31 +352,33 @@ await step("the service connected during setup shows as connected", async () => 
   if (!/Disconnect/.test(strava)) throw new Error(`Strava was connected in setup but reads: ${strava}`);
 });
 await step("'Plan for this race' actually reaches the session planner", async () => {
-  // The planner sits on the same screen as the race panels, so it is already
-  // mounted when this button is pressed. It used to read its prefill only on
-  // mount, so the press set a value that was cleared a tick later and nothing
-  // moved — the button did nothing at all, on the screen it was made for.
-  await page.click('button.topnav-tab:has-text("Plan")');
-  await page.waitForSelector("#event-select", { timeout: 10000 });
+  // The planner used to read its prefill only on mount, so pressing this on the
+  // screen it was made for set a value that was cleared a tick later and
+  // nothing moved. It now also has to *switch* the screen to the planner, since
+  // the Plan screen shows one job at a time.
+  await planMode("A session");
+  const before = await page.locator("#duration").inputValue();
+
+  await planMode("A race");
   const race = await page.locator("#event-select option").nth(1).getAttribute("value");
   if (!race) throw new Error("no upcoming race offered");
   await page.selectOption("#event-select", race);
-  await page.waitForSelector(".event .geo-plan", { timeout: 15000 });
-
-  const before = await page.locator("#duration").inputValue();
+  await page.waitForSelector(".event .geo-plan", { timeout: 20000 });
   const raceTarget = await page.locator(".event-cols .geo-block").nth(1).locator(".stat-value").first().innerText();
-  await page.locator(".event .geo-plan").click();
-  await page.waitForTimeout(1500);
 
+  await page.locator(".event .geo-plan").click();
+  // Pressing it must bring the planner on screen, not just set a value behind a
+  // tab the athlete cannot see.
+  await page.waitForSelector("#duration", { timeout: 15000 });
   const after = await page.locator("#duration").inputValue();
   if (before === after) throw new Error(`the planner ignored the race (duration stayed ${before})`);
   const intensity = await page.locator(".segmented .seg.active").first().innerText();
   if (!/race/i.test(intensity)) throw new Error(`a race should be planned at race intensity, got "${intensity}"`);
 
-  // And the two panels must agree: the planner recomputing a different
-  // carbohydrate target from the one shown above it is worse than no button.
+  // And the two must agree: the planner recomputing a different carbohydrate
+  // target from the one shown on the race panel is worse than no button.
   const plannerTarget = await page.locator(".layout .stat").first().innerText();
-  const num = (s) => Number(/(\d+)/.exec(s)?.[1]);
+  const num = (x) => Number(/(\d+)/.exec(x)?.[1]);
   if (num(plannerTarget) !== num(raceTarget)) {
     throw new Error(`race panel says ${raceTarget}, planner says ${plannerTarget}`);
   }
@@ -518,7 +535,7 @@ await step("the start screen shows it as reviewed afterwards", async () => {
 
 console.log("── engine depth & crunching ──");
 await step("the plan refuses to promise more than a gut can absorb", async () => {
-  await page.click('button.topnav-tab:has-text("Plan")');
+  await planMode("A session");
   await page.waitForSelector("text=Carb / hour", { timeout: 15000 });
   // A five-hour race is where the target climbs past what any gut takes.
   await page.selectOption("#goal", "race-preparation");
@@ -569,7 +586,7 @@ await step("a race GPX becomes a fuelling plan for that exact course", async () 
   const file = join(tmpdir(), `e2e-race-${Date.now()}.gpx`);
   writeFileSync(file, `<?xml version="1.0"?><gpx version="1.1"><trk><name>Jungfrau Marathon</name><trkseg>${pts}</trkseg></trk></gpx>`);
 
-  await page.click('button.topnav-tab:has-text("Plan")');
+  await planMode("A route");
   await page.waitForSelector(".race", { timeout: 15000 });
   await page.locator(".race input[type=file]").setInputFiles(file);
   await page.waitForSelector(".race-head", { timeout: 20000 });

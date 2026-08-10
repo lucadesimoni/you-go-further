@@ -816,4 +816,15 @@ export const it: Dictionary = {
   "train.learn.longRunGap": "La tua uscita più lunga recente dura {longest} min e il piano arriva a {peak}. È un salto vero: prendi sul serio le settimane di scarico.",
   "train.learn.rateStepLarge": "Il ritmo di carboidrati sale fino a {step} g/h fra una settimana e l'altra. Se non va giù bene, tieni una settimana invece di forzare.",
   "train.learn.practiseProducts": "Usa esattamente i prodotti della gara in tutti i {sessions} lunghi. La stanchezza da gusto e un gel sconosciuto sono problemi del giorno di gara che puoi risolvere ora.",
+
+  // ---- Plan screen: one job at a time --------------------------------------
+  "plan.whatToPlan": "Che cosa stai pianificando?",
+  "plan.modeRace": "Una gara",
+  "plan.modeRaceWhy": "Una data, una preparazione e il rifornimento del giorno di gara",
+  "plan.modeRoute": "Un percorso",
+  "plan.modeRouteWhy": "Un GPX, rifornito secondo il suo terreno",
+  "plan.modeSession": "Una seduta",
+  "plan.modeSessionWhy": "L'allenamento di oggi, rifornito",
+  "event.tabRaceDay": "Giorno di gara",
+  "event.tabTraining": "Piano di allenamento",
 };

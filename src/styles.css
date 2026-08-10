@@ -3492,6 +3492,56 @@ code {
   .train-week-out { margin-left: 0; }
 }
 
+/* --- Plan screen: one job at a time --------------------------------------- */
+.plan-modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+.plan-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+}
+.plan-mode:hover { border-color: var(--border-strong); }
+.plan-mode.active { border-color: var(--accent); background: var(--accent-soft); }
+.plan-mode-name { font-weight: 700; color: var(--text); }
+.plan-mode-why { font-size: var(--text-2xs); }
+@media (max-width: 720px) {
+  .plan-modes { grid-template-columns: 1fr; }
+  .plan-mode-why { display: none; }
+}
+
+/* Race day and the build are two questions; stacking them made one panel four
+   screens deep. */
+.event-views {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-5) 0;
+  border-bottom: 1px solid var(--border);
+}
+.event-view {
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.event-view:hover { color: var(--text); }
+.event-view.active { color: var(--text); border-bottom-color: var(--accent); }
+
 /* --- Named events: a race with a date on it ------------------------------ */
 .event { margin-bottom: var(--space-6); }
 .event-pick { max-width: 420px; }

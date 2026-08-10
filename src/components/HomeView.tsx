@@ -57,7 +57,7 @@ export function HomeView({
   /** Logs, so a session that's already been reviewed doesn't ask again. */
   feedback?: SessionFeedback[];
   hasSyncedData: boolean;
-  onNavigate: (tab: string) => void;
+  onNavigate: (tab: string, planMode?: "race" | "route" | "session") => void;
   /** Plan for a specific past session — carries its shape into the planner. */
   onFuelSession?: (a: Activity) => void;
   /** Open the debrief for a past session. */
@@ -117,12 +117,12 @@ export function HomeView({
           <h2 className="home-next-title">{nextText!.title}</h2>
           <p className="home-next-why">{nextText!.why}</p>
           <div className="home-next-actions">
-            <button type="button" className="btn btn-primary" onClick={() => onNavigate("plan")}>
+            <button type="button" className="btn btn-primary" onClick={() => onNavigate("plan", "session")}>
               {t("home.planSession")}
             </button>
             {/* A race is the reason most athletes open this at all — give it its
                 own way in, not just "plan a session". */}
-            <button type="button" className="btn btn-ghost" onClick={() => onNavigate("plan")}>
+            <button type="button" className="btn btn-ghost" onClick={() => onNavigate("plan", "race")}>
               {t("home.planRace")}
             </button>
             {/* "Log a session" is only useful if it leads somewhere concrete.
