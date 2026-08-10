@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.8.0";
+export const PLATFORM_VERSION = "0.9.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -76,7 +76,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "engine",
     path: "src/engine",
-    version: "1.2.0",
+    version: "1.3.0",
     layer: "domain",
     stability: "stable",
     summary:
@@ -197,6 +197,18 @@ export const MODULES: readonly ModuleVersion[] = [
     ],
     caveat:
       "A date is only confirmed once the refresh script has fetched it from the organiser; until then it is the traditional weekend, labelled approximate. Aid-station data is present only where an organiser publishes it plainly. The organiser hosts cannot be reached from a network-restricted environment, so `confirmed.ts` ships empty.",
+  },
+  {
+    id: "training",
+    path: "src/training",
+    version: "0.1.0",
+    layer: "domain",
+    stability: "evolving",
+    summary:
+      "Periodised training plans for a named race: weekly volume built from the athlete's own recent hours, cut-back weeks, a taper, and carbohydrate-per-hour progressed alongside the training so race rate is rehearsed rather than met on the day.",
+    publicApi: ["buildTrainingPlan", "recentWeeklyHours", "longSessionShare"],
+    caveat:
+      "A template built on mainstream endurance-coaching practice, not individual coaching. It knows the athlete's volume and the race, and nothing about their injuries, their job or their calendar.",
   },
   {
     id: "auth",

@@ -8,6 +8,40 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.9.0
+
+The two halves of preparing for a race: knowing what the fuelling actually does
+to you, and having a plan to get there.
+
+**Added**
+
+- **`src/training`** (0.1.0). A periodised plan for a named race. Picking a race
+  and being handed only a fuelling plan answers the last question first — the
+  athlete's problem between now and September is the training. Volume is built
+  from *their own* recent weekly hours, rises about 8 % a week with every fourth
+  week cut back, tapers off the peak the build actually reached, and the
+  carbohydrate rate on the long day climbs to race rate during the
+  specific-preparation weeks so it is rehearsed on tired legs rather than met
+  for the first time on the day. An ultra gets back-to-back weekends instead of
+  one heroic long run; a climbing race gets hills where a flat one gets
+  threshold work.
+
+**Fixed**
+
+- **The energy curve was two straight lines.** Burn was a constant and intake a
+  constant subtracted from it, so the feed pins along the top of the chart
+  floated above a picture they had no effect on — you could move every gel and
+  nothing moved. Feeds are now events absorbed over a quarter of an hour, the
+  gut has a ceiling (a 105 g/h plan does not offset 105 g/h of burn; over a
+  14-hour race that is 1435 g swallowed against 1208 g absorbed), carbohydrate
+  oxidation falls as the store empties, and "race" intensity is discounted for
+  how long it has to be held — 202 g/h became 147 g/h for an Ironman. The chart
+  can now reach a verdict it was structurally incapable of: that even a maximal
+  plan will not hold the tank up, and the athlete should go easier early.
+- **Two burn models disagreed.** The chart used one table and the race
+  simulation another, so the same athlete on the same session could get two
+  answers. There is one now.
+
 ## 0.8.0
 
 Two things that were quietly hand-maintained: the race calendar, and the demo.

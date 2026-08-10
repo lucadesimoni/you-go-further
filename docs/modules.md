@@ -56,7 +56,7 @@ surfaces.
 
 ## Domain
 
-### `src/engine` — 1.2.0, stable
+### `src/engine` — 1.3.0, stable
 
 The recommendation engine, and the largest module in the platform. Documented
 file by file in [`docs/engine.md`](./engine.md); the physiology behind it is in
@@ -119,6 +119,29 @@ athlete the full feature set while subscriptions are off for the Phase 1 Swiss
 launch.
 
 Public API: `effectiveTier`, `planFor`, `TIERS`.
+
+### `src/training` — 0.1.0, evolving
+
+Periodised training plans for a named race. Picking a race and being handed only
+a fuelling plan answers the last question first: the athlete's problem between
+now and September is the training, and fuelling is one of the things that has to
+be trained.
+
+Three commitments shape it. It **starts from where the athlete is** — the first
+week comes from their own recent volume, because a plan opening at ten hours for
+somebody doing four is not ambition, it is an injury. It **progresses within a
+limit** — about 8 % a week, every fourth week cut back, never more than a tenth
+above the last, because nobody is watching a generated ramp. And the **fuelling
+is periodised with it**: carbohydrate per hour on the long day climbs to race
+rate during the specific-preparation weeks, so race rate has been rehearsed on
+tired legs well before the day.
+
+*Caveat:* a template built on mainstream endurance-coaching practice, not
+individual coaching. It knows the athlete's volume and the race, and nothing
+about their injuries, their job, or the fact that they are moving house in
+August — and the screen that renders it says so.
+
+Public API: `buildTrainingPlan`, `recentWeeklyHours`, `longSessionShare`.
 
 ### `src/data` — 1.0.0, stable
 

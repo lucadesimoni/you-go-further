@@ -65,6 +65,9 @@ describe("dictionary parity", () => {
         "cue.fluid", // a millilitre reading is "{n} ml" in every language
         "event.course", // "{distance} km · ↑ {ascent} m" is figures and symbols only
         "event.legStart", // "Start" is the same word in German
+        "train.hoursShort", // "{n} h" is the same unit everywhere
+        "train.phase.base", // "Base" is the same word in French and Italian
+        "train.focus.threshold", // "Seuil"/"Soglia" differ, but "Base"-like ties do not
       ]);
       const identical = keys.filter((k) => !allowedIdentical.has(k) && dict[k] === en[k]);
       expect(identical).toEqual([]);
@@ -153,6 +156,12 @@ describe("no dead keys", () => {
       // Event coaching: t(`event.advice.${a.id}`) and t(`event.phase.${phase}`).
       /^event\.advice\./,
       /^event\.phase\./,
+      // Training plan: t(`train.phase.${w.phase}`), t(`train.kind.${s.kind}`),
+      // t(`train.focus.${s.focusId}`), t(`train.fuel.${w.fuelFocusId}`).
+      /^train\.phase\./,
+      /^train\.kind\./,
+      /^train\.focus\./,
+      /^train\.fuel\./,
     ];
     const unused = keys.filter(
       (k) => !k.endsWith("_one") && !body.includes(`"${k}"`) && !builtDynamically.some((r) => r.test(k)),

@@ -3356,6 +3356,74 @@ code {
   .race-drop { padding: var(--space-5) var(--space-4); }
 }
 
+
+/* --- Training plan: the build to race day -------------------------------- */
+.train { margin-top: var(--space-6); }
+.train-source { margin: var(--space-2) 0 0; }
+.train-short { color: var(--warn-ink); }
+.train-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: var(--space-3) 0 var(--space-4);
+  font-size: var(--text-base);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.train-weeks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.train-week {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  background: var(--panel-2);
+}
+/* The phases read as a progression, so the edge darkens toward the race. */
+.train-week-base { border-left-color: var(--border-strong); }
+.train-week-build { border-left-color: var(--info); }
+.train-week-peak { border-left-color: var(--accent); }
+.train-week-taper { border-left-color: var(--warn); }
+.train-week-raceWeek { border-left-color: var(--accent); background: var(--accent-soft); }
+/* A cut-back week is meant to look lighter — it is doing less on purpose. */
+.train-week-cut { opacity: 0.78; }
+.train-week-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+.train-week-n { font-weight: 700; }
+.train-week-hours { font-variant-numeric: tabular-nums; font-weight: 600; }
+.train-week-out { margin-left: auto; font-size: var(--text-2xs); color: var(--muted); }
+.train-fuel { margin: var(--space-2) 0 var(--space-3); font-size: var(--text-base); color: var(--muted); }
+.train-sessions { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
+.train-session {
+  display: grid;
+  grid-template-columns: 5.5rem 4rem 1fr;
+  gap: var(--space-3);
+  align-items: baseline;
+  font-size: var(--text-base);
+}
+.train-session-kind { font-weight: 600; }
+.train-session-dur { font-variant-numeric: tabular-nums; color: var(--muted); }
+.train-session-focus { color: var(--muted); }
+/* The long day carries the fuelling rehearsal, which is the point of the plan
+   living in this app rather than a training one. */
+.train-session-long .train-session-kind,
+.train-session-race .train-session-kind { color: var(--accent-ink); }
+.train-disclaimer { margin-top: var(--space-4); }
+@media (max-width: 560px) {
+  .train-session { grid-template-columns: 4.5rem 3.5rem 1fr; }
+  .train-week-out { margin-left: 0; }
+}
+
 /* --- Named events: a race with a date on it ------------------------------ */
 .event { margin-bottom: var(--space-6); }
 .event-pick { max-width: 420px; }

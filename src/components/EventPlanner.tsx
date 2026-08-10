@@ -13,6 +13,8 @@ import {
 } from "../events";
 import { useI18n, type TranslationKey } from "../i18n";
 import { Explain } from "./Explain";
+import { TrainingPlanView, hasUsefulPlan } from "./TrainingPlanView";
+import { buildTrainingPlan } from "../training";
 
 const STORAGE_KEY = "ygf.event.v1";
 
@@ -260,6 +262,19 @@ export function EventPlanner({
               ))}
             </ul>
           </div>
+
+          {/* The build to race day. It comes before the carry legs because the
+              athlete's problem between now and September is the training —
+              what to carry is a race-morning question. */}
+          {(() => {
+            const training = buildTrainingPlan({
+              event,
+              estimatedMin: plan.estimatedMin,
+              raceCarbPerHourG: plan.target.carbPerHourG,
+              activities,
+            });
+            return hasUsefulPlan(training) ? <TrainingPlanView plan={training} /> : null;
+          })()}
 
           {plan.legs.length > 0 ? (
             <div className="event-legs">
