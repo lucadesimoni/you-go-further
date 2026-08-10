@@ -261,6 +261,56 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Phone typography and touch
+ *
+ * The desktop scale bottoms out at 10–13 px, which is fine at arm's length on a
+ * large screen and genuinely hard to read on a phone held in one hand. Measured
+ * at 390 px, roughly three quarters of the visible text was under 14 px — 34
+ * nodes at 10 px on the insights screen alone.
+ *
+ * Raising the *tokens* rather than patching components is what keeps one design
+ * rather than two: every rule already reads from these, so the whole interface
+ * moves together and nothing drifts out of proportion.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  :root {
+    --text-2xs: 12px;
+    --text-xs: 13px;
+    --text-sm: 14px;
+    --text-base: 15px;
+    --text-lg: 17px;
+    --text-xl: 19px;
+  }
+  /* 44 px is the smallest reliably tappable target, and a thumb is not a mouse
+     pointer. Applied to the controls rather than to everything, so text links
+     inside a paragraph keep their natural size. */
+  .btn,
+  .auth-btn,
+  .seg,
+  .chip,
+  .plan-mode,
+  .event-view,
+  .health-chip,
+  select,
+  input[type="file"] + label {
+    min-height: 44px;
+  }
+  select { font-size: var(--text-base); }
+  /* A text link grows its hit area with padding. Giving it a 44 px box made it
+     a full-width block that read as a heading under the one above it. */
+  .link-btn { padding: var(--space-3) 0; }
+  /* Range thumbs are dragged, not tapped, but they still need to be findable. */
+  input[type="range"] { height: 32px; }
+}
+
+/* Icons: sized from the text they sit beside, so they scale with the type. */
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex: 0 0 auto;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -2528,6 +2578,11 @@ code {
   flex: 0 0 auto;
   transition: color var(--transition), background var(--transition);
 }
+.topnav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 .topnav-tab:hover { color: var(--text); background: var(--panel-2); }
 .topnav-tab.active { color: var(--text); background: var(--accent-soft); }
 
@@ -2644,11 +2699,19 @@ code {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--space-3) var(--space-1);
-    font-size: var(--text-sm);
+    /* Icon over label: the shape is what the thumb aims at, and the word is
+       what confirms it. */
+    flex-direction: column;
+    gap: 3px;
+    padding: var(--space-2) var(--space-1) var(--space-3);
+    font-size: var(--text-2xs);
     border-radius: var(--radius-sm);
     position: relative;
   }
+  .topnav-tab .icon { width: 22px; height: 22px; }
+  .topnav-label { line-height: 1; }
+  /* The bar got taller once the icons went in. */
+  .page { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
   .topnav-tab.active { background: transparent; color: var(--accent-ink); }
   /* An indicator rather than a fill: cleaner in a dense bar. */
   .topnav-tab.active::before {
@@ -3514,11 +3577,26 @@ code {
 }
 .plan-mode:hover { border-color: var(--border-strong); }
 .plan-mode.active { border-color: var(--accent); background: var(--accent-soft); }
+.plan-mode > .icon { width: 20px; height: 20px; color: var(--muted); margin-bottom: 2px; }
+.plan-mode.active > .icon { color: var(--accent-ink); }
 .plan-mode-name { font-weight: 700; color: var(--text); }
 .plan-mode-why { font-size: var(--text-2xs); }
 @media (max-width: 720px) {
-  .plan-modes { grid-template-columns: 1fr; }
+  /* Three stacked cards took roughly 400 px of an 844 px screen before any
+     content. On a phone this is a chooser, not a landing page. */
+  .plan-modes {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+  }
+  .plan-mode {
+    align-items: center;
+    text-align: center;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-2);
+  }
   .plan-mode-why { display: none; }
+  .plan-mode-name { font-size: var(--text-sm); }
 }
 
 /* Race day and the build are two questions; stacking them made one panel four

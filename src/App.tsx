@@ -31,14 +31,15 @@ import { api, clearSessionToken, setSessionToken, isApiConfigured } from "./api/
 import { saveAccount } from "./auth";
 import { useI18n, type TranslationKey } from "./i18n";
 import { useTheme } from "./theme/useTheme";
+import { Icon, type IconName } from "./components/Icon";
 
 /** The three jobs the Plan screen does, one at a time. */
 export type PlanMode = "race" | "route" | "session";
 
-const PLAN_MODES: { id: PlanMode; labelKey: TranslationKey; blurbKey: TranslationKey }[] = [
-  { id: "race", labelKey: "plan.modeRace", blurbKey: "plan.modeRaceWhy" },
-  { id: "route", labelKey: "plan.modeRoute", blurbKey: "plan.modeRouteWhy" },
-  { id: "session", labelKey: "plan.modeSession", blurbKey: "plan.modeSessionWhy" },
+const PLAN_MODES: { id: PlanMode; labelKey: TranslationKey; blurbKey: TranslationKey; icon: IconName }[] = [
+  { id: "race", labelKey: "plan.modeRace", blurbKey: "plan.modeRaceWhy", icon: "race" },
+  { id: "route", labelKey: "plan.modeRoute", blurbKey: "plan.modeRouteWhy", icon: "route" },
+  { id: "session", labelKey: "plan.modeSession", blurbKey: "plan.modeSessionWhy", icon: "session" },
 ];
 
 interface TabDef {
@@ -46,18 +47,20 @@ interface TabDef {
   /** Translation key — the label is resolved at render, so it follows the language. */
   labelKey: TranslationKey;
   perm: Permission;
+  /** Shown beside the label, and alone on the mobile bar. */
+  icon: IconName;
 }
 
 // Primary navigation — the core work surfaces. Personal screens (Profile,
 // Subscription) live in the account menu, not here, so each is in one place.
 const TABS: TabDef[] = [
-  { id: "home", labelKey: "nav.home", perm: "plan:use" },
-  { id: "plan", labelKey: "nav.plan", perm: "plan:use" },
-  { id: "progress", labelKey: "nav.progress", perm: "plan:use" },
-  { id: "connect", labelKey: "nav.connect", perm: "analysis:view_own" },
-  { id: "team", labelKey: "nav.team", perm: "analysis:view_team" },
-  { id: "catalog", labelKey: "nav.catalog", perm: "catalog:read" },
-  { id: "admin", labelKey: "nav.admin", perm: "org:configure" },
+  { id: "home", labelKey: "nav.home", perm: "plan:use", icon: "home" },
+  { id: "plan", labelKey: "nav.plan", perm: "plan:use", icon: "plan" },
+  { id: "progress", labelKey: "nav.progress", perm: "plan:use", icon: "insights" },
+  { id: "connect", labelKey: "nav.connect", perm: "analysis:view_own", icon: "connect" },
+  { id: "team", labelKey: "nav.team", perm: "analysis:view_team", icon: "team" },
+  { id: "catalog", labelKey: "nav.catalog", perm: "catalog:read", icon: "catalog" },
+  { id: "admin", labelKey: "nav.admin", perm: "org:configure", icon: "admin" },
 ];
 
 export function App() {
@@ -345,7 +348,8 @@ export function App() {
               className={tab === t2.id ? "topnav-tab active" : "topnav-tab"}
               onClick={() => setTab(t2.id)}
             >
-              {t2.labelKey ? t(t2.labelKey) : ""}
+              <Icon name={t2.icon} />
+              <span className="topnav-label">{t2.labelKey ? t(t2.labelKey) : ""}</span>
             </button>
           ))}
         </nav>
@@ -418,6 +422,7 @@ export function App() {
                   aria-pressed={planMode === m.id}
                   onClick={() => setPlanMode(m.id)}
                 >
+                  <Icon name={m.icon} />
                   <span className="plan-mode-name">{t(m.labelKey)}</span>
                   <span className="plan-mode-why">{t(m.blurbKey)}</span>
                 </button>

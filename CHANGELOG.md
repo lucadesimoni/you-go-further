@@ -8,6 +8,27 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.10.2
+
+**Fixed**
+
+- **The type was too small to read on a phone.** Measured at 390 px, roughly
+  three quarters of the visible text was under 14 px — 148 of 188 nodes on the
+  insights screen, 34 of them at 10 px. The *tokens* now scale up below 720 px
+  rather than components being patched one at a time, so the whole interface
+  moves together: the insights screen is down to 56 nodes under 14 px and the
+  floor is 12 px.
+- **Nothing but words.** Every navigation target, mode and action had the same
+  shape and weight as the prose around it. There is now an inline SVG icon set —
+  no icon font, no network round trip — on the navigation bar and the plan
+  chooser, so a target can be found without reading the row.
+- **Touch targets under the 44 px minimum**: the health chips were 35 px, and
+  the insights screen had nine controls below the line. Two remain, both text
+  links inside paragraphs, which grow their hit area with padding instead.
+- **The plan chooser filled half a phone screen** — three stacked cards, about
+  400 px of an 844 px viewport before any content. It is a compact row of three
+  on a phone, which is what a chooser should be.
+
 ## 0.10.1
 
 **Fixed**
