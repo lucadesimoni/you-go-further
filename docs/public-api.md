@@ -45,9 +45,9 @@ which one they have.
 
 | Scope | Grants |
 | --- | --- |
-| `plan` | `/v1/plan`, `/v1/absorption`, `/v1/heat` |
+| `plan` | `/v1/plan`, `/v1/absorption`, `/v1/heat`, `POST /v1/events/{id}/plan` |
 | `course` | `/v1/course` |
-| `catalog` | `/v1/catalog` |
+| `catalog` | `/v1/catalog`, `GET /v1/events` |
 | `cohort` | reserved for pooled outcome data |
 
 `/v1/meta` needs only a valid key — a partner must be able to discover what their
@@ -66,7 +66,7 @@ limit.
 Every response, including every error, carries three versions:
 
 ```json
-{ "contract": "1.0.0", "engine": "1.2.0", "platform": "0.4.0" }
+{ "contract": "1.1.0", "engine": "1.2.0", "platform": "0.7.0" }
 ```
 
 - **`contract`** — this API's shape. It moves for *additive* changes only. A
@@ -176,6 +176,95 @@ carbohydrate burn multiplier, and one line of advice naming the numbers.
 The product library the plans are built from. A tenant with their own products
 gets their own catalog here, and their products named in `/v1/plan` and
 `/v1/course`.
+
+### `GET /v1/events`
+
+The curated Swiss races, with the countdown already worked out.
+
+```json
+{
+  "count": 12,
+  "events": [
+    {
+      "id": "jungfrau-marathon",
+      "name": "Jungfrau-Marathon",
+      "discipline": "trail-run",
+      "distanceKm": 42.195,
+      "ascentM": 1823,
+      "maxAltM": 2205,
+      "date": "2026-09-12",
+      "dateApproximate": true,
+      "daysOut": 34,
+      "cutoffMin": 405,
+      "organiserUrl": "https://www.jungfrau-marathon.ch",
+      "aidStationsKnown": false
+    }
+  ]
+}
+```
+
+Two fields exist to stop our uncertainty being rendered as your fact, and both
+are worth branching on:
+
+- **`dateApproximate`** is `true` for every curated entry. These are the weekend
+  each race traditionally falls on, taken from published calendars — Swiss races
+  move by a week or two and this list cannot ring them up. Show it, and link
+  `organiserUrl`.
+- **`aidStationsKnown`** is `false` when we have no aid-station data. That means
+  *unknown*, never *none*. An athlete who believes there is water at km 30 and
+  finds none is in real trouble, so we do not guess.
+
+### `POST /v1/events/{id}/plan`
+
+A named race, an athlete, and the race-day forecast — the one endpoint here that
+reaches the network.
+
+```json
+{ "bodyWeightKg": 72, "estimatedMin": 330, "startHour": 9, "sweatLevel": "heavy" }
+```
+
+Only `bodyWeightKg` is required. Without `estimatedMin` the finish is derived
+from the course and `estimateSource` says `"derived"` rather than `"athlete"`.
+
+```json
+{
+  "countdown": { "daysOut": 34, "weeksOut": 4, "phase": "build" },
+  "estimatedMin": 330,
+  "estimateSource": "athlete",
+  "target": { "carbPerHourG": 105, "carbTotalG": 578, "fluidPerHourMl": 700, "sodiumPerLitreMg": 700 },
+  "weather": {
+    "temperatureC": 15, "peakTemperatureC": 19, "conditions": "temperate",
+    "forecast": false, "estimateReason": "outOfRange",
+    "windowFromHour": 9, "windowToHour": 15
+  },
+  "advice": [{ "id": "rehearseRace", "severity": "act", "values": { "target": 105, "weeks": 4 } }],
+  "legs": [],
+  "aidStationsKnown": false
+}
+```
+
+**`phase`** is what makes this different from `/v1/plan`. The same athlete on the
+same course gets different advice nine weeks out and two days out: gut training
+in the build, carbohydrate loading inside 48 hours, nothing new in race week.
+The phases are `base`, `build`, `taper`, `raceWeek`, `raceDay`, `done`.
+
+**`weather.forecast`** must be branched on before you show a temperature as a
+forecast. Numerical models run about sixteen days ahead; beyond that this is
+climatology, and `estimateReason` says which of the two reasons applies —
+`outOfRange` resolves with time, `unreachable` with a connection. The figures
+cover the hours of the race rather than the calendar day, which is why
+`peakTemperatureC` is reported separately: a day that means 18 °C and touches
+26 °C is a hot race, and planning fluid on the mean leaves an athlete short on
+the last climb.
+
+**`advice`** is ids and numbers, never sentences. Your UI writes the copy, in
+your language and your voice — the same contract `/v1/course` uses for its
+warnings. `severity` is `act` or `info`.
+
+**`legs`** is aid station to aid station: how long each stretch takes, and the
+carbohydrate and fluid that have to be *on the athlete* for it. `mustCarry` is
+true when the station at the far end has no food, so nothing can be deferred to
+it. The array is empty when `aidStationsKnown` is false.
 
 ## Administration
 

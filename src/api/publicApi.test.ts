@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { v1Plan, v1Course, v1Absorption, v1Heat, v1Meta, v1Catalog, CONTRACT_VERSION } from "./publicApi";
+import { v1Plan, v1Course, v1Absorption, v1Heat, v1Meta, v1Catalog, v1Events, v1EventPlan, CONTRACT_VERSION } from "./publicApi";
 import { issueApiKey, checkApiKey, hashKey, publicKeyView, InMemoryApiKeyStore } from "./apiKeys";
 import { RateLimiter, UsageMeter } from "./rateLimit";
 
@@ -310,5 +310,81 @@ describe("usage metering", () => {
     meter.record("k1", "garmin", "plan");
     const json = JSON.stringify(meter.list());
     expect(json).not.toMatch(/bodyWeight|athlete|route/i);
+  });
+});
+
+describe("GET /v1/events", () => {
+  const list = () => (v1Events(new Date("2026-08-01T08:00:00Z")).data as Record<string, any>).events;
+
+  it("returns the curated races with the countdown already worked out", () => {
+    const jungfrau = list().find((e: any) => e.id === "jungfrau-marathon");
+    expect(jungfrau.name).toBe("Jungfrau-Marathon");
+    expect(jungfrau.daysOut).toBe(42);
+  });
+
+  it("makes the approximate date a field, not a footnote", () => {
+    // A partner who never reads our docs still has to destructure past this to
+    // render the date, which is the only warning that survives an integration.
+    for (const e of list()) expect(e.dateApproximate).toBe(true);
+  });
+
+  it("says whether aid stations are known rather than sending an empty list", () => {
+    for (const e of list()) expect(typeof e.aidStationsKnown).toBe("boolean");
+  });
+
+  it("carries the contract envelope", () => {
+    const data = v1Events().data as Record<string, unknown>;
+    expect(data.contract).toBe(CONTRACT_VERSION);
+    expect(typeof data.engine).toBe("string");
+  });
+});
+
+describe("POST /v1/events/{id}/plan", () => {
+  const NOW = new Date("2026-08-01T08:00:00Z");
+  const ok = () => v1EventPlan("jungfrau-marathon", { bodyWeightKg: 70, estimatedMin: 300 }, NOW);
+
+  it("names the unknown event instead of 500-ing on it", async () => {
+    const res = await v1EventPlan("no-such-race", { bodyWeightKg: 70 }, NOW);
+    expect(res.status).toBe(404);
+    expect((res.data as Record<string, unknown>).error).toBe("unknown_event");
+  });
+
+  it("validates the athlete before reaching for a forecast", async () => {
+    const res = await v1EventPlan("jungfrau-marathon", { bodyWeightKg: 5 }, NOW);
+    expect(res.status).toBe(400);
+    expect(String((res.data as Record<string, unknown>).detail)).toContain("bodyWeightKg");
+  });
+
+  it("rejects a start hour outside the day", async () => {
+    const res = await v1EventPlan("jungfrau-marathon", { bodyWeightKg: 70, startHour: 26 }, NOW);
+    expect(res.status).toBe(400);
+  });
+
+  it("returns the fields a watch renders, flat", async () => {
+    const d = (await ok()).data as Record<string, any>;
+    expect(d.countdown.phase).toBe("build");
+    expect(d.estimatedMin).toBe(300);
+    expect(d.estimateSource).toBe("athlete");
+    expect(d.target.carbPerHourG).toBeGreaterThan(0);
+    expect(d.target.fluidPerHourMl).toBeGreaterThan(0);
+  });
+
+  it("marks whether the weather is a forecast or climatology", async () => {
+    // Nine months out there is no model run, and the contract has to say so
+    // rather than letting a seasonal average be rendered as a forecast.
+    const d = (await ok()).data as Record<string, any>;
+    expect(d.weather.forecast).toBe(false);
+    expect(typeof d.weather.sourceLabel).toBe("string");
+    expect(d.weather.windowFromHour).toBe(9);
+  });
+
+  it("sends advice as ids and numbers, so the partner writes the sentence", async () => {
+    const d = (await ok()).data as Record<string, any>;
+    expect(d.advice.length).toBeGreaterThan(0);
+    for (const a of d.advice) {
+      expect(typeof a.id).toBe("string");
+      expect(["info", "act"]).toContain(a.severity);
+      expect(Object.values(a.values).every((v) => typeof v === "number")).toBe(true);
+    }
   });
 });

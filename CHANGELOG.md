@@ -8,6 +8,49 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.7.0
+
+Named races. Until now every plan started from a course or a session — a shape
+and a duration. An athlete does not arrive with a shape; they arrive with "the
+Jungfrau-Marathon is in nine weeks", and almost everything useful follows from
+the date rather than the distance.
+
+**Added**
+
+- **`src/events`** (0.1.0). A curated list of twelve Swiss endurance races, the
+  countdown phases that decide what to eat *this week* rather than in general
+  (`base` → `build` → `taper` → `raceWeek` → `raceDay`), aid-station carry legs,
+  and a readiness check against the athlete's own longest recent session.
+- **A race-day forecast that goes live as the date comes into range.** Beyond
+  the sixteen-day model horizon the plan runs on climatology and says so; inside
+  it, the plan changes when the real forecast does. It covers the *hours of the
+  race*, not the calendar day — a 09:00 marathon has its field on the steepest
+  climb at the hottest hour, and the daily mean hides exactly that.
+- **`GET /v1/events` and `POST /v1/events/{id}/plan`** on the public contract
+  (now 1.1.0, additive). `dateApproximate`, `aidStationsKnown`,
+  `weather.forecast` and `weather.estimateReason` are fields rather than
+  footnotes: a partner has to destructure past our uncertainty to render it.
+- **Event planning in the app**, in all four languages, above the GPX importer.
+
+**Fixed**
+
+- **Two altitude corrections stacked on one temperature.** `estimateWeather()`
+  used latitude as a stand-in for altitude; the event forecast then applied a
+  real lapse rate on top of it. Sierre-Zinal in August came out at 6 °C, which
+  would have argued an athlete out of the fluid they needed on a hot valley
+  race. `estimateWeather()` now takes an optional real altitude and applies one
+  correction with a physical meaning; the altitude-free path is unchanged.
+- **"Check back in 0 days."** A seasonal average was shown with the same words
+  whether the race was too far out for a forecast or the model was simply
+  unreachable. Those resolve differently — one with time, one with a connection
+  — and `estimateReason` now distinguishes them everywhere, including on `/v1`.
+- **A colour-only distinction in the carry table.** Which legs an athlete has to
+  be self-sufficient on is the most useful thing in it, and it was carried by a
+  red edge alone. It is now said in words as well.
+- **`Spitze Bei 10°C`.** The weather block's labels inherited a
+  `text-transform: capitalize` written for one-word labels, which upper-cases
+  every word of a phrase — in German that reads as a typo.
+
 ## 0.6.0
 
 API hardening. Four defects that only show up under load or under attack, none

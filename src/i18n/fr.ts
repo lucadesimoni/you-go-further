@@ -664,4 +664,85 @@ export const fr: Dictionary = {
     "Les preuves derrière chaque plan — quoi faire, en quelle quantité et pourquoi. Rédigé d'après le consensus scientifique en nutrition sportive.",
 
 
+
+  // ---- Courses -----------------------------------------------------------
+  "event.title": "Ravitaillement pour une course",
+  "event.intro":
+    "Choisissez la course que vous préparez. Les conseils suivent le calendrier, et la météo devient une vraie prévision dès que la date entre dans la portée des modèles.",
+  "event.choose": "Course",
+  "event.none": "Aucune course sélectionnée",
+  "event.change": "Choisir une autre course",
+  "event.organiser": "Organisateur",
+  "event.dateApproximate": "Week-end habituel — vérifiez la date auprès de l'organisateur.",
+  "event.daysToGo": "Encore {days} jours",
+  "event.daysToGo_one": "Encore 1 jour",
+  "event.today": "Jour de course",
+  "event.past": "Cette course a déjà eu lieu.",
+  "event.course": "{distance} km · ↑ {ascent} m",
+  "event.highPoint": "Point culminant {alt} m",
+  "event.cutoff": "Barrière horaire {time}",
+
+  "event.phase.base": "Période de base",
+  "event.phase.build": "Développement",
+  "event.phase.taper": "Affûtage",
+  "event.phase.raceWeek": "Semaine de course",
+  "event.phase.raceDay": "Jour de course",
+  "event.phase.done": "Terminée",
+
+  "event.finishTime": "Votre temps d'arrivée",
+  "event.finishDerived": "Estimé à partir du parcours. Indiquez le vôtre — tout ce qui suit s'y adapte.",
+  "event.planThis": "Planifier pour cette course →",
+  "event.thisWeek": "À faire maintenant",
+  "event.raceDayWeather": "Météo le jour de la course",
+  "event.forecastBadge": "Prévision",
+  "event.estimateBadge": "Moyenne saisonnière",
+  "event.forecastWindow": "{from}h–{to}h, les heures où vous êtes dehors",
+  "event.peaks": "Pointe à {temp}°C",
+  "event.forecastUnreachable": "Le modèle de prévision est injoignable pour l'instant. Voici la moyenne saisonnière de la région — elle sera actualisée dès le retour de la connexion.",
+  "event.forecastPending": "Trop loin pour une prévision. Voici la moyenne saisonnière de la région — revenez dans {days} jours.",
+  "event.targets": "Objectifs du jour de course",
+  "event.totalCarb": "Glucides au total",
+
+  "event.legs": "Ce qu'il faut porter entre les ravitaillements",
+  "event.legsIntro":
+    "Le total est une liste de courses. Voici le plan : ce qui doit être dans vos poches sur chaque portion, parce que le poste au bout ne l'aura peut-être pas.",
+  "event.leg": "Portion",
+  "event.legCarry": "À porter",
+  "event.legAvailable": "Nourriture au bout",
+  "event.legStart": "Départ",
+  "event.legFinish": "Arrivée",
+  "event.noLegs":
+    "Nous n'avons pas les ravitaillements de cet organisateur. Plutôt que de les inventer, nous les omettons — procurez-vous le règlement et prévoyez de tout porter.",
+
+  "event.readiness": "Séance la plus longue des 8 dernières semaines",
+  "event.readinessRatio": "{pct}% de la durée estimée de votre course",
+
+  "event.advice.gutTraining":
+    "Entraînez votre estomac. Pratiquez {target} g de glucides par heure sur les sorties longues — la tolérance se travaille, et le jour de course n'est pas le moment de la découvrir.",
+  "event.advice.rehearseRace":
+    "Répétez la course. Dans les {weeks} semaines qui restent, faites au moins deux sorties longues à {target} g/h avec exactement les produits de votre course.",
+  "event.advice.taperCarbs":
+    "L'entraînement baisse, pas l'alimentation. Maintenez les glucides pendant l'affûtage — encore {days} jours.",
+  "event.advice.carbLoad":
+    "Chargez maintenant : environ {grams} g de glucides par jour ({perKg} g par kg) sur les dernières 48 heures. Peu de fibres, des aliments familiers.",
+  "event.advice.nothingNew":
+    "Plus rien de nouveau. À {days} jours de la course, chaque gel, boisson et petit-déjeuner doit déjà avoir servi à l'entraînement.",
+  "event.advice.raceMorning":
+    "Matin de course : environ {carb} g de glucides deux à trois heures avant le départ, puis buvez selon la soif.",
+  "event.advice.afterRace":
+    "Course terminée. Glucides et protéines dans l'heure, et continuez à boire bien après en avoir eu envie.",
+  "event.advice.checkAidStations":
+    "{stations} ravitaillements, dont {withFood} avec de la nourriture. Vérifiez dans le règlement ce qui y est réellement distribué.",
+  "event.advice.carryOwn":
+    "Nous n'avons pas les ravitaillements de cette course. Sur {km} km, prévoyez de tout porter tant que le règlement ne dit pas le contraire.",
+  "event.advice.cutoffTight":
+    "La barrière horaire est à {cutoff} et vous estimez {estimated}. Ravitaillez-vous pour l'allure qui vous fait passer, pas pour celle que vous espérez.",
+  "event.advice.heatDay":
+    "Course chaude — pointe à {peak}°C. Visez {fluid} ml par heure avec {sodium} mg de sodium par litre, et buvez avant d'avoir soif.",
+  "event.advice.coldDay":
+    "Course froide à {temp}°C. Vous boirez moins que nécessaire — maintenez les glucides et prenez les boissons chaudes si l'organisateur en propose.",
+  "event.advice.altitude":
+    "Culmine à {alt} m. L'air raréfié coupe l'appétit et augmente les pertes hydriques — passez aux glucides liquides dès que le solide ne passe plus.",
+  "event.advice.longestShort":
+    "Votre plus longue séance récente dure {longest}, soit {pct}% d'une course de {estimated}. Allongez la sortie longue avant d'augmenter les volumes de ravitaillement.",
 };

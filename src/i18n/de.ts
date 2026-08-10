@@ -650,4 +650,85 @@ export const de: Dictionary = {
   "guide.articles": "{count} Artikel",
   "guide.intro":
     "Die Belege hinter jedem Plan — was zu tun ist, wie viel und warum. Verfasst nach dem gängigen sporternährungswissenschaftlichen Konsens.",
+
+  // ---- Rennen ------------------------------------------------------------
+  "event.title": "Verpflegung für ein Rennen",
+  "event.intro":
+    "Wähle das Rennen, auf das du hintrainierst. Die Hinweise richten sich nach dem Kalender, und aus dem Wetter wird eine echte Prognose, sobald das Datum in Reichweite kommt.",
+  "event.choose": "Rennen",
+  "event.none": "Kein Rennen gewählt",
+  "event.change": "Anderes Rennen wählen",
+  "event.organiser": "Veranstalter",
+  "event.dateApproximate": "Übliches Wochenende — Datum beim Veranstalter prüfen.",
+  "event.daysToGo": "Noch {days} Tage",
+  "event.daysToGo_one": "Noch 1 Tag",
+  "event.today": "Renntag",
+  "event.past": "Dieses Rennen ist gelaufen.",
+  "event.course": "{distance} km · ↑ {ascent} m",
+  "event.highPoint": "Höchster Punkt {alt} m",
+  "event.cutoff": "Zeitlimite {time}",
+
+  "event.phase.base": "Grundlage",
+  "event.phase.build": "Aufbau",
+  "event.phase.taper": "Tapering",
+  "event.phase.raceWeek": "Rennwoche",
+  "event.phase.raceDay": "Renntag",
+  "event.phase.done": "Vorbei",
+
+  "event.finishTime": "Deine Zielzeit",
+  "event.finishDerived": "Aus der Strecke geschätzt. Setze deine eigene — alles darunter richtet sich danach.",
+  "event.planThis": "Für dieses Rennen planen →",
+  "event.thisWeek": "Was jetzt zu tun ist",
+  "event.raceDayWeather": "Wetter am Renntag",
+  "event.forecastBadge": "Prognose",
+  "event.estimateBadge": "Saisonmittel",
+  "event.forecastWindow": "{from}:00–{to}:00, die Stunden, in denen du unterwegs bist",
+  "event.peaks": "Spitze bei {temp}°C",
+  "event.forecastUnreachable": "Das Prognosemodell ist gerade nicht erreichbar. Das hier ist der jahreszeitliche Durchschnitt für die Region — er aktualisiert sich, sobald die Verbindung wieder steht.",
+  "event.forecastPending": "Noch zu weit weg für eine Prognose. Das hier ist der jahreszeitliche Durchschnitt für die Region — schau in {days} Tagen wieder vorbei.",
+  "event.targets": "Zielwerte für den Renntag",
+  "event.totalCarb": "Kohlenhydrate gesamt",
+
+  "event.legs": "Was du zwischen den Verpflegungsposten dabeihaben musst",
+  "event.legsIntro":
+    "Die Gesamtmenge ist eine Einkaufsliste. Das hier ist der Plan: was auf jedem Abschnitt in deinen Taschen sein muss, weil der Posten am Ende ihn vielleicht nicht führt.",
+  "event.leg": "Abschnitt",
+  "event.legCarry": "Selbst tragen",
+  "event.legAvailable": "Essen am Ende",
+  "event.legStart": "Start",
+  "event.legFinish": "Ziel",
+  "event.noLegs":
+    "Wir haben die Verpflegungsposten dieses Veranstalters nicht. Statt sie zu erfinden, lassen wir sie weg — hol dir das Rennhandbuch und plane, alles selbst zu tragen.",
+
+  "event.readiness": "Längste Einheit der letzten 8 Wochen",
+  "event.readinessRatio": "{pct}% deiner geschätzten Renndauer",
+
+  "event.advice.gutTraining":
+    "Trainiere deinen Magen. Übe {target} g Kohlenhydrate pro Stunde in langen Einheiten — Verträglichkeit ist trainierbar, und der Renntag ist der falsche Tag für Experimente.",
+  "event.advice.rehearseRace":
+    "Probe das Rennen. Mache in den verbleibenden {weeks} Wochen mindestens zwei lange Einheiten mit {target} g/h und genau den Produkten, mit denen du startest.",
+  "event.advice.taperCarbs":
+    "Das Training geht runter, das Essen nicht. Halte die Kohlenhydrate im Tapering oben — noch {days} Tage.",
+  "event.advice.carbLoad":
+    "Jetzt laden: rund {grams} g Kohlenhydrate pro Tag ({perKg} g pro kg) für die letzten 48 Stunden. Wenig Ballaststoffe, vertraute Nahrung.",
+  "event.advice.nothingNew":
+    "Ab jetzt nichts Neues. Bei {days} Tagen Restzeit sollte jedes Gel, jedes Getränk und jedes Frühstück schon im Training erprobt sein.",
+  "event.advice.raceMorning":
+    "Rennmorgen: rund {carb} g Kohlenhydrate zwei bis drei Stunden vor dem Start, danach nach Durst trinken.",
+  "event.advice.afterRace":
+    "Rennen gelaufen. Kohlenhydrate und Protein innerhalb einer Stunde, und trink deutlich länger weiter, als dir danach ist.",
+  "event.advice.checkAidStations":
+    "{stations} Verpflegungsposten, {withFood} davon mit Essen. Prüfe im Rennhandbuch, was dort wirklich ausgegeben wird.",
+  "event.advice.carryOwn":
+    "Wir haben die Verpflegungsposten dieses Rennens nicht. Plane auf {km} km, alles selbst zu tragen, bis das Rennhandbuch etwas anderes sagt.",
+  "event.advice.cutoffTight":
+    "Die Zeitlimite liegt bei {cutoff}, du rechnest mit {estimated}. Verpflege dich für das Tempo, das dich darunter bringt, nicht für das erhoffte.",
+  "event.advice.heatDay":
+    "Warmes Rennen — Spitze bei {peak}°C. Ziel sind {fluid} ml pro Stunde mit {sodium} mg Natrium pro Liter, und trink, bevor du Durst hast.",
+  "event.advice.coldDay":
+    "Kaltes Rennen bei {temp}°C. Du trinkst weniger, als du brauchst — halte die Kohlenhydrate oben und nimm warme Getränke, wenn der Veranstalter welche hat.",
+  "event.advice.altitude":
+    "Höchster Punkt {alt} m. Dünne Luft dämpft den Appetit und erhöht den Flüssigkeitsverlust — wechsle auf flüssige Kohlenhydrate, sobald Festes nicht mehr reingeht.",
+  "event.advice.longestShort":
+    "Deine längste Einheit zuletzt dauerte {longest}, {pct}% eines Rennens von {estimated}. Bau den langen Tag aus, bevor du die Verpflegungsmenge hochschraubst.",
 };

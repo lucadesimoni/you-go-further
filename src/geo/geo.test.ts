@@ -127,3 +127,24 @@ describe("fuelling implications & enrichRoute", () => {
     expect(Array.isArray(r.implications)).toBe(true);
   });
 });
+
+describe("seasonal estimate with a known altitude", () => {
+  it("uses a real lapse rate when the altitude is known", () => {
+    // 2,000 m is 1,500 m above the plateau the monthly means describe, so about
+    // 9 °C cooler — a figure with a physical meaning, unlike the latitude proxy.
+    const plateau = estimateWeather(47.4, 7, 500);
+    const alpine = estimateWeather(47.4, 7, 2000);
+    expect(plateau.temperatureC - alpine.temperatureC).toBe(9);
+  });
+
+  it("leaves the altitude-free behaviour exactly as it was", () => {
+    // Callers that never knew an altitude must not shift underneath this change.
+    expect(estimateWeather(46.29, 7).temperatureC).toBe(11);
+  });
+
+  it("never warms a place for being below the plateau", () => {
+    // Lugano is low, but the monthly table is not a valley table, and inventing
+    // extra heat from it would be a guess dressed as a correction.
+    expect(estimateWeather(46.0, 7, 200).temperatureC).toBe(estimateWeather(46.0, 7, 500).temperatureC);
+  });
+});

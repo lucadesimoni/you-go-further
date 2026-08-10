@@ -660,4 +660,85 @@ export const it: Dictionary = {
     "Le prove dietro ogni piano — cosa fare, quanto e perché. Redatto secondo il consenso scientifico in nutrizione sportiva.",
 
 
+
+  // ---- Gare ---------------------------------------------------------------
+  "event.title": "Rifornimento per una gara",
+  "event.intro":
+    "Scegli la gara per cui ti stai preparando. I consigli seguono il calendario e il meteo diventa una previsione vera non appena la data entra nel raggio dei modelli.",
+  "event.choose": "Gara",
+  "event.none": "Nessuna gara selezionata",
+  "event.change": "Scegli un'altra gara",
+  "event.organiser": "Organizzatore",
+  "event.dateApproximate": "Fine settimana abituale — verifica la data con l'organizzatore.",
+  "event.daysToGo": "Mancano {days} giorni",
+  "event.daysToGo_one": "Manca 1 giorno",
+  "event.today": "Giorno di gara",
+  "event.past": "Questa gara si è già svolta.",
+  "event.course": "{distance} km · ↑ {ascent} m",
+  "event.highPoint": "Punto più alto {alt} m",
+  "event.cutoff": "Cancelletto {time}",
+
+  "event.phase.base": "Periodo di base",
+  "event.phase.build": "Costruzione",
+  "event.phase.taper": "Scarico",
+  "event.phase.raceWeek": "Settimana di gara",
+  "event.phase.raceDay": "Giorno di gara",
+  "event.phase.done": "Conclusa",
+
+  "event.finishTime": "Il tuo tempo finale",
+  "event.finishDerived": "Stimato dal percorso. Inserisci il tuo — tutto quello che segue si adatta.",
+  "event.planThis": "Pianifica per questa gara →",
+  "event.thisWeek": "Cosa fare adesso",
+  "event.raceDayWeather": "Meteo del giorno di gara",
+  "event.forecastBadge": "Previsione",
+  "event.estimateBadge": "Media stagionale",
+  "event.forecastWindow": "{from}:00–{to}:00, le ore in cui sei in gara",
+  "event.peaks": "Picco a {temp}°C",
+  "event.forecastUnreachable": "Il modello di previsione non è raggiungibile in questo momento. Questa è la media stagionale della zona — si aggiorna appena torna la connessione.",
+  "event.forecastPending": "Troppo lontano per una previsione. Questa è la media stagionale della zona — torna fra {days} giorni.",
+  "event.targets": "Obiettivi del giorno di gara",
+  "event.totalCarb": "Carboidrati totali",
+
+  "event.legs": "Cosa portare fra un ristoro e l'altro",
+  "event.legsIntro":
+    "Il totale è una lista della spesa. Questo è il piano: cosa deve stare nelle tue tasche su ogni tratto, perché il ristoro in fondo potrebbe non averlo.",
+  "event.leg": "Tratto",
+  "event.legCarry": "Da portare",
+  "event.legAvailable": "Cibo in fondo",
+  "event.legStart": "Partenza",
+  "event.legFinish": "Arrivo",
+  "event.noLegs":
+    "Non abbiamo i ristori di questo organizzatore. Invece di inventarli li lasciamo fuori — procurati il regolamento e prevedi di portare tutto.",
+
+  "event.readiness": "Sessione più lunga delle ultime 8 settimane",
+  "event.readinessRatio": "{pct}% della durata stimata della gara",
+
+  "event.advice.gutTraining":
+    "Allena l'intestino. Prova {target} g di carboidrati all'ora nelle uscite lunghe — la tolleranza si allena, e il giorno di gara è quello sbagliato per scoprirlo.",
+  "event.advice.rehearseRace":
+    "Prova la gara. Nelle {weeks} settimane che restano fai almeno due uscite lunghe a {target} g/h con esattamente i prodotti che userai.",
+  "event.advice.taperCarbs":
+    "L'allenamento cala, il cibo no. Tieni alti i carboidrati durante lo scarico — mancano {days} giorni.",
+  "event.advice.carbLoad":
+    "Carica adesso: circa {grams} g di carboidrati al giorno ({perKg} g per kg) nelle ultime 48 ore. Poche fibre, cibi familiari.",
+  "event.advice.nothingNew":
+    "Da qui in poi niente di nuovo. A {days} giorni dalla gara ogni gel, bevanda e colazione deve essere già stata provata in allenamento.",
+  "event.advice.raceMorning":
+    "Mattina di gara: circa {carb} g di carboidrati due o tre ore prima della partenza, poi bevi a piccoli sorsi secondo sete.",
+  "event.advice.afterRace":
+    "Gara finita. Carboidrati e proteine entro un'ora, e continua a bere ben oltre il momento in cui ne hai voglia.",
+  "event.advice.checkAidStations":
+    "{stations} ristori, {withFood} con cibo. Controlla nel regolamento cosa distribuiscono davvero.",
+  "event.advice.carryOwn":
+    "Non abbiamo i ristori di questa gara. Su {km} km prevedi di portare tutto finché il regolamento non dice altro.",
+  "event.advice.cutoffTight":
+    "Il cancelletto è a {cutoff} e tu stimi {estimated}. Riforniti per il passo che ti fa passare, non per quello che speri.",
+  "event.advice.heatDay":
+    "Gara calda — picco a {peak}°C. Punta a {fluid} ml all'ora con {sodium} mg di sodio per litro, e bevi prima di avere sete.",
+  "event.advice.coldDay":
+    "Gara fredda a {temp}°C. Berrai meno del necessario — tieni alti i carboidrati e prendi le bevande calde se l'organizzatore le ha.",
+  "event.advice.altitude":
+    "Arriva a {alt} m. L'aria rarefatta toglie l'appetito e aumenta la perdita di liquidi — passa ai carboidrati liquidi quando il solido non va più giù.",
+  "event.advice.longestShort":
+    "La tua uscita più lunga recente dura {longest}, il {pct}% di una gara da {estimated}. Allunga il lungo prima di aumentare i volumi di rifornimento.",
 };

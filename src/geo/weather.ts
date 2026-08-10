@@ -72,12 +72,32 @@ export function fromStation(station: StationReading, distanceKm: number): Weathe
   };
 }
 
-/** Seasonal estimate for a Swiss latitude when the API isn't reachable. */
-export function estimateWeather(lat: number, month = new Date().getMonth()): WeatherNow {
-  // Rough monthly mean for the Swiss plateau, cooled by ~0.6 °C per 100 m — here
-  // approximated by latitude as a stand-in for altitude.
-  const monthly = [1, 2, 6, 10, 15, 18, 20, 19, 15, 10, 5, 2];
-  const t = Math.round(monthly[month] - Math.max(0, 47.6 - lat) * 6);
+/** Monthly mean for the Swiss plateau at roughly 500 m, °C. */
+const MONTHLY_PLATEAU_C = [1, 2, 6, 10, 15, 18, 20, 19, 15, 10, 5, 2];
+
+/** The plateau altitude the monthly means describe, m. */
+const PLATEAU_M = 500;
+
+/** Environmental lapse rate: air cools about 0.6 °C per 100 m of altitude. */
+const LAPSE_C_PER_100M = 0.6;
+
+/**
+ * Seasonal estimate for a Swiss location when nothing live is reachable.
+ *
+ * Pass `altM` whenever it is known. Without it the function falls back to a
+ * crude proxy — latitude standing in for altitude, on the rough observation
+ * that the southern valleys sit high — which is only ever an ordering, not a
+ * temperature. A caller that knows the real altitude and then applies its own
+ * lapse rate on top of the proxy corrects twice: that is how a Sierre-Zinal
+ * August day came out at 6 °C.
+ */
+export function estimateWeather(lat: number, month = new Date().getMonth(), altM?: number): WeatherNow {
+  const base = MONTHLY_PLATEAU_C[month];
+  const t = Math.round(
+    typeof altM === "number" && Number.isFinite(altM)
+      ? base - (Math.max(PLATEAU_M, altM) - PLATEAU_M) / 100 * LAPSE_C_PER_100M
+      : base - Math.max(0, 47.6 - lat) * 6,
+  );
   return {
     temperatureC: t,
     humidityPct: 60,

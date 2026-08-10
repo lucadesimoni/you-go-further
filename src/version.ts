@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.6.0";
+export const PLATFORM_VERSION = "0.7.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -168,7 +168,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "geo",
     path: "src/geo",
-    version: "1.0.0",
+    version: "1.1.0",
     layer: "platform",
     stability: "stable",
     summary:
@@ -176,6 +176,18 @@ export const MODULES: readonly ModuleVersion[] = [
     publicApi: ["enrichRoute", "elevationProfile", "fetchWeather", "parseGpx", "basemapLayers"],
     caveat:
       "Every remote source has a labelled offline fallback; the live responses cannot be exercised from a network-restricted environment.",
+  },
+  {
+    id: "events",
+    path: "src/events",
+    version: "0.1.0",
+    layer: "platform",
+    stability: "evolving",
+    summary:
+      "Named races: a curated Swiss event list, the countdown phases that change what to eat, aid-station carry legs, and a race-day forecast that goes live as the date comes into model range.",
+    publicApi: ["SWISS_EVENTS", "eventCountdown", "eventAdvice", "carryLegs", "planEvent", "fetchRaceDayWeather"],
+    caveat:
+      "Event dates are the weekend each race traditionally falls on, not confirmed entries, and are labelled approximate throughout; aid-station data is present only where an organiser publishes it plainly.",
   },
   {
     id: "auth",
@@ -250,7 +262,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "api",
     path: "src/api",
-    version: "1.3.0",
+    version: "1.4.0",
     layer: "platform",
     stability: "stable",
     summary:
@@ -261,6 +273,8 @@ export const MODULES: readonly ModuleVersion[] = [
       "isApiConfigured",
       "getSessionToken",
       "v1Plan",
+      "v1Events",
+      "v1EventPlan",
       "v1Course",
       "v1Absorption",
       "v1Heat",
@@ -275,7 +289,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "components",
     path: "src/components",
-    version: "1.2.0",
+    version: "1.3.0",
     layer: "interface",
     stability: "stable",
     summary: "Every screen and shared control, from the planner and the race forecast to the admin views.",

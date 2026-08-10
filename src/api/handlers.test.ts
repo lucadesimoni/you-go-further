@@ -917,6 +917,56 @@ describe("public engine API (/v1)", () => {
     const res = await route(req("GET", "/v1/activities", { headers: { "x-api-key": secret } }));
     expect(res.status).toBe(404);
   });
+
+  it("lists the curated races on the catalog scope", async () => {
+    const secret = await issue({ scopes: ["catalog"] });
+    const res = await route(req("GET", "/v1/events", { headers: { "x-api-key": secret } }));
+    expect(res.status).toBe(200);
+    expect((res.data as { count: number }).count).toBeGreaterThan(0);
+  });
+
+  it("routes the nested event plan path", async () => {
+    const secret = await issue({ scopes: ["plan"] });
+    const res = await route(
+      req("POST", "/v1/events/jungfrau-marathon/plan", { body: { bodyWeightKg: 70, estimatedMin: 300 }, headers: { "x-api-key": secret } }),
+    );
+    expect(res.status).toBe(200);
+    expect((res.data as { countdown: { phase: string } }).countdown.phase).toBeTruthy();
+  });
+
+  it("asks for the plan scope to plan a race, not the catalog scope that lists them", async () => {
+    // Reading which races exist and getting an athlete's race plan are different
+    // permissions, and the 403 has to name the one that is actually missing.
+    const secret = await issue({ scopes: ["catalog"] });
+    const res = await route(
+      req("POST", "/v1/events/jungfrau-marathon/plan", { body: { bodyWeightKg: 70 }, headers: { "x-api-key": secret } }),
+    );
+    expect(res.status).toBe(403);
+    expect((res.data as { detail: string }).detail).toContain("plan");
+  });
+
+  it("404s an event path that is not a plan", async () => {
+    const secret = await issue({ scopes: ["catalog"] });
+    const res = await route(req("GET", "/v1/events/jungfrau-marathon", { headers: { "x-api-key": secret } }));
+    expect(res.status).toBe(404);
+  });
+
+  it("answers 'not with that key' before 'no such path', so the 404s stay behind auth", async () => {
+    // Otherwise the shape of the API is readable without a scope for it: an
+    // unauthorised caller could map which sub-paths exist by their status codes.
+    const secret = await issue({ scopes: ["plan"] });
+    const res = await route(req("GET", "/v1/events/nonsense", { headers: { "x-api-key": secret } }));
+    expect(res.status).toBe(403);
+  });
+
+  it("survives the Vercel rewrite on the nested path too", async () => {
+    const secret = await issue();
+    const body = { bodyWeightKg: 70, estimatedMin: 300 };
+    const direct = await route(req("POST", "/v1/events/jungfrau-marathon/plan", { body, headers: { "x-api-key": secret } }));
+    const rewritten = await route(req("POST", "/api/v1/events/jungfrau-marathon/plan", { body, headers: { "x-api-key": secret } }));
+    expect(rewritten.status).toBe(direct.status);
+    expect((rewritten.data as { estimatedMin: number }).estimatedMin).toBe((direct.data as { estimatedMin: number }).estimatedMin);
+  });
 });
 
 describe("API hardening", () => {

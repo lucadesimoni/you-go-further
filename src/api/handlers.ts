@@ -48,7 +48,17 @@ import { computeProgress, fuellingScore } from "../progress";
 import { normalizeHealthSync, profileUpdateFromSync } from "../health";
 import { NUTRITION_GUIDE, GUIDE_CATEGORIES, GUIDE_DISCLAIMER } from "../content/nutritionGuide";
 import { versionManifest } from "../version";
-import { v1Plan, v1Course, v1Absorption, v1Heat, v1Meta, v1Catalog, CONTRACT_VERSION } from "./publicApi";
+import {
+  v1Plan,
+  v1Course,
+  v1Absorption,
+  v1Heat,
+  v1Meta,
+  v1Catalog,
+  v1Events,
+  v1EventPlan,
+  CONTRACT_VERSION,
+} from "./publicApi";
 import { checkApiKey, issueApiKey, publicKeyView, ALL_SCOPES, type ApiScope } from "./apiKeys";
 import { RateLimiter, UsageMeter } from "./rateLimit";
 
@@ -292,10 +302,14 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           heat: "plan",
           course: "course",
           catalog: "catalog",
+          // Listing races is reference data; planning one is a plan. The scope
+          // therefore depends on the method, not only on the path.
+          events: "catalog",
         };
         if (!(endpoint in needed)) return { status: 404, data: { error: "unknown_endpoint", contract: CONTRACT_VERSION } };
+        const neededScope = endpoint === "events" && method === "POST" ? "plan" : needed[endpoint];
 
-        const check = await checkApiKey(presented, apiKeys, needed[endpoint]);
+        const check = await checkApiKey(presented, apiKeys, neededScope);
         if (!check.ok || !check.key) {
           // 401 for "who are you", 403 for "not with that key" — a partner
           // debugging an integration needs to be able to tell those apart.
@@ -310,7 +324,7 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
                   : check.reason === "revoked"
                     ? "This key has been revoked."
                     : check.reason === "scope"
-                      ? `This key does not carry the \`${needed[endpoint]}\` scope.`
+                      ? `This key does not carry the \`${neededScope}\` scope.`
                       : "Unknown API key.",
               contract: CONTRACT_VERSION,
             },
@@ -346,6 +360,15 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         if (method === "POST" && endpoint === "course") return v1Course(body, catalog);
         if (method === "POST" && endpoint === "absorption") return v1Absorption(body, catalog);
         if (method === "POST" && endpoint === "heat") return v1Heat(body);
+        if (method === "GET" && endpoint === "events" && !v1Segs[2]) return v1Events();
+        // `/v1/events/{id}/plan` — the only nested path in the contract, and it
+        // is nested because the id identifies a resource the plan is *of*.
+        if (method === "POST" && endpoint === "events" && v1Segs[3] === "plan") {
+          return await v1EventPlan(decodeURIComponent(v1Segs[2] ?? ""), body);
+        }
+        if (endpoint === "events" && v1Segs[2]) {
+          return { status: 404, data: { error: "unknown_endpoint", contract: CONTRACT_VERSION } };
+        }
         return { status: 405, data: { error: "method_not_allowed", contract: CONTRACT_VERSION } };
       }
 

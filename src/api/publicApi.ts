@@ -16,6 +16,7 @@ import {
   type Intensity,
 } from "../engine";
 import type { ElevationSample } from "../geo/swisstopo";
+import { SWISS_EVENTS, eventById, eventCountdown, planEvent } from "../events";
 import { moduleVersion, PLATFORM_VERSION } from "../version";
 
 /**
@@ -50,7 +51,7 @@ import { moduleVersion, PLATFORM_VERSION } from "../version";
  * A breaking change means `/v2`, not a bump here — this number moves for
  * additive changes so a partner can tell which fields they can rely on.
  */
-export const CONTRACT_VERSION = "1.0.0";
+export const CONTRACT_VERSION = "1.1.0";
 
 interface Envelope {
   contract: string;
@@ -469,6 +470,13 @@ export function v1Meta(scopes: string[], rateLimitPerMin: number): PublicResult 
         { method: "POST", path: "/v1/absorption", scope: "plan", summary: "Can this product mix deliver this carbohydrate rate?" },
         { method: "POST", path: "/v1/heat", scope: "plan", summary: "Sweat, sodium and glycogen cost of the current conditions." },
         { method: "GET", path: "/v1/catalog", scope: "catalog", summary: "The Swiss product library the plans are built from." },
+        { method: "GET", path: "/v1/events", scope: "catalog", summary: "Curated Swiss races, with approximate dates flagged as such." },
+        {
+          method: "POST",
+          path: "/v1/events/{id}/plan",
+          scope: "plan",
+          summary: "A named race, an athlete, and the race-day forecast — countdown, targets and carry legs out.",
+        },
       ],
       documentation: "docs/public-api.md",
     },
@@ -478,4 +486,119 @@ export function v1Meta(scopes: string[], rateLimitPerMin: number): PublicResult 
 /** `GET /v1/catalog` — the product library, for a partner rendering our picks. */
 export function v1Catalog(catalog: Product[] = CATALOG): PublicResult {
   return { status: 200, data: { ...envelope(), count: catalog.length, products: catalog.map(publicProduct) } };
+}
+
+/**
+ * `GET /v1/events` — the curated races.
+ *
+ * `dateApproximate` is part of the contract rather than a note in the docs,
+ * because a partner rendering "Jungfrau-Marathon · 12 September" without it is
+ * publishing our guess as their fact. A field they have to destructure past is
+ * the only version of that warning that survives an integration.
+ */
+export function v1Events(now = new Date()): PublicResult {
+  return {
+    status: 200,
+    data: {
+      ...envelope(),
+      count: SWISS_EVENTS.length,
+      events: SWISS_EVENTS.map((e) => ({
+        id: e.id,
+        name: e.name,
+        discipline: e.discipline,
+        distanceKm: e.distanceKm,
+        ascentM: e.ascentM,
+        maxAltM: e.maxAltM ?? null,
+        date: e.date,
+        dateApproximate: e.dateApproximate === true,
+        daysOut: eventCountdown(e, now).daysOut,
+        cutoffMin: e.cutoffMin ?? null,
+        organiserUrl: e.organiserUrl ?? null,
+        aidStationsKnown: (e.aidStations?.length ?? 0) > 0,
+      })),
+    },
+  };
+}
+
+/**
+ * `POST /v1/events/{id}/plan` — a named race, fuelled for the day it falls on.
+ *
+ * The one endpoint here that reaches the network: race-day weather is fetched
+ * when the date is inside model range. It never fails for that reason — an
+ * unreachable model returns `weather.forecast: false` and a seasonal figure, so
+ * a watch on a train still gets a plan.
+ */
+export async function v1EventPlan(id: string, body: unknown, now = new Date()): Promise<PublicResult> {
+  const event = eventById(id);
+  if (!event) return fail(404, "unknown_event", `No curated event with id \`${id}\`. List them at GET /v1/events.`);
+  if (!body || typeof body !== "object") return fail(400, "invalid_request", "body must be a JSON object");
+  const b = body as Record<string, unknown>;
+
+  if (!isNum(b.bodyWeightKg) || b.bodyWeightKg < 30 || b.bodyWeightKg > 200) {
+    return fail(400, "invalid_request", "bodyWeightKg must be a number between 30 and 200");
+  }
+  if (b.estimatedMin !== undefined && (!isNum(b.estimatedMin) || b.estimatedMin < 20 || b.estimatedMin > 2880)) {
+    return fail(400, "invalid_request", "estimatedMin must be a number between 20 and 2880");
+  }
+  if (b.startHour !== undefined && (!isNum(b.startHour) || b.startHour < 0 || b.startHour > 23)) {
+    return fail(400, "invalid_request", "startHour must be a number between 0 and 23");
+  }
+  if (b.sweatLevel !== undefined && (typeof b.sweatLevel !== "string" || !SWEAT.includes(b.sweatLevel))) {
+    return fail(400, "invalid_request", `sweatLevel must be one of ${SWEAT.join(", ")}`);
+  }
+
+  const plan = await planEvent({
+    event,
+    bodyWeightKg: b.bodyWeightKg,
+    ...(isNum(b.estimatedMin) ? { estimatedMin: Math.round(b.estimatedMin) } : {}),
+    ...(isNum(b.flatPaceMinPerKm) ? { flatPaceMinPerKm: b.flatPaceMinPerKm } : {}),
+    ...(isNum(b.startHour) ? { startHour: Math.round(b.startHour) } : {}),
+    ...(typeof b.sweatLevel === "string" ? { sweatLevel: b.sweatLevel as AthleteInput["sweatLevel"] } : {}),
+    now,
+  });
+
+  return {
+    status: 200,
+    data: {
+      ...envelope(),
+      event: { id: event.id, name: event.name, date: event.date, dateApproximate: event.dateApproximate === true },
+      countdown: {
+        daysOut: plan.countdown.daysOut,
+        weeksOut: plan.countdown.weeksOut,
+        phase: plan.countdown.phase,
+      },
+      estimatedMin: plan.estimatedMin,
+      estimateSource: plan.estimateSource,
+      target: {
+        carbPerHourG: plan.target.carbPerHourG,
+        carbTotalG: plan.target.carbTotalG,
+        fluidPerHourMl: plan.target.fluidPerHourMl,
+        sodiumPerLitreMg: plan.target.sodiumPerLitreMg,
+        requiresMultiTransportable: plan.target.requiresMultiTransportable,
+      },
+      weather: {
+        temperatureC: plan.weather.temperatureC,
+        peakTemperatureC: plan.weather.peakTemperatureC,
+        humidityPct: plan.weather.humidityPct,
+        windKmh: plan.weather.windKmh,
+        conditions: plan.weather.conditions,
+        // The field a partner must branch on before showing a number as a
+        // forecast. Everything else here is identical whichever it is.
+        forecast: plan.weather.forecast,
+        // Why there is no forecast, when there is none: "the race is in June"
+        // and "we could not reach the model" call for different words in a
+        // partner's UI, and only one of them is worth retrying.
+        estimateReason: plan.weather.estimateReason ?? null,
+        source: plan.weather.source,
+        sourceLabel: plan.weather.sourceLabel,
+        windowFromHour: plan.weather.window[0],
+        windowToHour: plan.weather.window[1],
+      },
+      // Ids and numbers, never sentences: the partner's own UI writes the copy,
+      // in their language, in their voice.
+      advice: plan.advice.map((a) => ({ id: a.id, severity: a.severity, values: a.values })),
+      legs: plan.legs,
+      aidStationsKnown: plan.legs.length > 0,
+    },
+  };
 }

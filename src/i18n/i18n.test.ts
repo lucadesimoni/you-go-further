@@ -63,6 +63,8 @@ describe("dictionary parity", () => {
         "catalog.sodiumMg", // "Sodium (mg)" is the same in French
         "cat.gel", // "Gel" is the same word in all four
         "cue.fluid", // a millilitre reading is "{n} ml" in every language
+        "event.course", // "{distance} km · ↑ {ascent} m" is figures and symbols only
+        "event.legStart", // "Start" is the same word in German
       ]);
       const identical = keys.filter((k) => !allowedIdentical.has(k) && dict[k] === en[k]);
       expect(identical).toEqual([]);
@@ -148,6 +150,9 @@ describe("no dead keys", () => {
       /^energy\.(water|plan)/,
       // The race forecast's badge: t(`sim.badge.${sim.verdict}`).
       /^sim\.badge\./,
+      // Event coaching: t(`event.advice.${a.id}`) and t(`event.phase.${phase}`).
+      /^event\.advice\./,
+      /^event\.phase\./,
     ];
     const unused = keys.filter(
       (k) => !k.endsWith("_one") && !body.includes(`"${k}"`) && !builtDynamically.some((r) => r.test(k)),

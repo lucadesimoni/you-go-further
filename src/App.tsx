@@ -11,6 +11,7 @@ import { SubscriptionView } from "./components/SubscriptionView";
 import { AccountMenu } from "./components/AccountMenu";
 import { HomeView } from "./components/HomeView";
 import { RaceImport } from "./components/RaceImport";
+import { EventPlanner } from "./components/EventPlanner";
 import { ToastHost } from "./components/ToastHost";
 import { ConfirmHost } from "./components/ConfirmHost";
 import { Onboarding } from "./components/Onboarding";
@@ -335,6 +336,10 @@ export function App() {
         )}
         {tab === "plan" && (
           <>
+            {/* A named race first, because that is the question athletes
+                actually arrive with — "the Jungfrau-Marathon is in nine weeks"
+                — and its answer depends on a date the GPX below does not carry. */}
+            <EventPlanner activities={activities} onPlan={setPlannerPrefill} />
             {/* The Phase-1 moment: a race you have not run yet, fuelled. It sits
                 above the session planner because it is the reason to open this
                 screen — planning a training session is the everyday case. */}

@@ -623,6 +623,87 @@ export const en = {
   "guide.articles": "{count} articles",
   "guide.intro":
     "The evidence behind every plan — what to do, how much, and why. Written against mainstream sports-nutrition consensus.",
+
+  // ---- Named events -------------------------------------------------------
+  "event.title": "Fuel a named race",
+  "event.intro":
+    "Pick the race you are training for. The advice follows the calendar, and the weather turns into a real forecast once the date comes into range.",
+  "event.choose": "Race",
+  "event.none": "No race selected",
+  "event.change": "Choose another race",
+  "event.organiser": "Organiser",
+  "event.dateApproximate": "Usual weekend — confirm the date with the organiser.",
+  "event.daysToGo": "{days} days to go",
+  "event.daysToGo_one": "1 day to go",
+  "event.today": "Race day",
+  "event.past": "This race has been run.",
+  "event.course": "{distance} km · ↑ {ascent} m",
+  "event.highPoint": "High point {alt} m",
+  "event.cutoff": "Cut-off {time}",
+
+  "event.phase.base": "Base",
+  "event.phase.build": "Build",
+  "event.phase.taper": "Taper",
+  "event.phase.raceWeek": "Race week",
+  "event.phase.raceDay": "Race day",
+  "event.phase.done": "Finished",
+
+  "event.finishTime": "Your finish time",
+  "event.finishDerived": "Estimated from the course. Set your own — everything below follows it.",
+  "event.planThis": "Plan for this race →",
+  "event.thisWeek": "What to do now",
+  "event.raceDayWeather": "Race-day weather",
+  "event.forecastBadge": "Forecast",
+  "event.estimateBadge": "Seasonal average",
+  "event.forecastWindow": "{from}:00–{to}:00, the hours you are out there",
+  "event.peaks": "Peaks at {temp}°C",
+  "event.forecastUnreachable": "The forecast model could not be reached just now. This is the seasonal average for the area — it will refresh when the connection is back.",
+  "event.forecastPending": "Too far out for a forecast. This is the September-style average for the area — check back inside {days} days.",
+  "event.targets": "Race-day targets",
+  "event.totalCarb": "Total carbohydrate",
+
+  "event.legs": "What to carry between aid stations",
+  "event.legsIntro":
+    "The total is a shopping list. This is the plan: what has to be in your pockets on each stretch, because the station at the end of it may not have it.",
+  "event.leg": "Leg",
+  "event.legCarry": "Carry",
+  "event.legAvailable": "Food at the far end",
+  "event.legStart": "Start",
+  "event.legFinish": "Finish",
+  "event.noLegs":
+    "We do not have this organiser's aid stations. Rather than invent them, we leave them out — get the race manual and plan to carry everything.",
+
+  "event.readiness": "Longest session in the last 8 weeks",
+  "event.readinessRatio": "{pct}% of your estimated race duration",
+
+  "event.advice.gutTraining":
+    "Train your gut. Practise {target} g of carbohydrate an hour on long sessions — tolerance is trainable, and race day is the wrong day to find out.",
+  "event.advice.rehearseRace":
+    "Rehearse the race. In the {weeks} weeks left, run at least two long sessions at {target} g/h using the exact products you will race with.",
+  "event.advice.taperCarbs":
+    "Training drops, food does not. Keep carbohydrate up through the taper — {days} days to go.",
+  "event.advice.carbLoad":
+    "Load now: around {grams} g of carbohydrate a day ({perKg} g per kg) for the last 48 hours. Low fibre, familiar food.",
+  "event.advice.nothingNew":
+    "Nothing new from here. With {days} days left, every gel, drink and breakfast should be one you have already used in training.",
+  "event.advice.raceMorning":
+    "Race morning: around {carb} g of carbohydrate two to three hours before the start, then sip to thirst until the gun.",
+  "event.advice.afterRace":
+    "Race done. Carbohydrate and protein inside the hour, and keep drinking well past the point you feel like it.",
+  "event.advice.checkAidStations":
+    "{stations} aid stations, {withFood} of them with food. Check the race manual for what they actually hand out.",
+  "event.advice.carryOwn":
+    "We do not have this race's aid stations. Over {km} km, plan to carry everything you need until the manual says otherwise.",
+  "event.advice.cutoffTight":
+    "The cut-off is {cutoff} and you are estimating {estimated}. Fuel for the pace that gets you inside it, not for the one you hope for.",
+  "event.advice.heatDay":
+    "Warm race — it peaks at {peak}°C. Aim for {fluid} ml an hour with {sodium} mg of sodium per litre, and start drinking before you are thirsty.",
+  "event.advice.coldDay":
+    "Cold race at {temp}°C. You will drink less than you need — keep carbohydrate up, and take the warm drinks if the organiser has them.",
+  "event.advice.altitude":
+    "Tops out at {alt} m. Thin air blunts appetite and raises fluid loss, so switch to liquid carbohydrate when solids stop appealing.",
+  "event.advice.longestShort":
+    "Your longest recent session is {longest}, {pct}% of a {estimated} race. Build the long day up before you push fuelling volume.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

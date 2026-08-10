@@ -131,7 +131,7 @@ Public API: `ingest`, `activityStore`, `exportActivities`, `databricksSink`.
 
 ## Platform
 
-### `src/geo` — 1.0.0, stable
+### `src/geo` — 1.1.0, stable
 
 Swiss terrain and weather. swisstopo elevation profiles and national basemaps,
 MeteoSwiss SwissMetNet stations with an ICON-CH model fallback, and a tolerant
@@ -144,6 +144,25 @@ network-restricted environment.
 
 Public API: `enrichRoute`, `elevationProfile`, `fetchWeather`, `parseGpx`,
 `basemapLayers`.
+
+### `src/events` — 0.1.0, evolving
+
+Named races. A curated list of Swiss endurance events, the countdown phases that
+decide what to eat this week rather than in general, aid-station carry legs, and
+a race-day forecast that switches from climatology to a live model run once the
+date comes inside the sixteen-day horizon.
+
+The module's whole reason to exist is the date. A session plan is the same
+answer in March and September; a race plan is not, and neither is the weather.
+
+*Caveat:* event dates are the weekend each race traditionally falls on rather
+than a confirmed entry, and are labelled approximate everywhere they appear.
+Aid-station data is present only for races whose organiser publishes it plainly
+— an empty list means "unknown", never "none", and the advice then says to carry
+your own.
+
+Public API: `SWISS_EVENTS`, `eventCountdown`, `eventAdvice`, `carryLegs`,
+`planEvent`, `fetchRaceDayWeather`.
 
 ### `src/auth` — 1.0.0, stable
 
@@ -218,7 +237,7 @@ translated into all four languages.
 
 Public API: `nutritionGuide`.
 
-### `src/api` — 1.2.0, stable
+### `src/api` — 1.4.0, stable
 
 Two HTTP surfaces behind one pure router. `handlers.ts` is request in, response
 out, with no Node and no Vercel in it — which is what lets `server/index.ts` and
@@ -240,14 +259,15 @@ SHA-256 hash. `rateLimit.ts` is a per-key token bucket plus aggregate usage
 metering — counts, never requests.
 
 Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
-`v1Plan`, `v1Course`, `v1Absorption`, `v1Heat`, `issueApiKey`, `checkApiKey`,
+`v1Plan`, `v1Course`, `v1Absorption`, `v1Heat`, `v1Events`, `v1EventPlan`,
+`issueApiKey`, `checkApiKey`,
 `RateLimiter`, `UsageMeter`.
 
 ---
 
 ## Interface
 
-### `src/components` — 1.2.0, stable
+### `src/components` — 1.3.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,

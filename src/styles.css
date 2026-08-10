@@ -3336,6 +3336,107 @@ code {
   .race-drop { padding: var(--space-5) var(--space-4); }
 }
 
+/* --- Named events: a race with a date on it ------------------------------ */
+.event { margin-bottom: var(--space-6); }
+.event-pick { max-width: 420px; }
+.event-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+}
+.event-name { margin: 0; font-size: var(--text-lg); }
+.event-figs {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.event-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+/* The countdown is the number the whole panel turns on, so it is allowed to
+   be the largest thing in the header. */
+.event-days {
+  font-size: var(--text-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.event-phase-raceWeek,
+.event-phase-raceDay { background: var(--accent-soft); color: var(--accent-ink); }
+.event-provenance { margin: var(--space-3) 0 var(--space-5); }
+.event-finish { max-width: 480px; margin-bottom: var(--space-5); }
+.event-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+@media (max-width: 560px) {
+  .event-cols { grid-template-columns: 1fr; }
+  .event-count { align-items: flex-start; }
+}
+/* The weather block's labels hold a phrase here ("peaks at 24°C"), not the
+   single word the shared rule was written for — `capitalize` would upper-case
+   every word of it, which in German reads as a typo. */
+.event-cols .stat-label { text-transform: none; }
+.event-advice { margin-top: var(--space-6); }
+.event-advice ul {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.event-advice li {
+  padding-left: var(--space-5);
+  border-left: 2px solid var(--border-strong);
+  font-size: var(--text-base);
+  color: var(--muted);
+}
+/* Two weights only: something to do now, and something to know. A third would
+   make the athlete rank them, which is our job. */
+.event-advice-act {
+  border-left-color: var(--accent);
+  color: var(--text);
+}
+.event-legs { margin-top: var(--space-6); }
+.event-legs table {
+  width: 100%;
+  margin-top: var(--space-4);
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.event-legs th,
+.event-legs td {
+  padding: var(--space-3) var(--space-3);
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+.event-legs thead th {
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.event-legs tbody th {
+  text-align: left;
+  font-weight: 600;
+}
+.event-leg-km {
+  display: block;
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  color: var(--muted);
+}
+/* A leg whose fuel has to be on the athlete is the one that ends races. */
+.event-leg-carry tbody th,
+.event-leg-carry th[scope="row"] { border-left: 2px solid var(--accent); padding-left: var(--space-3); }
+.event-nolegs { margin-top: var(--space-6); }
+
 /* --- Training load: fitness / fatigue / form ----------------------------- */
 .load-spark {
   width: 100%;
