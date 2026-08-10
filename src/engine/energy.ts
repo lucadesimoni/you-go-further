@@ -19,8 +19,10 @@
  *
  * 1. **Feeds are events, not a drip.** A gel is swallowed at a minute and
  *    reaches the blood over the following quarter of an hour. Between feeds
- *    nothing arrives and the curve falls; after one it lifts. That sawtooth
- *    *is* the effect, and it is why moving a feed changes the picture.
+ *    nothing arrives and the curve falls; while one is arriving it flattens.
+ *    Carbohydrate spares glycogen rather than replacing it, so the line never
+ *    climbs — but *when* it is taken decides how much of the drain it covers,
+ *    and that is why moving a feed changes the picture.
  * 2. **The gut has a ceiling.** Intake beyond roughly 60 g/h (glucose alone) or
  *    90 g/h (with fructose) does not reach the muscle — it stays in the
  *    stomach. Modelling intake as a straight subtraction let a 105 g/h plan
@@ -210,13 +212,30 @@ export function energyProfile(
       const start = f.atMin + GASTRIC_LAG_MIN;
       if (m > start && m <= start + ABSORB_WINDOW_MIN) gutPoolG += f.carbG / ABSORB_WINDOW_MIN;
     }
-    const deliveredPerMin = Math.min(gutPoolG, absorbCeilingPerHourG / 60);
+    const burnFuelledPerMin = burnAt(fuelled);
+    const burnUnfuelledPerMin = burnAt(unfuelled);
+
+    /**
+     * Exogenous carbohydrate is burned **instead of** glycogen — it spares the
+     * store, it does not refill it. Muscle glycogen is not resynthesised at any
+     * meaningful rate during exercise, so a curve that rises after a gel is
+     * drawing a battery being charged, which is not what is happening to the
+     * athlete.
+     *
+     * Two consequences, and both are the point:
+     *
+     * - Fuelling changes the *slope*, never the direction. The line can flatten
+     *   to horizontal when intake matches burn, and it never climbs.
+     * - What is not needed is not used. Delivery is capped by what is actually
+     *   being burned, so surplus stays in the gut rather than vanishing into a
+     *   tank — which is also the mechanism behind over-feeding sitting in the
+     *   stomach rather than helping.
+     */
+    const deliveredPerMin = Math.min(gutPoolG, absorbCeilingPerHourG / 60, burnFuelledPerMin);
     gutPoolG -= deliveredPerMin;
     deliveredTotalG += deliveredPerMin;
 
-    const burnFuelledPerMin = burnAt(fuelled);
-    const burnUnfuelledPerMin = burnAt(unfuelled);
-    fuelled = Math.max(0, Math.min(storeG, fuelled + deliveredPerMin - burnFuelledPerMin));
+    fuelled = Math.max(0, fuelled - Math.max(0, burnFuelledPerMin - deliveredPerMin));
     unfuelled = Math.max(0, unfuelled - burnUnfuelledPerMin);
 
     if (unfuelledFadeMin === undefined && unfuelled / storeG <= bonkPct / 100) unfuelledFadeMin = m;

@@ -8,6 +8,33 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.9.1
+
+Fuelling now changes your level, and not by the same amount every time.
+
+**Fixed**
+
+- **The curve rose after a feed, like a battery charging.** Exogenous
+  carbohydrate is burned *instead of* glycogen — it spares the store, it does
+  not refill it, because muscle glycogen is not resynthesised at any meaningful
+  rate during exercise. Fuelling now changes the slope and never the direction:
+  the line flattens to horizontal when intake matches burn, and never climbs.
+  Delivery is also capped by what is actually being burned, so carbohydrate
+  that is not needed queues in the gut instead of vanishing into a tank.
+- **Every feed was the same size at the same interval, right to the finish.**
+  Both ends of that are wrong. Carbohydrate takes about a quarter of an hour to
+  reach the blood, so a gel at minute 235 of a four-hour run is swallowed,
+  carried and finished with — feeding now stops early enough to be used, and
+  those grams are redistributed rather than dropped, so the session total still
+  meets the target. And early grams are worth more than late ones — a gram that
+  spares glycogen at minute 30 is still in the tank at minute 200 — so the doses
+  lean forward gently rather than sitting flat.
+
+The two together mean timing is now worth something. The same 300 g across the
+same four-hour session finishes at 70 % in reserve taken early, 36 % dumped
+late, and 13 % if it is swallowed in the last eight minutes — where 3 g of it
+arrives before the line.
+
 ## 0.9.0
 
 The two halves of preparing for a race: knowing what the fuelling actually does

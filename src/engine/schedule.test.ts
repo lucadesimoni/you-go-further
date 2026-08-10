@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildSchedule, formatClock } from "./schedule";
+import { computeTarget } from "./recommend";
 import type { AthleteInput } from "./types";
 
 const base: AthleteInput = {
@@ -68,5 +69,47 @@ describe("buildSchedule", () => {
     const sparse = buildSchedule(base, { carbIntervalMin: 30 });
     const carbCues = (s: ReturnType<typeof buildSchedule>) => s.cues.filter((c) => c.kind === "carb").length;
     expect(carbCues(dense)).toBeGreaterThan(carbCues(sparse));
+  });
+});
+
+describe("the plan is not an even drip", () => {
+  const input: AthleteInput = {
+    goal: "endurance-performance",
+    activity: "trail-running",
+    durationMin: 240,
+    intensity: "moderate",
+    bodyWeightKg: 70,
+    conditions: "temperate",
+  };
+
+  it("stops feeding early enough for the last gel to be used", () => {
+    // It takes about a quarter of an hour to reach the blood, so a feed at
+    // minute 235 of a four-hour run is swallowed, carried, and finished with.
+    const s = buildSchedule(input);
+    const carbs = s.cues.filter((c) => c.carbG);
+    expect(carbs[carbs.length - 1].atMin).toBeLessThanOrEqual(240 - 15);
+  });
+
+  it("redistributes those grams rather than dropping them", () => {
+    const s = buildSchedule(input);
+    const target = computeTarget(input);
+    expect(Math.abs(s.totalCarbG - target.carbTotalG)).toBeLessThanOrEqual(10);
+  });
+
+  it("leans the doses forward, because early grams are worth more", () => {
+    const carbs = buildSchedule(input).cues.filter((c) => c.carbG);
+    expect(carbs[0].carbG ?? 0).toBeGreaterThan(carbs[carbs.length - 1].carbG ?? 0);
+  });
+
+  it("does not lean so far that the first hour is a feast", () => {
+    const carbs = buildSchedule(input).cues.filter((c) => c.carbG);
+    expect((carbs[0].carbG ?? 0) / (carbs[carbs.length - 1].carbG ?? 1)).toBeLessThan(1.6);
+  });
+
+  it("hands out nothing at all when no feed could land in time", () => {
+    // A 25-minute session runs on its own stores; a gel for the bin is worse
+    // than saying so.
+    const short = buildSchedule({ ...input, durationMin: 25, intensity: "race" });
+    expect(short.cues.filter((c) => c.carbG)).toHaveLength(0);
   });
 });

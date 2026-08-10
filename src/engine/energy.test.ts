@@ -169,3 +169,53 @@ describe("the model is not two straight lines", () => {
     expect(p.burnPerHourG).toBe(carbBurnPerHourG(70, "hard"));
   });
 });
+
+describe("fuelling changes the slope, and not by the same amount every time", () => {
+  const timingInput: AthleteInput = {
+    goal: "endurance-performance",
+    activity: "trail-running",
+    durationMin: 240,
+    intensity: "moderate",
+    bodyWeightKg: 70,
+    conditions: "temperate",
+  };
+  const timingTarget = computeTarget(timingInput);
+  const withFeeds = (times: number[], totalG = 300) =>
+    energyProfile(timingInput, timingTarget, {
+      totalMin: 240,
+      totalCarbG: totalG,
+      totalFluidMl: 0,
+      cues: times.map((atMin) => ({ atMin, kind: "carb" as const, carbG: totalG / times.length, label: "", parts: [] })),
+    });
+
+  it("never lets the store rise — carbohydrate spares glycogen, it does not refill it", () => {
+    // Muscle glycogen is not resynthesised at any meaningful rate during
+    // exercise, so a curve that climbs after a gel is drawing a battery being
+    // charged. Fuelling flattens the line; it never turns it upward.
+    const p = withFeeds([20, 40, 60, 80, 100, 120, 140, 160, 180, 200]);
+    for (const [i, s] of p.samples.entries()) {
+      if (i === 0) continue;
+      expect(s.fuelledPct, `minute ${s.minute}`).toBeLessThanOrEqual(p.samples[i - 1].fuelledPct + 1e-9);
+    }
+  });
+
+  it("gives the same grams a different effect depending on when they are taken", () => {
+    // The whole point: 300 g is not 300 g. Taken early it is all used; dumped
+    // late, most of it is still in the stomach at the finish.
+    const early = withFeeds([20, 40, 60, 80, 100]);
+    const late = withFeeds([140, 160, 180, 200, 220]);
+    expect(early.fuelledEndPct).toBeGreaterThan(late.fuelledEndPct + 10);
+    expect(early.deliveredTotalG).toBeGreaterThan(late.deliveredTotalG);
+  });
+
+  it("wastes carbohydrate swallowed too close to the finish", () => {
+    const p = withFeeds([232, 236]);
+    expect(p.deliveredTotalG).toBeLessThan(10);
+    expect(p.fuelledEndPct).toBeLessThan(20);
+  });
+
+  it("does not credit intake beyond what is being burned", () => {
+    const p = withFeeds([20], 300);
+    for (const s of p.samples) expect(s.deliveredPerHourG).toBeLessThanOrEqual(s.burnPerHourG + 1);
+  });
+});

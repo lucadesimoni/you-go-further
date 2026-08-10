@@ -67,6 +67,18 @@ interface Accum {
   caffeine?: boolean;
 }
 
+/**
+ * How long before the finish the last carbohydrate feed is still worth taking.
+ *
+ * Gastric emptying plus absorption is about a quarter of an hour; anything
+ * swallowed inside that window is carried to the line rather than used.
+ */
+const LAST_USEFUL_FEED_MIN = 15;
+
+/** How much the doses lean forward: first feed vs last, before normalising. */
+const FRONT_LOAD_START = 1.15;
+const FRONT_LOAD_END = 0.85;
+
 const wantsCaffeine = (input: AthleteInput) =>
   Boolean(input.caffeineOk) && (input.durationMin >= 90 || input.intensity === "race" || input.intensity === "hard");
 
@@ -96,10 +108,38 @@ export function buildSchedule(input: AthleteInput, opts: ScheduleOptions = {}): 
     });
   };
 
-  // Carbohydrate hits.
+  /**
+   * Carbohydrate hits — deliberately not an even drip.
+   *
+   * The schedule used to place an identical dose at an identical interval right
+   * up to the finish, which is wrong at both ends.
+   *
+   * **The last feeds never arrive.** Carbohydrate takes roughly a quarter of an
+   * hour to clear the stomach and reach the blood, so a gel at minute 235 of a
+   * four-hour run is swallowed, carried, and finished with — it does nothing
+   * except sit there. Feeding stops early enough to be used, and its grams are
+   * redistributed rather than dropped, so the athlete still gets the total the
+   * target asks for.
+   *
+   * **Early grams are worth more than late ones.** A gram that spares glycogen
+   * at minute 30 is a gram still in the tank at minute 200, and the gut takes
+   * food better before it has been jostled for hours. So the doses lean forward
+   * gently — enough to matter, not so much that it front-loads the whole plan
+   * into one uncomfortable hour.
+   */
   if (target.carbPerHourG > 0) {
-    const perHit = Math.max(5, round5((target.carbPerHourG * carbEvery) / 60));
-    for (let t = carbEvery; t < totalMin; t += carbEvery) bump(t, { carbG: perHit });
+    const times: number[] = [];
+    for (let t = carbEvery; t <= totalMin - LAST_USEFUL_FEED_MIN; t += carbEvery) times.push(t);
+    // A session too short for any feed to land is a session that runs on its
+    // own stores, and saying so beats handing out a gel for the bin.
+    if (times.length > 0) {
+      const weights = times.map((t) => FRONT_LOAD_START - (FRONT_LOAD_START - FRONT_LOAD_END) * (t / totalMin));
+      const weightSum = weights.reduce((s, w) => s + w, 0);
+      const totalCarbG = (target.carbPerHourG * totalMin) / 60;
+      times.forEach((t, i) => {
+        bump(t, { carbG: Math.max(5, round5((totalCarbG * weights[i]) / weightSum)) });
+      });
+    }
   }
 
   // Drinking cues (fluid + its sodium).
