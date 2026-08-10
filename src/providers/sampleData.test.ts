@@ -130,3 +130,131 @@ describe("sample data is physiologically coherent", () => {
     }
   });
 });
+
+describe("a demo that holds still", () => {
+  /**
+   * The generator used to seed from the window start — a millisecond-precision
+   * timestamp — so two calls a millisecond apart returned 19 and 21 sessions
+   * with no ids in common. The demo's whole training history reset on every
+   * render, and because `externalId` was that same millisecond, the same run
+   * synced twice was two different activities.
+   */
+  const at = (iso: string) => new Date(iso).toISOString();
+
+  it("returns the same sessions however precisely you ask", () => {
+    const a = generateSampleActivities("strava", at("2026-05-04T00:00:00Z"), at("2026-06-01T00:00:00Z"));
+    const b = generateSampleActivities("strava", at("2026-05-04T00:00:00.007Z"), at("2026-06-01T00:00:00.011Z"));
+    expect(b).toEqual(a);
+  });
+
+  it("gives a day's session one identity, so a re-sync deduplicates", () => {
+    const first = generateSampleActivities("garmin", at("2026-05-04T00:00:00Z"), at("2026-06-01T00:00:00Z"));
+    const again = generateSampleActivities("garmin", at("2026-05-04T09:31:00Z"), at("2026-06-01T18:02:00Z"));
+    const ids = new Set(first.map((x) => x.id));
+    expect(again.every((x) => ids.has(x.id))).toBe(true);
+    // And an id says which day it was, rather than when it was asked for.
+    for (const a of first) expect(a.externalId).toBe(a.startTime.slice(0, 10));
+  });
+
+  it("keeps the overlapping days identical when the window widens", () => {
+    // Asking for 90 days must not rewrite the 28 the athlete already saw.
+    const short = generateSampleActivities("polar", at("2026-05-04T00:00:00Z"), at("2026-06-01T00:00:00Z"));
+    const long = generateSampleActivities("polar", at("2026-03-01T00:00:00Z"), at("2026-06-01T00:00:00Z"));
+    const byId = new Map(long.map((a) => [a.id, a]));
+    for (const a of short) expect(byId.get(a.id)).toEqual(a);
+  });
+
+  it("gives two athletes on the same provider different training", () => {
+    // A squad in which everyone trained identically is a squad view that says
+    // nothing, and the roster shares providers.
+    const a = generateSampleActivities("strava", at("2026-05-04T00:00:00Z"), at("2026-06-01T00:00:00Z"), {
+      athleteKey: "nina",
+    });
+    const b = generateSampleActivities("strava", at("2026-05-04T00:00:00Z"), at("2026-06-01T00:00:00Z"), {
+      athleteKey: "luca",
+    });
+    expect(a).not.toEqual(b);
+  });
+
+  it("still accepts a bare maxHr, the way the older callers pass it", () => {
+    const acts = generateSampleActivities("garmin", at("2026-05-04T00:00:00Z"), at("2026-06-01T00:00:00Z"), 175);
+    expect(acts.length).toBeGreaterThan(0);
+    for (const a of acts) expect(a.maxHr ?? 0).toBeLessThanOrEqual(175);
+  });
+
+  it("returns nothing for a backwards or unparseable window instead of looping", () => {
+    expect(generateSampleActivities("strava", at("2026-06-01T00:00:00Z"), at("2026-05-04T00:00:00Z"))).toEqual([]);
+    expect(generateSampleActivities("strava", "not-a-date", at("2026-06-01T00:00:00Z"))).toEqual([]);
+  });
+});
+
+describe("a week that looks like a week", () => {
+  const acts = generateSampleActivities("strava", "2026-01-05T00:00:00Z", "2026-06-01T00:00:00Z");
+  const dow = (a: (typeof acts)[number]) => new Date(a.startTime).getUTCDay();
+
+  it("rests, rather than training every single day", () => {
+    // Sessions drawn one per day at random give a history with no rest days,
+    // which the acute:chronic ratio then reads as a heroic athlete.
+    const days = new Set(acts.map((a) => a.externalId));
+    const span = Math.round((Date.parse("2026-06-01") - Date.parse("2026-01-05")) / 86_400_000);
+    expect(days.size).toBeLessThan(span * 0.8);
+    expect(days.size).toBeGreaterThan(span * 0.4);
+  });
+
+  it("puts the long session at the weekend", () => {
+    const longest = [...acts].sort((a, b) => b.durationSec - a.durationSec).slice(0, 10);
+    const weekend = longest.filter((a) => dow(a) === 0 || dow(a) === 6);
+    expect(weekend.length, "the longest sessions should mostly be Sat/Sun").toBeGreaterThanOrEqual(6);
+  });
+
+  it("keeps Friday mostly clear", () => {
+    const fri = acts.filter((a) => dow(a) === 5).length;
+    const wed = acts.filter((a) => dow(a) === 3).length;
+    expect(fri).toBeLessThan(wed);
+  });
+
+  it("varies volume week to week instead of running flat", () => {
+    // A recovery week every fourth week is what makes the form curve mean
+    // something rather than drift.
+    const byWeek = new Map<number, number>();
+    for (const a of acts) {
+      const w = Math.floor(Date.parse(a.startTime) / (7 * 86_400_000));
+      byWeek.set(w, (byWeek.get(w) ?? 0) + a.durationSec / 3600);
+    }
+    const hours = [...byWeek.values()];
+    const mean = hours.reduce((s, h) => s + h, 0) / hours.length;
+    expect(Math.min(...hours)).toBeLessThan(mean * 0.8);
+    expect(Math.max(...hours)).toBeGreaterThan(mean * 1.15);
+  });
+
+  it("names sessions the way a provider does", () => {
+    // Every session used to be called "run session" / "trail-run session".
+    // Checked against the sport rather than by pattern: "Tempo session" is a
+    // perfectly good name and an earlier version of this test rejected it.
+    expect(acts.every((a) => a.name && a.name !== `${a.sport} session`)).toBe(true);
+    expect(new Set(acts.map((a) => a.name)).size).toBeGreaterThan(5);
+  });
+
+  it("trains harder on the hard days", () => {
+    // Intensity has to show up in the data, or every session looks the same to
+    // the analysis that reads it.
+    const hr = acts.filter((a) => a.avgHr).map((a) => a.avgHr!);
+    expect(Math.max(...hr) - Math.min(...hr)).toBeGreaterThan(25);
+  });
+
+  it("keeps one athlete in one place", () => {
+    // A new random Swiss trailhead per session put someone in Zürich on Tuesday
+    // and Zermatt on Wednesday.
+    const starts = acts.filter((a) => a.route).map((a) => a.route![0]);
+    const lats = starts.map((s) => s[0]);
+    expect(Math.max(...lats) - Math.min(...lats), "home should be one place").toBeLessThan(0.5);
+  });
+
+  it("starts sessions at hours people actually train", () => {
+    for (const a of acts) {
+      const h = new Date(a.startTime).getUTCHours();
+      expect(h, `${a.name} at ${h}:00`).toBeGreaterThanOrEqual(6);
+      expect(h, `${a.name} at ${h}:00`).toBeLessThan(20);
+    }
+  });
+});

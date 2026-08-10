@@ -30,7 +30,13 @@ export function TeamView({ canExport }: { canExport: boolean }) {
     () =>
       ROSTER.map((a) => {
         const window = lastNDays(28, now);
-        const activities = generateSampleActivities(a.provider, window.after, window.before, a.maxHr);
+        // Keyed on the athlete, not just the provider: Lena and Sara are both
+        // on Garmin, and without this the squad view showed them training
+        // identically — which is exactly the thing a squad view exists to spot.
+        const activities = generateSampleActivities(a.provider, window.after, window.before, {
+          maxHr: a.maxHr,
+          athleteKey: a.name,
+        });
         const report = analyze(activities, { bodyWeightKg: a.weightKg, maxHr: a.maxHr }, "endurance-performance", now);
         return { ...a, report };
       }),
