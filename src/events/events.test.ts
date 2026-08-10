@@ -155,8 +155,15 @@ describe("the curated list", () => {
     for (const e of SWISS_EVENTS) expect(e.organiserUrl, e.id).toMatch(/^https:\/\//);
   });
 
-  it("marks every curated date as approximate", () => {
-    for (const e of SWISS_EVENTS) expect(e.dateApproximate, e.id).toBe(true);
+  it("marks every date approximate unless it was fetched from the organiser", () => {
+    // The refresh script is the only thing allowed to clear the flag, and only
+    // against a record carrying the URL it came from. An entry that is neither
+    // approximate nor traceable would be a date presented as fact by accident.
+    for (const e of SWISS_EVENTS) {
+      if (e.dateApproximate === true) continue;
+      expect(e.confirmedFrom, `${e.id} is not approximate but has no source`).toMatch(/^https?:\/\//);
+      expect(e.confirmedAt, `${e.id} has no fetch timestamp`).toBeTruthy();
+    }
   });
 
   it("uses unique ids and ISO dates", () => {

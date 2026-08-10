@@ -145,7 +145,7 @@ network-restricted environment.
 Public API: `enrichRoute`, `elevationProfile`, `fetchWeather`, `parseGpx`,
 `basemapLayers`.
 
-### `src/events` — 0.1.0, evolving
+### `src/events` — 0.2.0, evolving
 
 Named races. A curated list of Swiss endurance events, the countdown phases that
 decide what to eat this week rather than in general, aid-station carry legs, and
@@ -155,14 +155,31 @@ date comes inside the sixteen-day horizon.
 The module's whole reason to exist is the date. A session plan is the same
 answer in March and September; a race plan is not, and neither is the weather.
 
-*Caveat:* event dates are the weekend each race traditionally falls on rather
-than a confirmed entry, and are labelled approximate everywhere they appear.
-Aid-station data is present only for races whose organiser publishes it plainly
-— an empty list means "unknown", never "none", and the advice then says to carry
-your own.
+`sync.ts` keeps the list current without hand-maintenance: it reads each
+organiser's schema.org `SportsEvent` markup — the same data that puts a race in
+Google's event results — or their `.ics` feed, and `npm run refresh:events`
+writes what it finds into the generated `confirmed.ts`.
+
+The parsing is the easy half. The half that matters is **refusing**: an
+automatically-fetched wrong date is worse than a curated approximate one,
+because the approximate date is labelled and the athlete checks it while the
+fetched one is presented as confirmed. A candidate must therefore have a date
+that parses, is in the future and inside eighteen months; a name that shares a
+*distinctive* token with the race we asked about (sharing only "marathon" is
+not a match); and no tie — an organiser page listing E101, E51 and E35 must not
+confirm whichever was parsed first. Everything else stays approximate, and the
+script says which and why.
+
+*Caveat:* a date is only confirmed once that script has fetched it. Until then
+it is the weekend the race traditionally falls on, labelled approximate
+everywhere it appears. Aid-station data is present only for races whose
+organiser publishes it plainly — an empty list means "unknown", never "none",
+and the advice then says to carry your own. The organiser hosts are unreachable
+from a network-restricted environment, so `confirmed.ts` ships empty and every
+date here is still the curated one.
 
 Public API: `SWISS_EVENTS`, `eventCountdown`, `eventAdvice`, `carryLegs`,
-`planEvent`, `fetchRaceDayWeather`.
+`planEvent`, `fetchRaceDayWeather`, `refreshEvent`, `applyConfirmed`.
 
 ### `src/auth` — 1.0.0, stable
 
@@ -182,7 +199,7 @@ and typed, but has not been exercised against a live database here.
 
 Public API: `fileStores`, `pgStores`, `jsonFile`.
 
-### `src/providers` — 0.7.0, **preview**
+### `src/providers` — 0.8.0, **preview**
 
 Training-service connectors — Strava, Garmin, Polar, Suunto — plus the registry,
 connection records and sample data. See [`provider-import.md`](./provider-import.md).

@@ -1,6 +1,6 @@
 {
   "name": "you-go-further",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "description": "Personalized Swiss sports nutrition recommendations for endurance athletes, tailored by goal and session.",
@@ -17,7 +17,8 @@
     "e2e": "node scripts/e2e-smoke.mjs",
     "e2e:mobile": "node scripts/mobile-smoke.mjs",
     "verify:payments": "node scripts/stripe-verify.mjs",
-    "verify:providers": "npx tsx scripts/verify-providers.mjs"
+    "verify:providers": "npx tsx scripts/verify-providers.mjs",
+    "refresh:events": "npx tsx scripts/refresh-events.mjs"
   },
   "dependencies": {
     "leaflet": "^1.9.4",

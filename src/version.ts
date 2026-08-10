@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.7.0";
+export const PLATFORM_VERSION = "0.8.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -180,14 +180,23 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "events",
     path: "src/events",
-    version: "0.1.0",
+    version: "0.2.0",
     layer: "platform",
     stability: "evolving",
     summary:
       "Named races: a curated Swiss event list, the countdown phases that change what to eat, aid-station carry legs, and a race-day forecast that goes live as the date comes into model range.",
-    publicApi: ["SWISS_EVENTS", "eventCountdown", "eventAdvice", "carryLegs", "planEvent", "fetchRaceDayWeather"],
+    publicApi: [
+      "SWISS_EVENTS",
+      "eventCountdown",
+      "eventAdvice",
+      "carryLegs",
+      "planEvent",
+      "fetchRaceDayWeather",
+      "refreshEvent",
+      "applyConfirmed",
+    ],
     caveat:
-      "Event dates are the weekend each race traditionally falls on, not confirmed entries, and are labelled approximate throughout; aid-station data is present only where an organiser publishes it plainly.",
+      "A date is only confirmed once the refresh script has fetched it from the organiser; until then it is the traditional weekend, labelled approximate. Aid-station data is present only where an organiser publishes it plainly. The organiser hosts cannot be reached from a network-restricted environment, so `confirmed.ts` ships empty.",
   },
   {
     id: "auth",
@@ -211,7 +220,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "providers",
     path: "src/providers",
-    version: "0.7.0",
+    version: "0.8.0",
     layer: "platform",
     stability: "preview",
     summary:

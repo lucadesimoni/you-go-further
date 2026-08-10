@@ -33,3 +33,19 @@ export {
   type EventPlan,
   type EventPlanInput,
 } from "./plan";
+export {
+  parseJsonLdEvents,
+  parseIcs,
+  nameScore,
+  tokens,
+  chooseCandidate,
+  applyConfirmed,
+  fetchEventCandidates,
+  refreshEvent,
+  MIN_NAME_SCORE,
+  MAX_LEAD_DAYS,
+  type EventCandidate,
+  type ConfirmedDate,
+  type RefreshResult,
+} from "./sync";
+export { CONFIRMED_DATES } from "./confirmed";

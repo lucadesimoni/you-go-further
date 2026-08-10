@@ -8,6 +8,64 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.8.0
+
+Two things that were quietly hand-maintained: the race calendar, and the demo.
+
+**Added**
+
+- **`npm run refresh:events`.** The race dates were curated by hand and flagged
+  approximate, which is honest but is not an answer — an athlete tapering for
+  the wrong Saturday has still been failed. Most organisers already publish the
+  real date as schema.org `SportsEvent` markup (the data that puts a race in
+  Google's event results) or an `.ics` feed, so `src/events/sync.ts` reads
+  those and the script writes what it finds into a generated `confirmed.ts`.
+  A confirmed date is the only thing that clears `dateApproximate`, and it
+  carries the URL and timestamp it came from.
+
+  The parsing is the easy half. The half that matters is **refusing**: a
+  fetched wrong date is worse than a curated approximate one, because the
+  approximate one is labelled and the athlete checks it. A candidate needs a
+  date that parses, is in the future and inside eighteen months; a name sharing
+  a *distinctive* token with the race (an early version scored
+  "Jungfrau-Marathon" against "Zürich Marathon" at 0.5 on the word "marathon"
+  alone — above the accept threshold — so one page about the wrong race could
+  have confirmed a date); and no tie, so an organiser page listing E101, E51
+  and E35 cannot give one sibling another's date. Everything else stays
+  approximate and the script reports which and why.
+
+- **A demo account that is an account.** "Explore a demo account" landed on an
+  empty Home — no sessions, no week, no insights, no fuelling score — because a
+  demo persona has no connected provider. It now arrives connected, through the
+  same OAuth path the onboarding button uses, and with three session logs so
+  the half of the product that learns from outcomes has something to show. The
+  personas are people now, with their own body profiles, so the plans on screen
+  are somebody's rather than the 70 kg default.
+
+**Fixed**
+
+- **The demo's training history reset on every render.** The sample generator
+  seeded from the sync window's start — a millisecond-precision timestamp — so
+  three calls a millisecond apart returned 19, 21 and 14 sessions, 502 km, 586
+  km and 376 km, with no activity ids in common. `externalId` was that same
+  millisecond, so the same run synced twice was two different activities and
+  deduplication could never match. Sessions are now keyed on the calendar day
+  they happened.
+- **A week that looked nothing like a week.** Sessions were drawn one per day
+  at random: no rest days, no weekend long run, no build/recovery rhythm —
+  noise that the acute:chronic ratio and the form curve then analysed. There
+  are now two rest days, quality separated by easy running, the long day at the
+  weekend, and a recovery week every fourth week, with intensity showing up in
+  the pace and heart rate.
+- **Signing in always landed on Plan, not Home.** Signed out, `visibleTabs` is
+  empty, so the tab-correction effect "corrected" the default before anyone had
+  signed in. Onboarding masked it by setting the tab at the end.
+- **Two of the five demo chips both read "Athlete"** — they were labelled by
+  role, and the solo and club athletes are the two most different accounts here.
+- **Session names ignored the sport**, putting "Progression run" on a 68.9 km
+  session at 26 km/h, and every athlete drew a fresh Swiss trailhead per
+  session, so one person trained in Zürich on Tuesday and Zermatt on Wednesday.
+
 ## 0.7.0
 
 Named races. Until now every plan started from a course or a session — a shape

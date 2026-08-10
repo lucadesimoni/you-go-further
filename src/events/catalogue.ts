@@ -1,4 +1,6 @@
 import type { SwissEvent } from "./events";
+import { CONFIRMED_DATES } from "./confirmed";
+import { applyConfirmed } from "./sync";
 
 /**
  * Swiss endurance events, curated.
@@ -23,7 +25,7 @@ import type { SwissEvent } from "./events";
  * water at km 30 and finds none is in real trouble, so an empty list means
  * "we do not know", and the advice then says to carry your own.
  */
-export const SWISS_EVENTS: SwissEvent[] = [
+const CURATED: SwissEvent[] = [
   {
     id: "jungfrau-marathon",
     name: "Jungfrau-Marathon",
@@ -175,6 +177,14 @@ export const SWISS_EVENTS: SwissEvent[] = [
     note: "Over the Sertigpass, the highest point of any Swiss marathon-distance race.",
   },
 ];
+
+/**
+ * The list the app uses: curated, with any date the refresh script fetched from
+ * the organiser applied on top. A confirmed entry loses `dateApproximate` and
+ * gains the URL it came from — which is the only route by which a date here
+ * stops being labelled a guess.
+ */
+export const SWISS_EVENTS: SwissEvent[] = applyConfirmed(CURATED, CONFIRMED_DATES);
 
 /** Find a curated event by id. */
 export function eventById(id: string): SwissEvent | undefined {

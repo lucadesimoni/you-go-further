@@ -56,6 +56,14 @@ export interface SwissEvent {
   date: string;
   /** True when the date is the usual weekend rather than a confirmed one. */
   dateApproximate?: boolean;
+  /**
+   * Where a confirmed date came from, set by the refresh script from the
+   * organiser's own schema.org markup or calendar feed. Its presence is what
+   * distinguishes "we fetched this" from "we assumed this".
+   */
+  confirmedFrom?: string;
+  /** When that fetch happened, so a stale confirmation is visible as one. */
+  confirmedAt?: string;
   aidStations?: AidStation[];
   /** Cut-off, minutes — a slower athlete's plan is a different plan. */
   cutoffMin?: number;
