@@ -13,6 +13,9 @@ import {
   type SwissEvent,
 } from "../events";
 import { useI18n, type TranslationKey } from "../i18n";
+import { ChoiceCards } from "./Choice";
+import { MoreList } from "./ReadMore";
+import { DISCIPLINE_ICONS } from "./optionIcons";
 import { Explain } from "./Explain";
 import { TrainingPlanView, hasUsefulPlan } from "./TrainingPlanView";
 import { buildTrainingPlan } from "../training";
@@ -127,17 +130,21 @@ export function EventPlanner({
       {!event && (
         <>
           <p className="detail">{t("event.intro")}</p>
-          <div className="field event-pick">
-            <label htmlFor="event-select">{t("event.choose")}</label>
-            <select id="event-select" value="" onChange={(e) => choose(e.target.value)}>
-              <option value="">{t("event.none")}</option>
-              {upcoming.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name} — {dateLabel(e)}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* A list, not a dropdown. Choosing a race means comparing a dozen of
+              them on date, distance and climb — exactly the three facts a
+              select hides behind one collapsed line. */}
+          <ChoiceCards
+            label={t("event.choose")}
+            value=""
+            onChange={choose}
+            options={upcoming.map((e) => ({
+              value: e.id,
+              label: e.name,
+              blurb: t("event.course", { distance: e.distanceKm, ascent: e.ascentM }),
+              meta: dateLabel(e),
+              icon: DISCIPLINE_ICONS[e.discipline],
+            }))}
+          />
         </>
       )}
 
@@ -277,15 +284,18 @@ export function EventPlanner({
             </div>
           </div>
 
+          {/* Ordered most urgent first, so the two that are always visible are
+              the two worth acting on today; the rest are a tap away. */}
           <div className="event-advice">
             <h4 className="geo-title">{t("event.thisWeek")}</h4>
-            <ul>
-              {plan.advice.map((a) => (
+            <MoreList
+              keep={2}
+              items={plan.advice.map((a) => (
                 <li key={a.id} className={`event-advice-${a.severity}`}>
                   {t(`event.advice.${a.id}` as TranslationKey, adviceVars(a.values))}
                 </li>
               ))}
-            </ul>
+            />
           </div>
 
 

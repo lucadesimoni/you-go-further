@@ -8,6 +8,41 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.10.3
+
+**Fixed**
+
+- **Choices were hidden inside dropdowns.** A native `<select>` shows one option
+  and hides the rest behind an OS menu, which is the wrong control for a choice
+  between three and twelve things worth comparing. Goal, activity, intensity,
+  conditions, sweat level, race, product category and both session ratings are
+  now visible groups: chips for short labels, cards for options that need a
+  sentence. Each is a real radio group — one tab stop, arrow keys move the
+  selection — and each carries an icon.
+- **The goal picker was cutting off its own explanation.** "Endurance
+  performance — Go longer and faster" arrived as a truncated dropdown line. The
+  sentence that tells two goals apart is the whole reason it was written, and it
+  is now shown in full beside each option.
+- **Picking a race meant opening a menu of twelve.** The race list is a list:
+  name, date, distance and climb for each, all on screen.
+- **German was being cut off the right edge of a phone.** Equal-column control
+  rows sized their track to their content, so "Locker / Mittel / Hart /
+  Wettkampf" pushed its whole column past the viewport — and because the page
+  clips sideways overflow, the last option was simply chopped in half with
+  nothing to scroll to. The rows flow now, the layout column can shrink, and
+  `npm run e2e` walks every screen at 390 px in German to keep it that way.
+
+**Changed**
+
+- **Long text folds.** The training-plan preamble, the race-day advice and the
+  plan's learnings clip to their first lines with a "Show more" that appears
+  only when there is genuinely more; the text is clipped by CSS, never removed,
+  so find-in-page and screen readers still reach all of it.
+- **The build shows one week at a time.** Every week of a fifteen-week plan
+  expanded at once made it a page you scroll for a minute. Each week keeps the
+  four facts that let you find it — which one, what it is for, how much, how far
+  out — and opens on a tap. This week starts open.
+
 ## 0.10.2
 
 **Fixed**

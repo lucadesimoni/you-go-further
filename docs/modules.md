@@ -320,16 +320,17 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.5.0, stable
+### `src/components` — 1.6.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
-onboarding, and the shared primitives (`Stat`, `Switch`, `Explain`, `BuyLink`).
+onboarding, and the shared primitives (`Stat`, `Switch`, `Explain`, `BuyLink`,
+`Icon`, `ChoiceRow`/`ChoiceCards`, `ReadMore`/`MoreList`).
 
 Public API: `App`, `Planner`, `RouteInsights`, `RaceForecast`, `SessionDebrief`,
 `LoadProfileCard`.
 
-### `src/i18n` — 1.1.0, stable
+### `src/i18n` — 1.2.0, stable
 
 Four typed dictionaries — German, French, Italian, English — with `{placeholder}`
 interpolation and `_one` plural siblings. `de`, `fr` and `it` are typed against

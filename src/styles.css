@@ -292,6 +292,7 @@
   .plan-mode,
   .event-view,
   .health-chip,
+  .choice-card,
   select,
   input[type="file"] + label {
     min-height: 44px;
@@ -346,8 +347,12 @@ body {
 }
 
 @media (max-width: 820px) {
+  /* `minmax(0, 1fr)`, not `1fr`: a grid track's automatic minimum is its
+     content's min-content width, so one stubborn child — a long word, a
+     nowrap figure — silently widened the whole column past the viewport and
+     the page clipped the right edge off every control in it. */
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -472,6 +477,155 @@ input[type="range"] {
   background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--text);
+}
+
+.seg:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---- Choices: rows and cards, in place of native dropdowns --------------
+   A native select shows one option and hides the rest behind an OS menu.
+   Every choice in this app is between three and twelve things that are worth
+   comparing side by side, so they are laid out instead of collapsed. */
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.choice-row .seg {
+  padding: 9px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.choice-row .seg > .icon {
+  color: var(--muted);
+}
+
+.choice-row .seg.active > .icon {
+  color: var(--accent-ink);
+}
+
+.seg-label {
+  min-width: 0;
+  /* `break-word`, not `anywhere`: `anywhere` shrinks the chip's min-content
+     width, which broke "Temperate" across two lines as "Temperat / e". */
+  overflow-wrap: break-word;
+}
+
+.choice-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.choice-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 11px 13px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.choice-card:hover {
+  border-color: var(--border-strong);
+}
+
+.choice-card.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.choice-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.choice-card-icon {
+  display: flex;
+  color: var(--muted);
+}
+
+.choice-card.on .choice-card-icon {
+  color: var(--accent-ink);
+}
+
+.choice-card-icon .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.choice-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.choice-card-label {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+/* The reason these are cards at all: the sentence that tells two options
+   apart, shown in full rather than truncated into a dropdown line. */
+.choice-card-blurb {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.choice-card-meta {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.choice-tick {
+  width: 14px;
+  text-align: center;
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+/* ---- Folded prose -------------------------------------------------------
+   Clipped, never removed: the text stays in the document so find-in-page and
+   a screen reader still reach it. */
+.readmore-clamped {
+  /* Overridden inline per block; three lines is enough to tell what a
+     paragraph is about. */
+  --readmore-lines: 3;
+  display: -webkit-box;
+  -webkit-line-clamp: var(--readmore-lines);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* The clamp collapses the children's own margins into one block, so the
+   paragraph spacing has to come back as a gap the box model can see. */
+.readmore-clamped > * + * {
+  margin-top: var(--space-2);
+}
+
+.readmore-toggle {
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .checkbox {
@@ -2983,8 +3137,7 @@ code {
 /* The ask: a short, low-friction form, not a questionnaire. */
 .debrief-log { display: flex; flex-direction: column; gap: var(--space-3); }
 .debrief-ask { margin: 0; font-size: var(--text-base); }
-.debrief-log .segmented { width: 100%; }
-.debrief-log .group-label { margin-top: var(--space-2); }
+.debrief-log .choice-field { margin-top: var(--space-2); }
 .debrief-log label { font-size: var(--text-base); color: var(--muted); margin-top: var(--space-2); }
 .debrief-log label .value { color: var(--text); font-weight: 700; }
 .debrief-log input[type="range"] { width: 100%; }
@@ -3456,15 +3609,25 @@ code {
 .train-week-raceWeek { border-left-color: var(--accent); background: var(--accent-soft); }
 /* A cut-back week is meant to look lighter — it is doing less on purpose. */
 .train-week-cut { opacity: 0.78; }
+/* A button now, not a heading: the week opens on it. */
 .train-week-head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-2) var(--space-3);
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 .train-week-n { font-weight: 700; }
 .train-week-hours { font-variant-numeric: tabular-nums; font-weight: 600; }
 .train-week-out { margin-left: auto; font-size: var(--text-2xs); color: var(--muted); }
+.train-week-chevron { color: var(--muted); font-size: var(--text-2xs); }
 .train-fuel { margin: var(--space-2) 0 var(--space-3); font-size: var(--text-base); color: var(--muted); }
 .train-sessions { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
 /* The row's own grid moved onto the button when the session became openable;

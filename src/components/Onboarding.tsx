@@ -7,6 +7,8 @@ import { ALL_PROVIDER_IDS, DESCRIPTORS } from "../providers";
 import { api, isApiConfigured } from "../api/client";
 import { getConfig } from "../config";
 import { setOnboardStep } from "../api/onboarding";
+import { ChoiceRow } from "./Choice";
+import { SWEAT_ICONS } from "./optionIcons";
 import { Switch } from "./Switch";
 import { useT } from "../i18n";
 
@@ -135,18 +137,16 @@ export function Onboarding({
               />
             </div>
             <div className="onboard-field">
-              <label htmlFor="ob-sweat">{t("onboard.sweatLevel")}</label>
-              <select
-                id="ob-sweat"
+              <ChoiceRow
+                label={t("onboard.sweatLevel")}
                 value={profile.sweatLevel}
-                onChange={(e) => set("sweatLevel", e.target.value as AthleteProfile["sweatLevel"])}
-              >
-                {SWEAT_LEVELS.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => set("sweatLevel", v)}
+                options={SWEAT_LEVELS.map((s) => ({
+                  value: s.value,
+                  label: t(s.labelKey),
+                  icon: SWEAT_ICONS[s.value],
+                }))}
+              />
             </div>
             <Switch
               label={t("onboard.caffeineOk")}

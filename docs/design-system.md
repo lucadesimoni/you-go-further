@@ -148,6 +148,9 @@ transition both turned out never to have rendered.
 | `.panel` | the card container (surface + border + `--radius-lg`) |
 | `.btn` + `.btn-primary` / `.btn-ghost` / `.btn-danger` | buttons |
 | `.segmented` / `.seg` (`.active`) | segmented single-select control |
+| `<ChoiceRow>` / `.choice-row` | one choice from a few short options, as chips |
+| `<ChoiceCards>` / `.choice-card` | one choice from options that need a sentence |
+| `<ReadMore>` / `<MoreList>` | long prose and long lists, folded to their first lines |
 | `.badge` + `.badge-pre/-during/-post` | filled phase labels |
 | `.pill` | outlined count / status pill |
 | `.tag` (`.caf`, `.tag-house`) | attribute chips |
@@ -190,7 +193,29 @@ transition both turned out never to have rendered.
    safety wording and anything that says what we earn.
 7. **Every interactive target is at least 24×24 px** (WCAG 2.5.8), including
    link-styled buttons. Padding, not font size, is what gets them there.
-8. **Selects draw their own chevron.** `appearance: none` plus a per-theme
+8. **A single choice is shown, not hidden.** A native `<select>` collapses every
+   option but one and truncates anything long, which is the wrong trade when the
+   list is three to twelve things the athlete is comparing. `<ChoiceRow>` lays
+   short options out as chips that flow; `<ChoiceCards>` gives each option its
+   explaining sentence and any trailing fact (a date, a distance). Both are real
+   radio groups — `role="radiogroup"`, one tab stop, arrows move the selection —
+   so the browser announces "3 of 3" without us saying it. A `<select>` is still
+   right for a list that is long, alphabetical and not worth comparing: the
+   language picker is the example.
+9. **Equal columns are a trap in four languages.** A grid track's automatic
+   minimum is its content's min-content width, so a row of equal columns sized
+   to its longest label and pushed its whole column past a phone's viewport —
+   invisible in English, cutting the last option in half in German. Choice rows
+   flow instead, and layout columns are `minmax(0, 1fr)`. `npm run e2e` walks
+   every screen at 390 px in German and fails on anything that reaches past the
+   viewport unclipped.
+10. **Long text folds, it is never dropped.** `<ReadMore>` clips prose to a few
+   lines and offers "Show more" *only when the text is genuinely clipped* — a
+   control that reveals nothing teaches people to ignore it. The text is clipped
+   by CSS and stays in the document, so find-in-page and screen readers still
+   reach all of it. Same rule as `<Explain>`: reasoning is worth keeping, worth
+   folding, never worth deleting.
+11. **Selects draw their own chevron.** `appearance: none` plus a per-theme
    `--chevron` data URI, because the native arrow is painted by the OS and
    ignores the theme — on dark it reads as a foreign control. The options list
    itself is still the OS's; `select option` sets its palette. Compact variants

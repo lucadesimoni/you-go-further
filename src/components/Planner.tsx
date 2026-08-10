@@ -7,6 +7,8 @@ import { addFeedback, clearFeedback, feedbackPersistence, loadFeedback } from ".
 import { loadCatalog } from "../api/productLibrary";
 import { loadProfile } from "../api/profileStore";
 import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_KEYS, SWEAT_TEXT_KEYS } from "../options";
+import { ChoiceCards, ChoiceRow } from "./Choice";
+import { ACTIVITY_ICONS, CONDITION_ICONS, GOAL_ICONS } from "./optionIcons";
 import { Stat } from "./Stat";
 import { SessionTimeline } from "./SessionTimeline";
 import { CartPanel } from "./CartPanel";
@@ -136,31 +138,31 @@ export function Planner({
   return (
     <main className="layout" id="session-planner">
       <section className="panel form" aria-label={t("plan.sessionDetails")}>
-        <div className="field">
-          <label htmlFor="goal">{t("plan.goal")}</label>
-          <select id="goal" value={input.goal} onChange={(e) => set("goal", e.target.value as SessionInput["goal"])}>
-            {GOALS.map((g) => (
-              <option key={g.value} value={g.value}>
-                {t(g.labelKey)} — {t(g.blurbKey)}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Cards, not a dropdown: the blurb is the difference between "Race
+            preparation" and "Endurance performance" for anyone choosing
+            between them for the first time, and a native select cut it off. */}
+        <ChoiceCards
+          label={t("plan.goal")}
+          value={input.goal}
+          onChange={(v) => set("goal", v)}
+          options={GOALS.map((g) => ({
+            value: g.value,
+            label: t(g.labelKey),
+            blurb: t(g.blurbKey),
+            icon: GOAL_ICONS[g.value],
+          }))}
+        />
 
-        <div className="field">
-          <label htmlFor="activity">{t("plan.activity")}</label>
-          <select
-            id="activity"
-            value={input.activity}
-            onChange={(e) => set("activity", e.target.value as SessionInput["activity"])}
-          >
-            {ACTIVITIES.map((a) => (
-              <option key={a.value} value={a.value}>
-                {t(a.labelKey)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <ChoiceRow
+          label={t("plan.activity")}
+          value={input.activity}
+          onChange={(v) => set("activity", v)}
+          options={ACTIVITIES.map((a) => ({
+            value: a.value,
+            label: t(a.labelKey),
+            icon: ACTIVITY_ICONS[a.value],
+          }))}
+        />
 
         <div className="field">
           <label htmlFor="duration">
@@ -182,36 +184,23 @@ export function Planner({
           />
         </div>
 
-        <div className="field">
-          <span className="group-label">{t("plan.intensity")}</span>
-          <div className="segmented" role="group" aria-label={t("plan.intensity")}>
-            {INTENSITIES.map((i) => (
-              <button
-                key={i.value}
-                type="button"
-                className={input.intensity === i.value ? "seg active" : "seg"}
-                onClick={() => set("intensity", i.value)}
-              >
-                {t(i.labelKey)}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ChoiceRow
+          label={t("plan.intensity")}
+          value={input.intensity}
+          onChange={(v) => set("intensity", v)}
+          options={INTENSITIES.map((i) => ({ value: i.value, label: t(i.labelKey) }))}
+        />
 
-        <div className="field">
-          <label htmlFor="conditions">{t("plan.conditions")}</label>
-          <select
-            id="conditions"
-            value={input.conditions}
-            onChange={(e) => set("conditions", e.target.value as SessionInput["conditions"])}
-          >
-            {CONDITIONS.map((c) => (
-              <option key={c.value} value={c.value}>
-                {t(c.labelKey)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <ChoiceRow
+          label={t("plan.conditions")}
+          value={input.conditions}
+          onChange={(v) => set("conditions", v)}
+          options={CONDITIONS.map((c) => ({
+            value: c.value,
+            label: t(c.labelKey),
+            icon: CONDITION_ICONS[c.value],
+          }))}
+        />
 
         <div className="from-profile">
           <span>

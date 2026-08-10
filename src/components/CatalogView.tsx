@@ -7,6 +7,7 @@ import { confirm } from "../ui/confirm";
 import { useFocusTrap } from "../ui/useFocusTrap";
 import { useT, type TranslationKey } from "../i18n";
 import { BuyLink } from "./BuyLink";
+import { ChoiceRow } from "./Choice";
 
 /** Category names, keyed so the library reads in the athlete's language. */
 const CATEGORY_KEY: Record<ProductCategory, TranslationKey> = {
@@ -136,19 +137,18 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
         )}
         {error && <p className="auth-error">{error}</p>}
 
-        <div
-          className="segmented"
-          style={{ gridTemplateColumns: `repeat(${categories.length + 1}, 1fr)`, marginBottom: 14 }}
-        >
-          <button type="button" className={category === "all" ? "seg active" : "seg"} onClick={() => setCategory("all")}>
-            {t("cat.all")}
-          </button>
-          {categories.map((c) => (
-            <button key={c} type="button" className={category === c ? "seg active" : "seg"} onClick={() => setCategory(c)}>
-              {t(CATEGORY_KEY[c])}
-            </button>
-          ))}
-        </div>
+        {/* Six category names in equal columns fit in English and nowhere else;
+            as chips they wrap onto a second line instead of off the screen. */}
+        <ChoiceRow
+          hideLabel
+          label={t("catalog.filter")}
+          value={category}
+          onChange={setCategory}
+          options={[
+            { value: "all" as const, label: t("cat.all") },
+            ...categories.map((c) => ({ value: c, label: t(CATEGORY_KEY[c]) })),
+          ]}
+        />
 
         <div className="providers">
           {items.map((p) => (

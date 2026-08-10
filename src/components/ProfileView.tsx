@@ -6,6 +6,8 @@ import { estimateSweatRateMlPerH } from "../analysis";
 import { type AthleteProfile, loadProfile, saveProfile, syncProfile, profilePersistence } from "../api/profileStore";
 import { HEALTH_PLATFORMS, syncHealthSignals } from "../api/healthSync";
 import { useT } from "../i18n";
+import { ChoiceRow } from "./Choice";
+import { SWEAT_ICONS } from "./optionIcons";
 import { Switch } from "./Switch";
 
 /**
@@ -101,20 +103,18 @@ export function ProfileView({ account }: { account: Account }) {
               onChange={(e) => set("maxHrBpm", Number(e.target.value))}
             />
           </div>
-          <div className="field">
-            <label htmlFor="p-sweat">{t("profile.sweatLevelShort")}</label>
-            <select
-              id="p-sweat"
-              value={profile.sweatLevel}
-              onChange={(e) => set("sweatLevel", e.target.value as AthleteProfile["sweatLevel"])}
-            >
-              {SWEAT_LEVELS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Three options, all short: they belong on screen at once, and the
+              labels are translated here rather than left in English. */}
+          <ChoiceRow
+            label={t("profile.sweatLevelShort")}
+            value={profile.sweatLevel}
+            onChange={(v) => set("sweatLevel", v)}
+            options={SWEAT_LEVELS.map((s) => ({
+              value: s.value,
+              label: t(s.labelKey),
+              icon: SWEAT_ICONS[s.value],
+            }))}
+          />
         </div>
 
         {/* A preference that persists the instant it changes — a switch, not a

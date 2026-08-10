@@ -12,6 +12,8 @@ import { api, isApiConfigured } from "../api/client";
 import type { SessionFeedback } from "../feedback";
 import { getConfig } from "../config";
 import { loadProfile } from "../api/profileStore";
+import { ChoiceRow } from "./Choice";
+import { GOAL_ICONS } from "./optionIcons";
 import { Stat } from "./Stat";
 import { useI18n, type TranslationKey } from "../i18n";
 import { RouteInsights } from "./RouteInsights";
@@ -315,16 +317,14 @@ export function Dashboard({
           <h2>{t("connect.analysisSettings")}</h2>
           <span className="pill">history: {historyDays >= 365 ? `${Math.round(historyDays / 365)} yr` : `${historyDays} d`}</span>
         </div>
-        <div className="field">
-          <label htmlFor="dgoal">{t("plan.goal")}</label>
-          <select id="dgoal" value={goal} onChange={(e) => setGoal(e.target.value as AthleteInput["goal"])}>
-            {GOALS.map((g) => (
-              <option key={g.value} value={g.value}>
-                {t(g.labelKey)}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Wrapped rather than columned: five goal names of very different
+            lengths in four languages will not share equal columns. */}
+        <ChoiceRow
+          label={t("plan.goal")}
+          value={goal}
+          onChange={(v) => setGoal(v)}
+          options={GOALS.map((g) => ({ value: g.value, label: t(g.labelKey), icon: GOAL_ICONS[g.value] }))}
+        />
         <div className="from-profile">
           <span>{t("connect.usingProfile", { weight: bodyWeightKg, maxHr })}</span>
           {onEditProfile && (

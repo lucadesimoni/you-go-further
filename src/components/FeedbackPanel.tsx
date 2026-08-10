@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { AdaptationInsight, EnergyRating, GiRating, SessionFeedback } from "../feedback";
 import { useT } from "../i18n";
+import { ChoiceRow } from "./Choice";
 
 /* The same ratings the debrief uses, so one vocabulary describes a session
    whether it is being logged or reviewed. */
@@ -60,27 +61,22 @@ export function FeedbackPanel({
       </div>
       <p className="detail">{t("log.sub")}</p>
 
+      {/* Chips that flow, not four equal columns: "Bonked / Faded / Steady /
+          Strong" shares a row and "Eingebrochen / Nachgelassen / Konstant /
+          Stark" does not, and the German column was being cut off. */}
       <div className="fb-row">
-        <div className="field">
-          <span className="group-label">{t("log.gut")}</span>
-          <div className="segmented" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
-            {GI_OPTS.map((o) => (
-              <button key={o} type="button" className={gi === o ? "seg active" : "seg"} onClick={() => setGi(o)}>
-                {t(`debrief.gi.${o}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="field">
-          <span className="group-label">{t("log.energy")}</span>
-          <div className="segmented">
-            {ENERGY_OPTS.map((o) => (
-              <button key={o} type="button" className={energy === o ? "seg active" : "seg"} onClick={() => setEnergy(o)}>
-                {t(`debrief.energy.${o}`)}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ChoiceRow
+          label={t("log.gut")}
+          value={gi}
+          onChange={setGi}
+          options={GI_OPTS.map((o) => ({ value: o, label: t(`debrief.gi.${o}`) }))}
+        />
+        <ChoiceRow
+          label={t("log.energy")}
+          value={energy}
+          onChange={setEnergy}
+          options={ENERGY_OPTS.map((o) => ({ value: o, label: t(`debrief.energy.${o}`) }))}
+        />
       </div>
 
       <button type="button" className={`btn btn-primary${justLogged ? " done" : ""}`} onClick={log}>

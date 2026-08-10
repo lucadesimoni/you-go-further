@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatClock } from "../engine";
 import type { SessionFeedback } from "../feedback";
 import type { Activity } from "../model";
@@ -12,6 +12,7 @@ import {
   type TrainingWeek,
 } from "../training";
 import { useT, type TranslationKey } from "../i18n";
+import { MoreList, ReadMore } from "./ReadMore";
 
 /** How many weeks to show before the athlete asks for the rest. */
 const PREVIEW_WEEKS = 6;
@@ -46,6 +47,29 @@ export function TrainingPlanView({
   const [openSession, setOpenSession] = useState<string | null>(null);
   const weeks = expanded ? plan.weeks : plan.weeks.slice(0, PREVIEW_WEEKS);
 
+  /**
+   * Which weeks are showing their sessions. The nearest one starts open —
+   * that is the week the athlete is actually in, and the plan should answer
+   * "what am I doing this week" without a tap.
+   */
+  const [openWeeks, setOpenWeeks] = useState<Set<string>>(
+    () => new Set(plan.weeks.length ? [plan.weeks[0].startDate] : []),
+  );
+  // Switching races is a different build entirely, so start it the same way.
+  // Keyed on the first week rather than the plan object: the plan is rebuilt on
+  // every drag of the finish-time slider, and that must not slam weeks shut.
+  const firstWeek = plan.weeks[0]?.startDate;
+  useEffect(() => {
+    setOpenWeeks(new Set(firstWeek ? [firstWeek] : []));
+  }, [firstWeek]);
+
+  const toggleWeek = (startDate: string) =>
+    setOpenWeeks((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(startDate)) next.add(startDate);
+      return next;
+    });
+
   const stats = useMemo(() => prepStats(plan), [plan]);
   const learnings = useMemo(
     () => planLearnings(plan, stats, { feedback, activities, estimatedMin: plan.peakLongMin }),
@@ -58,16 +82,21 @@ export function TrainingPlanView({
         <h4 className="geo-title">{t("train.title")}</h4>
         <span className="pill">{t("train.peak", { hours: plan.peakHours })}</span>
       </div>
-      <p className="detail">{t("train.intro")}</p>
+      {/* Three stacked paragraphs of preamble were pushing the plan itself
+          below the fold on a phone. The first two lines say what this is; the
+          rest is there for anyone who wants it. */}
+      <ReadMore lines={2}>
+        <p className="detail">{t("train.intro")}</p>
 
-      {/* Where the first week's volume came from. A plan built on a guess and a
-          plan built on the athlete's own six weeks are different promises. */}
-      <p className="detail train-source">
-        {plan.startSource === "measured"
-          ? t("train.fromMeasured", { hours: plan.startHours })
-          : t("train.fromAssumed", { hours: plan.startHours })}
-      </p>
-      {plan.tooShort && <p className="detail train-short">{t("train.tooShort")}</p>}
+        {/* Where the first week's volume came from. A plan built on a guess and
+            a plan built on the athlete's own six weeks are different promises. */}
+        <p className="detail train-source">
+          {plan.startSource === "measured"
+            ? t("train.fromMeasured", { hours: plan.startHours })
+            : t("train.fromAssumed", { hours: plan.startHours })}
+        </p>
+        {plan.tooShort && <p className="detail train-short">{t("train.tooShort")}</p>}
+      </ReadMore>
 
       <div className="train-summary">
         <span>{t("train.longest", { time: formatClock(plan.peakLongMin) })}</span>
@@ -77,7 +106,19 @@ export function TrainingPlanView({
       <ol className="train-weeks">
         {weeks.map((w) => (
           <li key={w.startDate} className={`train-week train-week-${w.phase}${w.recovery ? " train-week-cut" : ""}`}>
-            <div className="train-week-head">
+            {/* Every week fully expanded made a fifteen-week build a page you
+                scroll for a minute. The header keeps the four facts that let
+                you find a week — which one, what it is for, how much, how far
+                out — and the sessions open on it. This week starts open. */}
+            <button
+              type="button"
+              className="train-week-head"
+              aria-expanded={openWeeks.has(w.startDate)}
+              onClick={() => toggleWeek(w.startDate)}
+            >
+              <span className="train-week-chevron" aria-hidden>
+                {openWeeks.has(w.startDate) ? "▾" : "▸"}
+              </span>
               <span className="train-week-n">{t("train.week", { n: w.index })}</span>
               <span className={`pill train-phase train-phase-${w.phase}`}>
                 {t(`train.phase.${w.phase}` as TranslationKey)}
@@ -88,7 +129,8 @@ export function TrainingPlanView({
                   ? t("train.raceWeekLabel")
                   : t("train.weeksOut", { n: w.weeksOut, count: w.weeksOut })}
               </span>
-            </div>
+            </button>
+            {openWeeks.has(w.startDate) && (<>
             <p className="train-fuel">{t(`train.fuel.${w.fuelFocusId}` as TranslationKey)}</p>
             <ul className="train-sessions">
               {w.sessions
@@ -116,6 +158,7 @@ export function TrainingPlanView({
                   </li>
                 ))}
             </ul>
+            </>)}
           </li>
         ))}
       </ol>
@@ -137,13 +180,14 @@ export function TrainingPlanView({
           for one rather than dressing a population figure as an insight. */}
       <div className="train-learn">
         <h5 className="train-sub">{t("train.learnings")}</h5>
-        <ul>
-          {learnings.map((l) => (
+        <MoreList
+          keep={2}
+          items={learnings.map((l) => (
             <li key={l.id} className={`train-learn-${l.severity}`}>
               {t(`train.learn.${l.id}` as TranslationKey, l.values)}
             </li>
           ))}
-        </ul>
+        />
       </div>
 
       {plan.weeks.length > PREVIEW_WEEKS && (

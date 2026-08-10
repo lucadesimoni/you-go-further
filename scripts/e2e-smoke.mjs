@@ -57,6 +57,20 @@ const planMode = async (name) => {
   await page.waitForTimeout(600);
 };
 
+/**
+ * Pick an option from one of the visible choice groups.
+ *
+ * Every single-choice control that used to be a `<select>` is now a labelled
+ * radio group whose options are all on screen, so the test picks one the same
+ * way a person does — by clicking the option it can see.
+ */
+const choose = async (groupLabel, optionText) => {
+  const group = page.locator(`[role="radiogroup"][aria-label="${groupLabel}"]`);
+  await group.waitFor({ timeout: 15000 });
+  await group.locator(`[role="radio"]:has-text("${optionText}")`).first().click();
+  await page.waitForTimeout(400);
+};
+
 const email = `smoke-${Date.now()}@club.ch`;
 
 console.log("── what is deployed ──");
@@ -360,9 +374,11 @@ await step("'Plan for this race' actually reaches the session planner", async ()
   const before = await page.locator("#duration").inputValue();
 
   await planMode("A race");
-  const race = await page.locator("#event-select option").nth(1).getAttribute("value");
-  if (!race) throw new Error("no upcoming race offered");
-  await page.selectOption("#event-select", race);
+  // The race list is a list, not a dropdown: every race, its date, distance
+  // and climb, all on screen. Picking one is a click on its card.
+  const race = page.locator(".event .choice-card").first();
+  await race.waitFor({ timeout: 15000 });
+  await race.click();
   await page.waitForSelector(".event .geo-plan", { timeout: 20000 });
   const raceTarget = await page.locator(".event-cols .geo-block").nth(1).locator(".stat-value").first().innerText();
 
@@ -372,7 +388,9 @@ await step("'Plan for this race' actually reaches the session planner", async ()
   await page.waitForSelector("#duration", { timeout: 15000 });
   const after = await page.locator("#duration").inputValue();
   if (before === after) throw new Error(`the planner ignored the race (duration stayed ${before})`);
-  const intensity = await page.locator(".segmented .seg.active").first().innerText();
+  const intensity = await page
+    .locator('[role="radiogroup"][aria-label="Intensity"] [role="radio"][aria-checked="true"]')
+    .innerText();
   if (!/race/i.test(intensity)) throw new Error(`a race should be planned at race intensity, got "${intensity}"`);
 
   // And the two must agree: the planner recomputing a different carbohydrate
@@ -480,7 +498,9 @@ await step("an unlogged session is asked about, never given an invented verdict"
   await page.waitForSelector(".debrief-log");
 });
 await step("logging it turns the panel into the answer", async () => {
-  await page.locator(".debrief-log .segmented").nth(1).locator('button:has-text("Bonked")').click();
+  await page
+    .locator('.debrief-log [role="radiogroup"][aria-label="Energy"] [role="radio"]:has-text("Bonked")')
+    .click();
   await page.locator("#debrief-actual").fill("0");
   await page.click('.debrief-log button:has-text("Save and see the debrief")');
   await page.waitForSelector(".debrief-compare", { timeout: 15000 });
@@ -538,10 +558,10 @@ await step("the plan refuses to promise more than a gut can absorb", async () =>
   await planMode("A session");
   await page.waitForSelector("text=Carb / hour", { timeout: 15000 });
   // A five-hour race is where the target climbs past what any gut takes.
-  await page.selectOption("#goal", "race-preparation");
-  await page.selectOption("#activity", "cycling");
+  await choose("Goal", "Race preparation");
+  await choose("Activity", "Cycling");
   await page.locator("#duration").fill("300");
-  await page.locator('.segmented button:has-text("Race")').first().click();
+  await choose("Intensity", "Race");
   await page.waitForTimeout(1000);
 
   const target = Number(/(\d+)/.exec(await page.locator('.stat:has-text("Carb / hour") .stat-value').first().innerText())?.[1]);
@@ -714,6 +734,38 @@ await step("every dropdown is themed, on-screen and aligned with its label", asy
   });
   if (bad.length) throw new Error(bad.join("; "));
 });
+await step("a single choice shows all its options, and answers the arrow keys", async () => {
+  await planMode("A session");
+  await page.waitForSelector("text=Carb / hour", { timeout: 15000 });
+
+  // The goal picker exists to show the sentence that tells two goals apart.
+  // A dropdown collapsed four of the five and truncated the fifth.
+  const goals = page.locator('[role="radiogroup"][aria-label="Goal"] [role="radio"]');
+  if ((await goals.count()) !== 5) throw new Error(`expected 5 goals on screen, saw ${await goals.count()}`);
+  const blurbs = await page.locator('[aria-label="Goal"] .choice-card-blurb').allInnerTexts();
+  if (blurbs.length !== 5 || blurbs.some((b) => b.trim().length < 10)) {
+    throw new Error(`goals are not explaining themselves: ${blurbs.join(" | ")}`);
+  }
+  // Nothing may be cut off — truncation is the defect this replaced.
+  const clipped = await page.evaluate(() =>
+    [...document.querySelectorAll('[aria-label="Goal"] .choice-card-blurb')]
+      .filter((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)
+      .map((el) => el.textContent),
+  );
+  if (clipped.length) throw new Error(`clipped goal text: ${clipped.join(" | ")}`);
+
+  // Exactly one option is checked, and the arrow keys move that selection —
+  // the radio-group contract these groups claim through their roles.
+  const checked = async (label) =>
+    page.locator(`[role="radiogroup"][aria-label="${label}"] [role="radio"][aria-checked="true"]`);
+  if ((await (await checked("Intensity")).count()) !== 1) throw new Error("intensity has no single selection");
+  const was = await (await checked("Intensity")).innerText();
+  await (await checked("Intensity")).focus();
+  await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(300);
+  const now = await (await checked("Intensity")).innerText();
+  if (was === now) throw new Error(`ArrowRight did not move the selection off "${was}"`);
+});
 await step("the account menu opens under its trigger and stays on screen", async () => {
   await page.click(".account-btn");
   await page.waitForSelector(".account-dropdown");
@@ -830,6 +882,64 @@ await step("skip link is the first tab stop", async () => {
   await page.keyboard.press("Tab");
   const t = await page.evaluate(() => document.activeElement?.textContent ?? "");
   if (!/skip to content/i.test(t)) throw new Error(`first tab stop was "${t}"`);
+});
+
+console.log("── a phone, in the longest language ──");
+await step("no screen is wider than the phone it is on, in German", async () => {
+  // The defect this guards: a grid track's automatic minimum is its content's
+  // min-content width, so one row of equal columns with long German labels
+  // widened its whole column past the viewport — and because the page clips
+  // sideways overflow, the right-hand edge of every control in that column was
+  // simply cut off with nothing to scroll to. English fitted, so it was
+  // invisible until someone switched language on a phone.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => localStorage.setItem("ygf.lang", "de"));
+  await page.goto(B, { waitUntil: "networkidle" });
+  await page.waitForTimeout(1500);
+
+  const tooWide = () =>
+    page.evaluate(() => {
+      // Something that sticks out of a box which clips or scrolls is contained
+      // on purpose — a map tile, a wide table, a chart drawn past its frame.
+      // Only overflow that reaches the page unclipped is a layout defect, so
+      // the walk stops at `.page`, whose own `overflow-x: clip` is what turns
+      // this class of bug into silent truncation in the first place.
+      const contained = (el) => {
+        for (let p = el.parentElement; p && !p.classList.contains("page"); p = p.parentElement) {
+          if (getComputedStyle(p).overflowX !== "visible") return true;
+        }
+        return false;
+      };
+      const names = [...document.querySelectorAll(".page *")]
+        .filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width > 40 && r.right > window.innerWidth + 1 && !contained(el);
+        })
+        .map((el) => `${el.tagName.toLowerCase()}.${(el.getAttribute("class") ?? "").split(" ")[0]}`);
+      return [...new Set(names)].slice(0, 6);
+    });
+
+  const bad = [];
+  const tabs = await page.locator(".topnav-tab").count();
+  for (let i = 0; i < tabs; i++) {
+    await page.locator(".topnav-tab").nth(i).click();
+    await page.waitForTimeout(1600);
+    const name = (await page.locator(".topnav-tab").nth(i).innerText()).replace(/\n/g, " ");
+    for (const el of await tooWide()) bad.push(`${name}: ${el}`);
+    // The Plan screen is three screens behind one switcher; check all of them.
+    if (await page.locator(".plan-modes").count()) {
+      const modes = await page.locator(".plan-mode").count();
+      for (let m = 0; m < modes; m++) {
+        await page.locator(".plan-mode").nth(m).click();
+        await page.waitForTimeout(1200);
+        for (const el of await tooWide()) bad.push(`${name}/mode ${m}: ${el}`);
+      }
+    }
+  }
+
+  await page.evaluate(() => localStorage.setItem("ygf.lang", "en"));
+  await page.setViewportSize({ width: 1180, height: 900 });
+  if (bad.length) throw new Error([...new Set(bad)].join("; "));
 });
 
 await browser.close();

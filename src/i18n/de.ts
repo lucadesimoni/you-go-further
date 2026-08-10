@@ -88,6 +88,10 @@ export const de: Dictionary = {
   // ---- Common -------------------------------------------------------------
   "common.of": "von",
   "common.whyThis": "Warum das",
+  "common.showMore": "Mehr anzeigen",
+  "common.showLess": "Weniger anzeigen",
+  "common.showRest": "{count} weitere anzeigen",
+  "common.showRest_one": "1 weitere anzeigen",
 
   // ---- Domain option labels ----------------------------------------------
   "goal.general-fitness": "Allgemeine Fitness",
@@ -281,6 +285,7 @@ export const de: Dictionary = {
   "catalog.productName": "Produktname",
   "catalog.brand": "Marke",
   "catalog.category": "Kategorie",
+  "catalog.filter": "Nach Kategorie filtern",
   "catalog.phases": "Phasen",
   "catalog.serving": "Portion",
   "catalog.carbsG": "Kohlenhydrate (g)",
@@ -660,7 +665,6 @@ export const de: Dictionary = {
   "event.intro":
     "Wähle das Rennen, auf das du hintrainierst. Die Hinweise richten sich nach dem Kalender, und aus dem Wetter wird eine echte Prognose, sobald das Datum in Reichweite kommt.",
   "event.choose": "Rennen",
-  "event.none": "Kein Rennen gewählt",
   "event.change": "Anderes Rennen wählen",
   "event.organiser": "Veranstalter",
   "event.dateApproximate": "Übliches Wochenende — Datum beim Veranstalter prüfen.",

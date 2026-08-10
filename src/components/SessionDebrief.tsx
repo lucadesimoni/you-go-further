@@ -3,6 +3,7 @@ import type { SessionDebrief as Debrief } from "../analysis";
 import type { RouteFuelPlan } from "../engine";
 import type { GiRating, EnergyRating, SessionFeedback } from "../feedback";
 import { useT, type TranslationKey } from "../i18n";
+import { ChoiceRow } from "./Choice";
 
 const VERDICT_KEY: Record<Debrief["verdict"], TranslationKey> = {
   "under-fuelled": "debrief.verdictUnderFuelled",
@@ -56,23 +57,19 @@ export function SessionDebrief({
           <h4 className="debrief-ask">{t("debrief.howWasIt")}</h4>
           <p className="detail">{t("finding.noLog")}</p>
 
-          <span className="group-label">{t("debrief.gut")}</span>
-          <div className="segmented">
-            {GI.map((g) => (
-              <button key={g} type="button" className={gi === g ? "seg active" : "seg"} onClick={() => setGi(g)}>
-                {t(`debrief.gi.${g}` as TranslationKey)}
-              </button>
-            ))}
-          </div>
+          <ChoiceRow
+            label={t("debrief.gut")}
+            value={gi}
+            onChange={setGi}
+            options={GI.map((g) => ({ value: g, label: t(`debrief.gi.${g}` as TranslationKey) }))}
+          />
 
-          <span className="group-label">{t("debrief.energy")}</span>
-          <div className="segmented">
-            {ENERGY.map((e) => (
-              <button key={e} type="button" className={energy === e ? "seg active" : "seg"} onClick={() => setEnergy(e)}>
-                {t(`debrief.energy.${e}` as TranslationKey)}
-              </button>
-            ))}
-          </div>
+          <ChoiceRow
+            label={t("debrief.energy")}
+            value={energy}
+            onChange={setEnergy}
+            options={ENERGY.map((e) => ({ value: e, label: t(`debrief.energy.${e}` as TranslationKey) }))}
+          />
 
           <label htmlFor="debrief-actual">
             {t("debrief.actualCarbs")} <span className="value">{actual} g/h</span>

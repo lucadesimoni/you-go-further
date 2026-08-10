@@ -83,6 +83,10 @@ export const en = {
   // ---- Common -------------------------------------------------------------
   "common.of": "of",
   "common.whyThis": "Why this",
+  "common.showMore": "Show more",
+  "common.showLess": "Show less",
+  "common.showRest": "Show {count} more",
+  "common.showRest_one": "Show 1 more",
 
   // ---- Domain option labels ----------------------------------------------
   "goal.general-fitness": "General fitness",
@@ -272,6 +276,7 @@ export const en = {
   "catalog.productName": "Product name",
   "catalog.brand": "Brand",
   "catalog.category": "Category",
+  "catalog.filter": "Filter by category",
   "catalog.phases": "Phases",
   "catalog.serving": "Serving",
   "catalog.carbsG": "Carbs (g)",
@@ -633,7 +638,6 @@ export const en = {
   "event.intro":
     "Pick the race you are training for. The advice follows the calendar, and the weather turns into a real forecast once the date comes into range.",
   "event.choose": "Race",
-  "event.none": "No race selected",
   "event.change": "Choose another race",
   "event.organiser": "Organiser",
   "event.dateApproximate": "Usual weekend — confirm the date with the organiser.",
