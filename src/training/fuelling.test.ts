@@ -153,3 +153,34 @@ describe("learnings, from this athlete's data", () => {
     }
   });
 });
+
+describe("it does not read the target back as the athlete's own data", () => {
+  const stats = prepStats(plan);
+  const log = (rate: number): SessionFeedback => ({
+    id: Math.random().toString(),
+    date: "2026-04-20T08:00:00Z",
+    durationMin: 150,
+    plannedCarbPerHourG: rate,
+    actualCarbPerHourG: rate,
+    gi: "none",
+    energy: "steady",
+  });
+
+  it("reports the rate the logs show, not the one the race wants", () => {
+    // "Your logs already show 105 g/h" to somebody whose best session was 72 is
+    // the invented personalisation this whole list exists to avoid.
+    const feedback = [log(72), log(65), log(38)];
+    const found = planLearnings(plan, stats, { estimatedMin: 330, feedback }).find(
+      (l) => l.id === "belowTargetSoFar",
+    );
+    expect(found).toBeDefined();
+    expect(found!.values.best).toBe(72);
+    expect(found!.values.target).toBe(90);
+  });
+
+  it("only claims tolerance once the logs actually reach the rate", () => {
+    const ids = planLearnings(plan, stats, { estimatedMin: 330, feedback: [log(95), log(92), log(90)] }).map((l) => l.id);
+    expect(ids).toContain("toleratesRate");
+    expect(ids).not.toContain("belowTargetSoFar");
+  });
+});

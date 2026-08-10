@@ -1,6 +1,16 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatClock } from "../engine";
-import type { TrainingPlan, TrainingWeek } from "../training";
+import type { SessionFeedback } from "../feedback";
+import type { Activity } from "../model";
+import {
+  planLearnings,
+  prepStats,
+  sessionFuelling,
+  type FuellingContext,
+  type PlannedSession,
+  type TrainingPlan,
+  type TrainingWeek,
+} from "../training";
 import { useT, type TranslationKey } from "../i18n";
 
 /** How many weeks to show before the athlete asks for the rest. */
@@ -19,10 +29,28 @@ const PREVIEW_WEEKS = 6;
  * at 90 g/h with your race products" are different sessions, and only one of
  * them prepares a gut.
  */
-export function TrainingPlanView({ plan }: { plan: TrainingPlan }) {
+export function TrainingPlanView({
+  plan,
+  fuelling,
+  feedback = [],
+  activities = [],
+}: {
+  plan: TrainingPlan;
+  /** Body and conditions, so each session's dosing is this athlete's. */
+  fuelling: FuellingContext;
+  feedback?: SessionFeedback[];
+  activities?: Activity[];
+}) {
   const t = useT();
   const [expanded, setExpanded] = useState(false);
+  const [openSession, setOpenSession] = useState<string | null>(null);
   const weeks = expanded ? plan.weeks : plan.weeks.slice(0, PREVIEW_WEEKS);
+
+  const stats = useMemo(() => prepStats(plan), [plan]);
+  const learnings = useMemo(
+    () => planLearnings(plan, stats, { feedback, activities, estimatedMin: plan.peakLongMin }),
+    [plan, stats, feedback, activities],
+  );
 
   return (
     <div className="train">
@@ -67,17 +95,56 @@ export function TrainingPlanView({ plan }: { plan: TrainingPlan }) {
                 .filter((s) => s.kind !== "rest")
                 .map((s, i) => (
                   <li key={i} className={`train-session train-session-${s.kind}`}>
-                    <span className="train-session-kind">{t(`train.kind.${s.kind}` as TranslationKey)}</span>
-                    <span className="train-session-dur">{formatClock(s.durationMin)}</span>
-                    <span className="train-session-focus">
-                      {t(`train.focus.${s.focusId}` as TranslationKey, { carb: s.carbPerHourG })}
-                    </span>
+                    <button
+                      type="button"
+                      className="train-session-row"
+                      aria-expanded={openSession === `${w.startDate}-${i}`}
+                      onClick={() => setOpenSession(openSession === `${w.startDate}-${i}` ? null : `${w.startDate}-${i}`)}
+                    >
+                      <span className="train-session-kind">{t(`train.kind.${s.kind}` as TranslationKey)}</span>
+                      <span className="train-session-dur">{formatClock(s.durationMin)}</span>
+                      <span className="train-session-focus">
+                        {t(`train.focus.${s.focusId}` as TranslationKey, { carb: s.carbPerHourG })}
+                      </span>
+                      <span className="train-session-more">{t("train.sessionFuel")}</span>
+                    </button>
+                    {/* Before, during and after for this exact session. Kept
+                        behind a click: five sessions a week with three lines
+                        each is a wall, and the athlete only needs the detail
+                        for the one they are about to do. */}
+                    {openSession === `${w.startDate}-${i}` && <SessionFuel session={s} ctx={fuelling} />}
                   </li>
                 ))}
             </ul>
           </li>
         ))}
       </ol>
+
+      <div className="train-prep">
+        <h5 className="train-sub">{t("train.prep")}</h5>
+        <ul className="train-prep-list">
+          <li>{t("train.prepSessions", { n: stats.sessions })}</li>
+          <li>{t("train.prepHours", { n: stats.hours })}</li>
+          <li>{t("train.prepRehearsals", { n: stats.sessionsAtRaceRate, carb: plan.raceCarbPerHourG })}</li>
+          <li>{t("train.prepCarb", { n: stats.carbToPractiseG })}</li>
+          {stats.weeksToRaceRate !== undefined && (
+            <li>{t("train.prepFirstRaceRate", { n: stats.weeksToRaceRate })}</li>
+          )}
+        </ul>
+      </div>
+
+      {/* Tailored, or honest about not being. With no logs the first item asks
+          for one rather than dressing a population figure as an insight. */}
+      <div className="train-learn">
+        <h5 className="train-sub">{t("train.learnings")}</h5>
+        <ul>
+          {learnings.map((l) => (
+            <li key={l.id} className={`train-learn-${l.severity}`}>
+              {t(`train.learn.${l.id}` as TranslationKey, l.values)}
+            </li>
+          ))}
+        </ul>
+      </div>
 
       {plan.weeks.length > PREVIEW_WEEKS && (
         <button type="button" className="link-btn" onClick={() => setExpanded(!expanded)}>
@@ -87,6 +154,32 @@ export function TrainingPlanView({ plan }: { plan: TrainingPlan }) {
 
       <p className="energy-note train-disclaimer">{t("train.disclaimer")}</p>
     </div>
+  );
+}
+
+/** Before, during and after for one planned session. */
+function SessionFuel({ session, ctx }: { session: PlannedSession; ctx: FuellingContext }) {
+  const t = useT();
+  const f = useMemo(() => sessionFuelling(session, ctx), [session, ctx]);
+  return (
+    <dl className="train-fuel-detail">
+      <dt>{t("train.pre")}</dt>
+      <dd>{t("train.preValue", { carb: f.pre.carbG, fluid: f.pre.fluidMl })}</dd>
+      <dt>{t("train.during")}</dt>
+      <dd>
+        {f.during.carbPerHourG > 0
+          ? t("train.duringValue", {
+              carb: f.during.carbPerHourG,
+              fluid: f.during.fluidPerHourMl,
+              sodium: f.during.sodiumPerLitreMg,
+              feeds: f.during.feeds,
+            })
+          : t("train.duringNone")}
+        {f.during.rehearsalRateG > 0 && <span className="pill train-rehearsal">{t("train.rehearsalTag")}</span>}
+      </dd>
+      <dt>{t("train.after")}</dt>
+      <dd>{t("train.afterValue", { carb: f.after.carbG, protein: f.after.proteinG })}</dd>
+    </dl>
   );
 }
 

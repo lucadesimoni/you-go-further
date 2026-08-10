@@ -752,6 +752,33 @@ export const en = {
   "train.fuel.holdRate": "Hold the rate you have earned.",
   "train.fuel.loadAndTaper": "Training drops; carbohydrate does not.",
   "train.fuel.raceWeek": "Nothing new. Load in the last 48 hours.",
+
+  // ---- Training plan: per-session fuelling, stats, learnings --------------
+  "train.prep": "What this build adds up to",
+  "train.prepSessions": "{n} sessions",
+  "train.prepHours": "{n} h in total",
+  "train.prepRehearsals": "{n} rehearsals at {carb} g/h",
+  "train.prepCarb": "{n} g of carbohydrate to practise with",
+  "train.prepFirstRaceRate": "Race rate from week {n}",
+  "train.learnings": "What this means for you",
+  "train.sessionFuel": "Fuel",
+  "train.pre": "Before",
+  "train.during": "During",
+  "train.after": "After",
+  "train.preValue": "{carb} g carbohydrate 1–3 h before, {fluid} ml fluid",
+  "train.duringValue": "{carb} g/h · {fluid} ml/h · {sodium} mg sodium/l · {feeds} feeds",
+  "train.duringNone": "Water is enough — short and easy.",
+  "train.afterValue": "{carb} g carbohydrate + {protein} g protein within the hour",
+  "train.rehearsalTag": "rehearsal",
+  "train.learn.noLogsYet": "Log one long session and this plan starts learning: the rate you tolerate is the rate it should build toward, and right now it is working from population figures.",
+  "train.learn.gutCeilingBelowTarget": "Your own logs put you around {ceiling} g/h, and this race wants {target} g/h. Build toward it slowly on the long days rather than forcing it, and log what happens — {samples} sessions in, that ceiling is your data, not a guess.",
+  "train.learn.belowTargetSoFar": "Your highest logged rate so far is {best} g/h across {samples} sessions, and this race wants {target} g/h. Nothing says you cannot get there — that gap is what the long days are for.",
+  "train.learn.toleratesRate": "Your logs already show {rate} g/h going down without trouble across {samples} sessions. Hold that on the long days and change nothing else.",
+  "train.learn.underFuelling": "You have been finishing sessions flat. The plan adds about {bias} g/h on the long days to close that.",
+  "train.learn.fewRaceRateSessions": "Only {sessions} of your long days reach full race rate — aim for {want}, or race day is the first time your gut meets it.",
+  "train.learn.longRunGap": "Your longest recent session is {longest} min and the plan builds to {peak}. That is a real step up; take the cut-back weeks seriously.",
+  "train.learn.rateStepLarge": "The carbohydrate rate climbs by up to {step} g/h between weeks. If that sits badly, hold a week rather than pushing through.",
+  "train.learn.practiseProducts": "Use the exact products you will race with on all {sessions} long days. Flavour fatigue and an unfamiliar gel are race-day problems you can solve now.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

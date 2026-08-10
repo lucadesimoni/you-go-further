@@ -162,6 +162,8 @@ describe("no dead keys", () => {
       /^train\.kind\./,
       /^train\.focus\./,
       /^train\.fuel\./,
+      // Learnings: t(`train.learn.${l.id}`).
+      /^train\.learn\./,
     ];
     const unused = keys.filter(
       (k) => !k.endsWith("_one") && !body.includes(`"${k}"`) && !builtDynamically.some((r) => r.test(k)),

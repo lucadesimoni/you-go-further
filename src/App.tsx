@@ -391,6 +391,7 @@ export function App() {
                 — and its answer depends on a date the GPX below does not carry. */}
             <EventPlanner
               activities={activities}
+              feedback={feedback}
               onPlan={(prefill) => {
                 planFor(prefill);
                 toast.info(t("toast.planningRace"));

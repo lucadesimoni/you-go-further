@@ -3404,13 +3404,10 @@ code {
 .train-week-out { margin-left: auto; font-size: var(--text-2xs); color: var(--muted); }
 .train-fuel { margin: var(--space-2) 0 var(--space-3); font-size: var(--text-base); color: var(--muted); }
 .train-sessions { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
-.train-session {
-  display: grid;
-  grid-template-columns: 5.5rem 4rem 1fr;
-  gap: var(--space-3);
-  align-items: baseline;
-  font-size: var(--text-base);
-}
+/* The row's own grid moved onto the button when the session became openable;
+   leaving it here placed the expanded detail in a grid cell *beside* the row
+   instead of under it, and the two drew on top of each other. */
+.train-session { font-size: var(--text-base); }
 .train-session-kind { font-weight: 600; }
 .train-session-dur { font-variant-numeric: tabular-nums; color: var(--muted); }
 .train-session-focus { color: var(--muted); }
@@ -3419,6 +3416,77 @@ code {
 .train-session-long .train-session-kind,
 .train-session-race .train-session-kind { color: var(--accent-ink); }
 .train-disclaimer { margin-top: var(--space-4); }
+/* One session's own before / during / after, opened on demand: five sessions a
+   week with three lines each is a wall nobody reads. */
+.train-session-row {
+  display: grid;
+  grid-template-columns: 5.5rem 4rem 1fr auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.train-session-more { font-size: var(--text-2xs); color: var(--link); }
+.train-session-row:hover .train-session-more { color: var(--link-hover); }
+.train-fuel-detail {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-3) 0 var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  font-size: var(--text-base);
+}
+.train-fuel-detail dt { color: var(--muted); font-weight: 600; }
+.train-fuel-detail dd { margin: 0; }
+.train-rehearsal { margin-left: var(--space-2); background: var(--accent-soft); color: var(--accent-ink); }
+.train-sub {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.train-prep { margin-top: var(--space-5); }
+.train-prep-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-size: var(--text-base);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.train-learn { margin-top: var(--space-5); }
+.train-learn ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.train-learn li {
+  padding-left: var(--space-5);
+  border-left: 2px solid var(--border-strong);
+  font-size: var(--text-base);
+  color: var(--muted);
+}
+.train-learn-act { border-left-color: var(--accent); color: var(--text); }
+@media (max-width: 560px) {
+  .train-session-row { grid-template-columns: 4.5rem 3.5rem 1fr; }
+  .train-session-more { grid-column: 1 / -1; }
+  .train-fuel-detail { grid-template-columns: 1fr; }
+}
 @media (max-width: 560px) {
   .train-session { grid-template-columns: 4.5rem 3.5rem 1fr; }
   .train-week-out { margin-left: 0; }

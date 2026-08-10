@@ -207,6 +207,7 @@ export type LearningId =
   | "noLogsYet"
   | "gutCeilingBelowTarget"
   | "toleratesRate"
+  | "belowTargetSoFar"
   | "underFuelling"
   | "fewRaceRateSessions"
   | "longRunGap"
@@ -256,11 +257,26 @@ export function planLearnings(
         values: { ceiling: insight.carbCeilingG, target: plan.raceCarbPerHourG, samples: insight.samples },
       });
     } else {
-      out.push({
-        id: "toleratesRate",
-        severity: "info",
-        values: { rate: plan.raceCarbPerHourG, samples: insight.samples },
-      });
+      /**
+       * Report the rate their sessions actually show, not the one the race
+       * wants. Reading the target back to the athlete as though it were their
+       * own data — "your logs already show 105 g/h" to somebody whose best
+       * logged session was 72 — is precisely the invented personalisation this
+       * whole list is meant to avoid.
+       */
+      const best = Math.max(
+        0,
+        ...feedback.map((f) => f.actualCarbPerHourG ?? f.plannedCarbPerHourG ?? 0),
+      );
+      if (best >= plan.raceCarbPerHourG) {
+        out.push({ id: "toleratesRate", severity: "info", values: { rate: best, samples: insight.samples } });
+      } else {
+        out.push({
+          id: "belowTargetSoFar",
+          severity: "info",
+          values: { best, target: plan.raceCarbPerHourG, samples: insight.samples },
+        });
+      }
     }
     if ((insight.carbBiasG ?? 0) > 0) {
       out.push({ id: "underFuelling", severity: "act", values: { bias: insight.carbBiasG as number } });

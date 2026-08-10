@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Activity as SyncedActivity } from "../model";
+import type { SessionFeedback } from "../feedback";
 import { formatClock } from "../engine";
 import { loadProfile } from "../api/profileStore";
 import {
@@ -36,10 +37,13 @@ const STORAGE_KEY = "ygf.event.v1";
  */
 export function EventPlanner({
   activities = [],
+  feedback = [],
   onPlan,
 }: {
   /** The athlete's synced sessions, for the readiness check. */
   activities?: SyncedActivity[];
+  /** Their logged sessions, so the plan's learnings are actually theirs. */
+  feedback?: SessionFeedback[];
   /**
    * Carry this race into the session planner. The whole session shape goes,
    * not just the activity: a race is planned at race intensity, and sending
@@ -273,7 +277,21 @@ export function EventPlanner({
               raceCarbPerHourG: plan.target.carbPerHourG,
               activities,
             });
-            return hasUsefulPlan(training) ? <TrainingPlanView plan={training} /> : null;
+            return hasUsefulPlan(training) ? (
+              <TrainingPlanView
+                plan={training}
+                fuelling={{
+                  event,
+                  bodyWeightKg: loadProfile().bodyWeightKg,
+                  sweatLevel: loadProfile().sweatLevel,
+                  caffeineOk: loadProfile().caffeineOk,
+                  conditions: plan.weather.peakConditions,
+                  feedback,
+                }}
+                feedback={feedback}
+                activities={activities}
+              />
+            ) : null;
           })()}
 
           {plan.legs.length > 0 ? (
