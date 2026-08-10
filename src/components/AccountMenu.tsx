@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Account } from "../auth";
 import { ROLE_LABELS } from "../auth";
 import type { ProgressProfile } from "../progress";
-import { PERSONAS } from "../personas";
-import type { Principal } from "../auth";
+import { PERSONAS, type Persona } from "../personas";
 import { useT, LANGS, type Lang } from "../i18n";
 import type { ThemeChoice } from "../theme/theme";
 
@@ -37,7 +36,7 @@ export function AccountMenu({
   themeChoice: ThemeChoice;
   onTheme: (c: ThemeChoice) => void;
   onNavigate: (tab: string) => void;
-  onSwitchDemo: (persona: Principal) => void;
+  onSwitchDemo: (persona: Persona) => void;
   onSignOut: () => void;
 }) {
   const t = useT();

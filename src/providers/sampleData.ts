@@ -96,13 +96,38 @@ const HR_FRAC: Record<Exclude<SessionKind, "rest">, [number, number]> = {
   long: [0.67, 0.78],
 };
 
-/** Session titles, the way they actually arrive from a provider. */
-const NAMES: Record<Exclude<SessionKind, "rest">, string[]> = {
-  easy: ["Easy run", "Recovery jog", "Morning shakeout", "Easy spin"],
-  quality: ["Threshold intervals", "Tempo session", "Hill repeats", "5×1000 m"],
-  medium: ["Steady ride", "Progression run", "Midweek long", "Rolling loop"],
-  long: ["Long run", "Long ride", "Weekend long one", "Sunday endurance"],
+/**
+ * Session titles, the way they actually arrive from a provider.
+ *
+ * Keyed on the sport as well as the kind, because a name has to survive being
+ * read next to the figures: a pool of shared titles put "Progression run" on a
+ * 68.9 km session at 26 km/h, which is a ride however it is labelled.
+ */
+type NameSport = "run" | "ride" | "swim";
+const NAMES: Record<NameSport, Record<Exclude<SessionKind, "rest">, string[]>> = {
+  run: {
+    easy: ["Easy run", "Recovery jog", "Morning shakeout"],
+    quality: ["Threshold intervals", "Tempo run", "Hill repeats", "5×1000 m"],
+    medium: ["Progression run", "Steady run", "Rolling loop"],
+    long: ["Long run", "Weekend long one", "Sunday endurance"],
+  },
+  ride: {
+    easy: ["Easy spin", "Recovery spin", "Coffee ride"],
+    quality: ["Threshold intervals", "Tempo ride", "Hill repeats"],
+    medium: ["Steady ride", "Rolling loop", "Midweek ride"],
+    long: ["Long ride", "Weekend long one", "Sunday endurance"],
+  },
+  swim: {
+    easy: ["Easy swim", "Technique set"],
+    quality: ["Threshold 100s", "Swim intervals"],
+    medium: ["Steady swim", "Continuous set"],
+    long: ["Long swim", "Distance set"],
+  },
 };
+
+/** Which name pool a sport draws from. */
+const nameSportOf = (sport: SportType): NameSport =>
+  sport === "ride" ? "ride" : sport === "swim" ? "swim" : "run";
 
 /**
  * Synthesize a plausible outdoor GPS loop (a smooth closed path) of roughly the
@@ -316,7 +341,12 @@ export function generateSampleActivities(
       trainingLoad: provider === "strava" ? undefined : Math.round((durationSec / 60) * hrFrac * 2.2),
       // Outdoor sessions carry a GPS track; a trainer or a pool does not.
       route: indoor ? undefined : generateRoute(rand, distanceM, home),
-      name: indoor && sport !== "swim" ? `${pick(rand, NAMES[actual])} (indoor)` : pick(rand, NAMES[actual]),
+      name: (() => {
+        const title = pick(rand, NAMES[nameSportOf(sport)][actual]);
+        // A trainer or a treadmill is worth saying: it is why the session has no
+        // GPS track, and an athlete scanning the list wants to know which it was.
+        return indoor && sport !== "swim" ? `${title} (indoor)` : title;
+      })(),
     });
   }
   // Newest first is what every provider API returns, and what the UI expects.

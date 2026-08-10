@@ -235,6 +235,19 @@ describe("a week that looks like a week", () => {
     expect(new Set(acts.map((a) => a.name)).size).toBeGreaterThan(5);
   });
 
+  it("gives a ride a ride's name", () => {
+    // Names were pooled across sports, which put "Progression run" on a 68.9 km
+    // session at 26 km/h. A name has to survive being read next to the figures.
+    for (const p of ["strava", "garmin", "polar"] as const) {
+      for (const a of generateSampleActivities(p, "2026-01-05T00:00:00Z", "2026-06-01T00:00:00Z")) {
+        const n = a.name ?? "";
+        if (a.sport === "ride") expect(n, `${a.sport}: ${n}`).not.toMatch(/\brun\b|jog|shakeout/i);
+        if (a.sport === "run" || a.sport === "trail-run") expect(n, `${a.sport}: ${n}`).not.toMatch(/ride|spin/i);
+        if (a.sport === "swim") expect(n, `${a.sport}: ${n}`).toMatch(/swim|set|100s/i);
+      }
+    }
+  });
+
   it("trains harder on the hard days", () => {
     // Intensity has to show up in the data, or every session looks the same to
     // the analysis that reads it.

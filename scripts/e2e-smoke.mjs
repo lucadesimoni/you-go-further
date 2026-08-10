@@ -342,8 +342,13 @@ await step("a run can be chosen, not just the latest ride", async () => {
   if (!run) throw new Error(`no running session offered (got ${chips.join(" | ")})`);
   await page.locator(".route-picker .chip").filter({ hasText: /^Run|^Trail run/ }).first().click();
   await page.waitForTimeout(1200);
-  const foot = await page.locator(".energy-foot").innerText();
-  if (!/run/i.test(foot)) throw new Error(`picker did not switch to a run: ${foot}`);
+  // Read the selection off the picker, which states the sport, rather than off
+  // the map's footer, which shows the session's own title. That footer only
+  // ever matched /run/ because sample sessions were literally named "run
+  // session" — a real title like "Sunday endurance" is a better label and was
+  // failing an assertion that had quietly been testing the generator.
+  const active = await page.locator(".route-picker .chip-active").innerText();
+  if (!/^Run|^Trail run/.test(active)) throw new Error(`picker did not switch to a run: ${active}`);
 });
 await step("fuel stops are placed on the height profile, not just the clock", async () => {
   // Walk the sessions until one is long enough to need on-route feeds.

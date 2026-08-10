@@ -2,9 +2,7 @@ import { useState } from "react";
 import {
   appleConfigured,
   googleConfigured,
-  ROLE_LABELS,
   saveAccount,
-  signInAsDemo,
   signInWithAppleReal,
   signInWithEmail,
   signInWithGoogleReal,
@@ -12,6 +10,7 @@ import {
   type Account,
 } from "../auth";
 import { PERSONAS } from "../personas";
+import { enterDemo } from "../api/onboarding";
 import { api, isApiConfigured } from "../api/client";
 import { useI18n, LANGS, type Lang } from "../i18n";
 
@@ -164,9 +163,18 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
           <div className="auth-demo">
             <span className="auth-demo-label">{t("auth.exploreDemo")}</span>
             <div className="auth-demo-row">
+              {/* The person, not the role. Labelling these by role gave two
+                  chips both reading "Athlete" — and the solo athlete and the
+                  club athlete are the two most different accounts here. */}
               {PERSONAS.map((p) => (
-                <button key={p.id} type="button" className="auth-demo-chip" onClick={() => onSignedIn(signInAsDemo(p))}>
-                  {ROLE_LABELS[p.role]}
+                <button
+                  key={p.id}
+                  type="button"
+                  className="auth-demo-chip"
+                  onClick={() => onSignedIn(enterDemo(p))}
+                >
+                  <span className="auth-demo-name">{p.name}</span>
+                  <span className="auth-demo-blurb">{p.blurb}</span>
                 </button>
               ))}
             </div>

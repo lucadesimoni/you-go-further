@@ -211,7 +211,13 @@ export function HomeView({
             {recent.map((a) => (
               <li key={a.id} className="home-session">
                 <span className="home-session-date">{dateFmt.format(new Date(a.startTime))}</span>
-                <span className="home-session-sport">{SPORT_KEY[a.sport] ? t(SPORT_KEY[a.sport]) : a.sport}</span>
+                {/* The athlete's own title when the provider sent one — that is
+                    what they recognise the session by. "Trail running" is the
+                    fallback for a session that arrived without a name, not the
+                    thing to show instead of "Hill repeats". */}
+                <span className="home-session-sport">
+                  {a.name?.trim() || (SPORT_KEY[a.sport] ? t(SPORT_KEY[a.sport]) : a.sport)}
+                </span>
                 <span className="home-session-figs">
                   {a.distanceM ? `${(a.distanceM / 1000).toFixed(1)} km` : "—"} ·{" "}
                   {formatClock(Math.round(a.durationSec / 60))}

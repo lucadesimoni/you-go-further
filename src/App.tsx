@@ -15,10 +15,10 @@ import { EventPlanner } from "./components/EventPlanner";
 import { ToastHost } from "./components/ToastHost";
 import { ConfirmHost } from "./components/ConfirmHost";
 import { Onboarding } from "./components/Onboarding";
-import { isOnboarded, setOnboarded, getOnboardStep } from "./api/onboarding";
+import { isOnboarded, setOnboarded, getOnboardStep, enterDemo, seedDemoFeedback, demoLogsSeeded, connectDemoSource } from "./api/onboarding";
 import { toast } from "./ui/toast";
 import { effectiveTier, type Tier } from "./subscription";
-import { currentAccount, hasPermission, signInAsDemo, signOut, type Account, type Permission } from "./auth";
+import { currentAccount, hasPermission, signOut, type Account, type Permission } from "./auth";
 import { isSolo } from "./personas";
 import { getConfig } from "./config";
 import type { Activity } from "./model";
@@ -147,14 +147,32 @@ export function App() {
       .catch(() => {});
     // Real synced sessions + connections (empty in the API-less build).
     if (isApiConfigured()) {
-      api
-        .activities()
-        .then((r) => alive && setActivities(r.activities))
-        .catch(() => {});
-      api
-        .connections()
-        .then((r) => alive && setConnectionsCount(r.connections.length))
-        .catch(() => {});
+      // A demo account arrives connected. Without this "explore a demo account"
+      // lands on an empty Home with nothing to explore — no sessions, no week,
+      // no insights — because a real athlete's first job is to connect a
+      // provider, which is not what someone clicking "show me the product" is
+      // there to do. It goes through the real OAuth path, so what appears is
+      // genuinely ingested rather than injected behind the pipeline.
+      void (async () => {
+        const isDemo = account.authProvider === "demo";
+        if (isDemo) await connectDemoSource().catch(() => false);
+        const [acts, conns] = await Promise.all([
+          api.activities().catch(() => null),
+          api.connections().catch(() => null),
+        ]);
+        if (!alive) return;
+        if (conns) setConnectionsCount(conns.connections.length);
+        if (!acts) return;
+        setActivities(acts.activities);
+        // A demo account also gets a few session logs the first time, so the
+        // half of the product that *learns* from outcomes has something to
+        // show. A real athlete is never seeded — their logs are their own.
+        if (isDemo && acts.activities.length > 0 && !demoLogsSeeded()) {
+          await seedDemoFeedback(acts.activities, account.role, addFeedback);
+          const list = await loadFeedback(account.role).catch(() => null);
+          if (alive && list) setFeedback(list);
+        }
+      })();
     }
     // The profile is authoritative on the server — refresh the local cache.
     void syncProfile();
@@ -166,11 +184,17 @@ export function App() {
   // them even though they aren't in visibleTabs; otherwise fall back to the first
   // permitted tab (e.g. after a role switch removes access to the current one).
   useEffect(() => {
+    // Only once there is an account. Signed out, `visibleTabs` is empty, so this
+    // used to "correct" the default Home tab to Plan before anyone had signed in
+    // — and the choice stuck, because Plan is permitted once they do. Onboarding
+    // hid it by setting the tab itself at the end; skip onboarding, as a demo
+    // account now does, and you landed on Plan instead of your own start screen.
+    if (!account) return;
     const menuScreens = ["profile", "subscription"];
     if (!visibleTabs.some((t) => t.id === tab) && !menuScreens.includes(tab)) {
       setTab(visibleTabs[0]?.id ?? "plan");
     }
-  }, [visibleTabs, tab]);
+  }, [account, visibleTabs, tab]);
 
   // The planner prefill is one-shot: the Planner reads it on mount, then we clear
   // it so later visits to Plan start from the user's own defaults.
@@ -298,7 +322,9 @@ export function App() {
             // screen full of permission errors. Drop the token and the client
             // is genuinely in demo mode as that persona.
             clearSessionToken();
-            setAccount(signInAsDemo(p));
+            // Same entry as the sign-in screen: a demo persona arrives set up,
+            // with their own body profile, rather than in a setup wizard.
+            setAccount(enterDemo(p));
           }}
           onSignOut={() => {
             clearSessionToken();
