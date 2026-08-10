@@ -382,6 +382,9 @@ export const de: Dictionary = {
 
   "energy.waterDips": "Auch diese Einheit nähert sich der Einbruchslinie — sie ist aber kurz und locker genug, dass Wasser die vernünftige Wahl ist.",
   "energy.waterFine": "Kurz und locker genug für die eigenen Speicher — Verpflegung ist hier eine Frage des Komforts, nicht des Einbruchs.",
+  "energy.planNotEnough": "Auch mit Verpflegung erreicht der Tank gegen {at} die Ermüdungslinie — so viel nimmt kein Magen auf. Geh früh ruhiger an oder plane ein, langsamer zu werden.",
+  "energy.gutCeiling": "Dein Magen verträgt etwa {ceiling} g/h, der Plan verlangt {asked} g/h — rund {lost} g kommen also nie an.",
+  "energy.delivered": "{n} g aufgenommen",
   "energy.planSavesFade": "Nur mit Wasser erreichen Sie die Einbruchslinie gegen {at} — der Plan hält Sie bis ins Ziel darüber, mit rund {finishPct}% Reserve.",
   "energy.planFinishesFresher": "Ins Ziel kämen Sie so oder so, aber mit Plan bei rund {finishPct}% statt {unfuelledPct}% — frischere Beine und schnellere Erholung.",
   "energy.store": "Speicher ≈ {n} g",

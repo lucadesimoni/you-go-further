@@ -372,6 +372,9 @@ export const en = {
 
   "energy.waterDips": "Even this session dips toward the fade line — but it's short and easy enough that water is the sensible call.",
   "energy.waterFine": "Short and easy enough to run on your own stores — fuel here is about comfort, not avoiding a fade.",
+  "energy.planNotEnough": "Even fuelled, the tank reaches the fade line around {at} — no gut absorbs this much. Go easier early, or plan to slow.",
+  "energy.gutCeiling": "Your gut can take about {ceiling} g/h; the plan asks {asked} g/h, so roughly {lost} g never arrives.",
+  "energy.delivered": "{n} g absorbed",
   "energy.planSavesFade": "On water alone you'd hit the fade line around {at} — the plan keeps you above it to the finish with ~{finishPct}% in reserve.",
   "energy.planFinishesFresher": "You'd finish either way, but the plan lands you at ~{finishPct}% against ~{unfuelledPct}% — fresher legs and a faster recovery.",
   "energy.store": "Store ≈ {n} g",

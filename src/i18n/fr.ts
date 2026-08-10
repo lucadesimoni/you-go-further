@@ -385,6 +385,9 @@ export const fr: Dictionary = {
 
   "energy.waterDips": "Même cette séance s'approche du seuil de défaillance — mais elle est assez courte et facile pour que l'eau soit le choix raisonnable.",
   "energy.waterFine": "Assez courte et facile pour vos propres réserves — ici la nutrition est une question de confort, pas de défaillance.",
+  "energy.planNotEnough": "Même ravitaillé, le réservoir atteint la ligne de fatigue vers {at} — aucun intestin n'absorbe autant. Partez plus prudemment ou prévoyez de ralentir.",
+  "energy.gutCeiling": "Votre intestin encaisse environ {ceiling} g/h ; le plan en demande {asked} g/h, donc près de {lost} g n'arrivent jamais.",
+  "energy.delivered": "{n} g absorbés",
   "energy.planSavesFade": "À l'eau seule vous atteindriez le seuil vers {at} — le plan vous maintient au-dessus jusqu'à l'arrivée, avec ~{finishPct}% de réserve.",
   "energy.planFinishesFresher": "Vous finiriez dans les deux cas, mais le plan vous amène à ~{finishPct}% contre ~{unfuelledPct}% — jambes plus fraîches et récupération plus rapide.",
   "energy.store": "Réserves ≈ {n} g",

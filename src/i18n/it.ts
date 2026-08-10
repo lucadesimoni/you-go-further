@@ -383,6 +383,9 @@ export const it: Dictionary = {
 
   "energy.waterDips": "Anche questa sessione si avvicina alla soglia di cedimento — ma è abbastanza breve e leggera perché l’acqua sia la scelta sensata.",
   "energy.waterFine": "Abbastanza breve e leggera per le sue scorte — qui la nutrizione è una questione di comfort, non di cedimento.",
+  "energy.planNotEnough": "Anche rifornito, il serbatoio tocca la linea di cedimento verso {at} — nessun intestino assorbe così tanto. Parti più cauto o metti in conto di rallentare.",
+  "energy.gutCeiling": "Il tuo intestino regge circa {ceiling} g/h, il piano ne chiede {asked} g/h: circa {lost} g non arrivano mai.",
+  "energy.delivered": "{n} g assorbiti",
   "energy.planSavesFade": "Con la sola acqua raggiungerebbe la soglia verso {at} — il piano la tiene sopra fino all’arrivo, con circa il {finishPct}% di riserva.",
   "energy.planFinishesFresher": "Arriverebbe comunque, ma con il piano al ~{finishPct}% invece che al ~{unfuelledPct}% — gambe più fresche e recupero più rapido.",
   "energy.store": "Scorte ≈ {n} g",

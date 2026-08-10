@@ -32,7 +32,9 @@ export function EnergyProfile({
   schedule: FuellingSchedule;
 }) {
   const t = useT();
-  const profile = useMemo(() => energyProfile(input, target), [input, target]);
+  // The schedule goes in: without it the model can only assume an even drip,
+  // and the whole point of the curve is that it responds to *these* feeds.
+  const profile = useMemo(() => energyProfile(input, target, schedule), [input, target, schedule]);
 
   const x = (minute: number) => PAD.l + (minute / profile.durationMin) * PLOT_W;
   const y = (pct: number) => PAD.t + (1 - pct / 100) * PLOT_H;
@@ -59,7 +61,25 @@ export function EnergyProfile({
           <span className="lg lg-fade">{t("energy.fadeLine")}</span>
         </span>
       </div>
-      <p className="detail energy-headline">{t(`energy.${profile.headlineId}`, { finishPct: profile.fuelledEndPct, unfuelledPct: profile.unfuelledEndPct, at: profile.unfuelledFadeMin !== undefined ? formatClock(profile.unfuelledFadeMin) : "" })}</p>
+      <p className="detail energy-headline">
+        {t(`energy.${profile.headlineId}`, {
+          finishPct: profile.fuelledEndPct,
+          unfuelledPct: profile.unfuelledEndPct,
+          at: formatClock(profile.fuelledFadeMin ?? profile.unfuelledFadeMin ?? 0),
+        })}
+      </p>
+      {/* Said plainly when the plan asks for more than a gut can take. The old
+          model subtracted intake from burn whatever the rate, so this case was
+          invisible: a 105 g/h plan looked like 105 g/h of help. */}
+      {profile.plannedTotalG > profile.deliveredTotalG + 5 && (
+        <p className="detail energy-ceiling">
+          {t("energy.gutCeiling", {
+            ceiling: profile.absorbCeilingPerHourG,
+            asked: profile.intakePerHourG,
+            lost: profile.plannedTotalG - profile.deliveredTotalG,
+          })}
+        </p>
+      )}
 
       <svg className="energy-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t("energy.chartLabel")}>
         <defs>
@@ -88,12 +108,32 @@ export function EnergyProfile({
         <path className="energy-unfuelled" d={unfuelledPath} fill="none" strokeDasharray="5 5" />
         <path className="energy-fuelled" d={fuelledPath} fill="none" />
 
-        {/* unfuelled fade marker */}
+        {/* fade marker — the unfuelled crossing, or the fuelled one when even
+            the plan cannot hold the tank up */}
         {profile.unfuelledFadeMin !== undefined && (
           <g>
             <line className="energy-fademark" x1={x(profile.unfuelledFadeMin)} y1={PAD.t} x2={x(profile.unfuelledFadeMin)} y2={y(0)} />
             <text className="energy-fadetext" x={x(profile.unfuelledFadeMin)} y={PAD.t - 4} textAnchor="middle">
               fade ~{formatClock(profile.unfuelledFadeMin)}
+            </text>
+          </g>
+        )}
+
+        {/* Where the plan itself runs out. Only drawn when it happens, which the
+            old straight-line model could never produce: intake was subtracted
+            from burn at whatever rate the plan asked, so the fuelled curve was
+            incapable of reaching the fade line. */}
+        {profile.fuelledFadeMin !== undefined && (
+          <g>
+            <line
+              className="energy-fademark energy-fademark-plan"
+              x1={x(profile.fuelledFadeMin)}
+              y1={PAD.t}
+              x2={x(profile.fuelledFadeMin)}
+              y2={y(0)}
+            />
+            <text className="energy-fadetext" x={x(profile.fuelledFadeMin)} y={PAD.t - 4} textAnchor="middle">
+              {formatClock(profile.fuelledFadeMin)}
             </text>
           </g>
         )}
@@ -128,6 +168,11 @@ export function EnergyProfile({
             ? t("energy.intake", { n: profile.intakePerHourG })
             : t("energy.intakeWater")}
         </span>
+        {/* What actually got in, which is not what was swallowed once the plan
+            passes what the gut can move. */}
+        {profile.plannedTotalG > 0 && (
+          <span>{t("energy.delivered", { n: profile.deliveredTotalG })}</span>
+        )}
         <span className="energy-reserve">{t("energy.reserve", { n: profile.fuelledEndPct })}</span>
       </div>
       <p className="energy-note">{t("energy.disclaimer")}</p>
