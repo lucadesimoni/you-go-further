@@ -15,7 +15,7 @@ import { EventPlanner } from "./components/EventPlanner";
 import { ToastHost } from "./components/ToastHost";
 import { ConfirmHost } from "./components/ConfirmHost";
 import { Onboarding } from "./components/Onboarding";
-import { isOnboarded, setOnboarded, getOnboardStep, enterDemo, seedDemoFeedback, demoLogsSeeded, connectDemoSource } from "./api/onboarding";
+import { isOnboarded, setOnboarded, getOnboardStep, enterDemo, seedDemoFeedback, connectDemoSource } from "./api/onboarding";
 import { toast } from "./ui/toast";
 import { effectiveTier, type Tier } from "./subscription";
 import { currentAccount, hasPermission, signOut, type Account, type Permission } from "./auth";
@@ -142,11 +142,12 @@ export function App() {
   useEffect(() => {
     if (!account) return;
     let alive = true;
-    loadFeedback(account.role)
-      .then((list) => alive && setFeedback(list))
-      .catch(() => {});
     // Real synced sessions + connections (empty in the API-less build).
-    if (isApiConfigured()) {
+    if (!isApiConfigured()) {
+      loadFeedback(account.role)
+        .then((list) => alive && setFeedback(list))
+        .catch(() => {});
+    } else {
       // A demo account arrives connected. Without this "explore a demo account"
       // lands on an empty Home with nothing to explore — no sessions, no week,
       // no insights — because a real athlete's first job is to connect a
@@ -156,21 +157,27 @@ export function App() {
       void (async () => {
         const isDemo = account.authProvider === "demo";
         if (isDemo) await connectDemoSource().catch(() => false);
-        const [acts, conns] = await Promise.all([
+        const [acts, conns, logs] = await Promise.all([
           api.activities().catch(() => null),
           api.connections().catch(() => null),
+          loadFeedback(account.role).catch(() => [] as SessionFeedback[]),
         ]);
         if (!alive) return;
+        setFeedback(logs);
         if (conns) setConnectionsCount(conns.connections.length);
         if (!acts) return;
         setActivities(acts.activities);
         // A demo account also gets a few session logs the first time, so the
         // half of the product that *learns* from outcomes has something to
         // show. A real athlete is never seeded — their logs are their own.
-        if (isDemo && acts.activities.length > 0 && !demoLogsSeeded()) {
+        //
+        // The "first time" is judged from the stored logs, not a local flag:
+        // the logs live on the server, so a flag in this browser let every
+        // fresh window seed another three on top of the last.
+        if (isDemo && acts.activities.length > 0 && logs.length === 0) {
           await seedDemoFeedback(acts.activities, account.role, addFeedback);
-          const list = await loadFeedback(account.role).catch(() => null);
-          if (alive && list) setFeedback(list);
+          const seeded = await loadFeedback(account.role).catch(() => null);
+          if (alive && seeded) setFeedback(seeded);
         }
       })();
     }
@@ -196,13 +203,31 @@ export function App() {
     }
   }, [account, visibleTabs, tab]);
 
-  // The planner prefill is one-shot: the Planner reads it on mount, then we clear
-  // it so later visits to Plan start from the user's own defaults.
-  useEffect(() => {
-    if (tab !== "plan" || !plannerPrefill) return;
-    const t = setTimeout(() => setPlannerPrefill(undefined), 0);
-    return () => clearTimeout(t);
-  }, [tab, plannerPrefill]);
+  /**
+   * Carry a session shape into the planner.
+   *
+   * The prefill is one-shot — later visits to Plan start from the athlete's own
+   * defaults — but "one-shot" used to mean "cleared by a timer a tick later",
+   * which quietly broke every caller that was *already* on the Plan screen.
+   * "Plan for this race" and "Plan for this route" both are: the planner was
+   * mounted, never re-read the value, and the button did nothing at all. The
+   * planner now reports when it has taken the prefill, and that is what clears
+   * it — no timer, and no way for the two to disagree.
+   *
+   * Scrolling is part of the answer, not a flourish: on the Plan screen the
+   * planner sits below the race panels, so without it the athlete presses a
+   * button and everything that changed is off-screen.
+   */
+  const planFor = useCallback((prefill: Partial<SessionInput>) => {
+    setPlannerPrefill(prefill);
+    setTab("plan");
+    requestAnimationFrame(() =>
+      document.getElementById("session-planner")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }, []);
+
+  /** Stable so the planner's effect does not re-run on every render. */
+  const clearPrefill = useCallback(() => setPlannerPrefill(undefined), []);
 
   // Redeem an emailed magic link (?magic=…) and confirm a completed payment
   // (?paid=…) on load, then clean the URL so a refresh can't replay either.
@@ -352,11 +377,10 @@ export function App() {
             onFuelSession={(a) => {
               // Carry the session's own shape into the planner rather than
               // making the athlete retype it.
-              setPlannerPrefill({
+              planFor({
                 activity: sportToActivity(a.sport),
                 durationMin: Math.round(a.durationSec / 60),
               });
-              setTab("plan");
             }}
           />
         )}
@@ -365,12 +389,28 @@ export function App() {
             {/* A named race first, because that is the question athletes
                 actually arrive with — "the Jungfrau-Marathon is in nine weeks"
                 — and its answer depends on a date the GPX below does not carry. */}
-            <EventPlanner activities={activities} onPlan={setPlannerPrefill} />
+            <EventPlanner
+              activities={activities}
+              onPlan={(prefill) => {
+                planFor(prefill);
+                toast.info(t("toast.planningRace"));
+              }}
+            />
             {/* The Phase-1 moment: a race you have not run yet, fuelled. It sits
                 above the session planner because it is the reason to open this
                 screen — planning a training session is the everyday case. */}
-            <RaceImport onPlan={setPlannerPrefill} />
-            <Planner initial={plannerPrefill} role={account.role} onEditProfile={() => setTab("profile")} />
+            <RaceImport
+              onPlan={(prefill) => {
+                planFor(prefill);
+                toast.info(t("toast.planningRoute"));
+              }}
+            />
+            <Planner
+              initial={plannerPrefill}
+              role={account.role}
+              onEditProfile={() => setTab("profile")}
+              onPrefillUsed={clearPrefill}
+            />
           </>
         )}
         {tab === "progress" && progress && (
@@ -388,8 +428,7 @@ export function App() {
             focusActivityId={reviewActivityId}
             onEditProfile={() => setTab("profile")}
             onPlanRoute={(prefill) => {
-              setPlannerPrefill(prefill);
-              setTab("plan");
+              planFor(prefill);
               toast.info(t("toast.planningRoute"));
             }}
           />

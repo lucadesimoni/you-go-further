@@ -637,6 +637,7 @@ export const de: Dictionary = {
   "toast.paymentReceived": "Zahlung erhalten — vielen Dank!",
   "toast.planActive": "Ihr {tier}-Abo ist aktiv.",
   "toast.connected": "{provider} verbunden — Ihre Einheiten werden synchronisiert.",
+  "toast.planningRace": "Planung für dieses Rennen — die Einheit unten richtet sich danach.",
   "toast.planningRoute": "Planung für Ihre Route — Bedingungen übernommen",
   "toast.sessionLogged": "Erfasst — das sagt uns die Einheit.",
   "toast.saveFailed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",

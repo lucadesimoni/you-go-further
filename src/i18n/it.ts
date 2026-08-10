@@ -645,6 +645,7 @@ export const it: Dictionary = {
   "toast.paymentReceived": "Pagamento ricevuto — grazie!",
   "toast.planActive": "Il suo abbonamento {tier} è attivo.",
   "toast.connected": "{provider} collegato — i suoi allenamenti si stanno sincronizzando.",
+  "toast.planningRace": "Pianificazione per questa gara — la sessione qui sotto si adatta.",
   "toast.planningRoute": "Pianificazione del suo percorso — condizioni applicate",
   "toast.sessionLogged": "Registrato — ecco cosa ci dice.",
   "toast.saveFailed": "Salvataggio non riuscito. Riprovi.",

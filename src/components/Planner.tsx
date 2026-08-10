@@ -20,6 +20,9 @@ import { Explain } from "./Explain";
 /** Only session-specific fields live in the planner now; body data comes from the profile. */
 export type SessionInput = Pick<AthleteInput, "goal" | "activity" | "durationMin" | "intensity" | "conditions">;
 
+/** The duration slider's granularity, shared with the prefill so they agree. */
+const DURATION_STEP_MIN = 5;
+
 const DEFAULT_SESSION: SessionInput = {
   goal: "endurance-performance",
   activity: "running",
@@ -34,14 +37,44 @@ export function Planner({
   initial,
   role = "athlete",
   onEditProfile,
+  onPrefillUsed,
 }: {
   initial?: Partial<SessionInput>;
   role?: Role;
   onEditProfile?: () => void;
+  /** Told once the prefill has landed, so the caller can clear it. */
+  onPrefillUsed?: () => void;
 }) {
   const t = useT();
   const [input, setInput] = useState<SessionInput>({ ...DEFAULT_SESSION, ...initial });
   const profile = useMemo(() => loadProfile(), []);
+
+  /**
+   * Take a prefill even when this component is already on screen.
+   *
+   * The initial state above only runs on mount, which was fine while every
+   * prefill arrived from another tab — the planner mounted fresh and read it.
+   * "Plan for this race" and "Plan for this route" sit on *this* screen, so the
+   * planner was already mounted and silently ignored them: the button set a
+   * value that was cleared a tick later and nothing on screen ever moved.
+   *
+   * The caller hands over a fresh object per request and clears it once told,
+   * so this runs exactly once per press rather than looping on identity.
+   */
+  useEffect(() => {
+    if (!initial) return;
+    setInput((prev) => ({
+      ...prev,
+      ...initial,
+      // Snap to the slider's own grid. A race estimate of 832 minutes is not a
+      // multiple of five, so the control reported 830 while the label read
+      // 13 h 52 min — and the first touch of the slider would have jumped.
+      ...(initial.durationMin !== undefined
+        ? { durationMin: Math.max(20, Math.round(initial.durationMin / DURATION_STEP_MIN) * DURATION_STEP_MIN) }
+        : {}),
+    }));
+    onPrefillUsed?.();
+  }, [initial, onPrefillUsed]);
 
   const [feedbacks, setFeedbacks] = useState<SessionFeedback[]>([]);
   const insight = useMemo(() => deriveAdaptation(feedbacks), [feedbacks]);
@@ -94,12 +127,14 @@ export function Planner({
   const set = <K extends keyof SessionInput>(key: K, value: SessionInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
 
+  // Rounded up to a whole hour so the thumb never sits exactly at the end.
+  const maxDurationMin = Math.max(360, Math.ceil(input.durationMin / 60) * 60);
   const hours = Math.floor(input.durationMin / 60);
   const mins = input.durationMin % 60;
   const durationLabel = `${hours ? `${hours} h ` : ""}${mins ? `${mins} min` : hours ? "" : "0 min"}`.trim();
 
   return (
-    <main className="layout">
+    <main className="layout" id="session-planner">
       <section className="panel form" aria-label={t("plan.sessionDetails")}>
         <div className="field">
           <label htmlFor="goal">{t("plan.goal")}</label>
@@ -131,12 +166,17 @@ export function Planner({
           <label htmlFor="duration">
             {t("plan.duration")} <span className="value">{durationLabel}</span>
           </label>
+          {/* Six hours covers training, and keeping the scale there is what
+              makes the slider usable for the everyday case. It stretches only
+              when a longer session is actually loaded — a race prefill for the
+              Inferno Triathlon or a 100 km ultra would otherwise arrive at
+              13:52 and sit pinned to a maximum it could never reach. */}
           <input
             id="duration"
             type="range"
             min={20}
-            max={360}
-            step={5}
+            max={maxDurationMin}
+            step={DURATION_STEP_MIN}
             value={input.durationMin}
             onChange={(e) => set("durationMin", Number(e.target.value))}
           />

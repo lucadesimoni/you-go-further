@@ -610,6 +610,7 @@ export const en = {
   "toast.paymentReceived": "Payment received — thank you!",
   "toast.planActive": "Your {tier} plan is active.",
   "toast.connected": "{provider} connected — your sessions are syncing.",
+  "toast.planningRace": "Planning for this race — the session below follows it.",
   "toast.planningRoute": "Planning for your route — conditions applied",
   "toast.sessionLogged": "Logged — here's what it tells us.",
   "toast.saveFailed": "Couldn't save that. Try again.",

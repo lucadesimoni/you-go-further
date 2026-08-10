@@ -85,30 +85,21 @@ export function enterDemo(persona: Persona): Account {
  *
  * The pattern is deliberately imperfect — a strong long run, a steady one, and
  * one that faded on under-fuelling — because a demo in which everything went
- * well demonstrates nothing. Called once per demo account: an athlete who has
- * logged anything is left alone.
+ * well demonstrates nothing.
+ *
+ * **The caller decides whether to seed, from the stored logs.** This guard was
+ * originally a localStorage flag, which is the wrong place for it: the logs
+ * live on the server, so every fresh browser, incognito window or second
+ * device seeded another three. They accumulated — 3, 6, 9, 12 — and the
+ * repeated "mild GI at 65 g/h" entry eventually pulled the planner's learned
+ * ceiling down to 65, so the session planner contradicted the race panel two
+ * panels above it on the same screen.
  */
-const SEEDED_KEY = "ygf.demoSeeded.v1";
-
-export function demoLogsSeeded(): boolean {
-  try {
-    return typeof localStorage !== "undefined" && localStorage.getItem(SEEDED_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 export async function seedDemoFeedback(
   activities: { id: string; durationSec: number }[],
   role: Role,
   add: (role: Role, entry: NewFeedback) => Promise<unknown>,
 ): Promise<void> {
-  if (demoLogsSeeded()) return;
-  try {
-    if (typeof localStorage !== "undefined") localStorage.setItem(SEEDED_KEY, "1");
-  } catch {
-    /* the seed just won't be remembered; the guard below still limits it */
-  }
   // Longest first: a debrief is worth most on the sessions where fuelling
   // actually decided something.
   const targets = [...activities].sort((a, b) => b.durationSec - a.durationSec).slice(0, 3);

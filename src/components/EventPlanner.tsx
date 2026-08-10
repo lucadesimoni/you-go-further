@@ -38,7 +38,13 @@ export function EventPlanner({
 }: {
   /** The athlete's synced sessions, for the readiness check. */
   activities?: SyncedActivity[];
-  onPlan?: (prefill: { activity: EventPlan["session"]["activity"]; durationMin: number; conditions: EventPlan["session"]["conditions"] }) => void;
+  /**
+   * Carry this race into the session planner. The whole session shape goes,
+   * not just the activity: a race is planned at race intensity, and sending
+   * only the duration left the planner computing a *different* carbohydrate
+   * target from the one shown here two panels above.
+   */
+  onPlan?: (prefill: Pick<EventPlan["session"], "goal" | "activity" | "durationMin" | "intensity" | "conditions">) => void;
 }) {
   const { t, lang } = useI18n();
   const [eventId, setEventId] = useState<string>(() => {
@@ -303,8 +309,10 @@ export function EventPlanner({
               className="btn btn-primary geo-plan"
               onClick={() =>
                 onPlan({
+                  goal: plan.session.goal,
                   activity: plan.session.activity,
                   durationMin: plan.estimatedMin,
+                  intensity: plan.session.intensity,
                   conditions: plan.session.conditions,
                 })
               }

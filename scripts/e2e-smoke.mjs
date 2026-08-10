@@ -336,6 +336,42 @@ await step("the service connected during setup shows as connected", async () => 
   const strava = await page.locator('.provider-card:has-text("Strava")').innerText();
   if (!/Disconnect/.test(strava)) throw new Error(`Strava was connected in setup but reads: ${strava}`);
 });
+await step("'Plan for this race' actually reaches the session planner", async () => {
+  // The planner sits on the same screen as the race panels, so it is already
+  // mounted when this button is pressed. It used to read its prefill only on
+  // mount, so the press set a value that was cleared a tick later and nothing
+  // moved — the button did nothing at all, on the screen it was made for.
+  await page.click('button.topnav-tab:has-text("Plan")');
+  await page.waitForSelector("#event-select", { timeout: 10000 });
+  const race = await page.locator("#event-select option").nth(1).getAttribute("value");
+  if (!race) throw new Error("no upcoming race offered");
+  await page.selectOption("#event-select", race);
+  await page.waitForSelector(".event .geo-plan", { timeout: 15000 });
+
+  const before = await page.locator("#duration").inputValue();
+  const raceTarget = await page.locator(".event-cols .geo-block").nth(1).locator(".stat-value").first().innerText();
+  await page.locator(".event .geo-plan").click();
+  await page.waitForTimeout(1500);
+
+  const after = await page.locator("#duration").inputValue();
+  if (before === after) throw new Error(`the planner ignored the race (duration stayed ${before})`);
+  const intensity = await page.locator(".segmented .seg.active").first().innerText();
+  if (!/race/i.test(intensity)) throw new Error(`a race should be planned at race intensity, got "${intensity}"`);
+
+  // And the two panels must agree: the planner recomputing a different
+  // carbohydrate target from the one shown above it is worse than no button.
+  const plannerTarget = await page.locator(".layout .stat").first().innerText();
+  const num = (s) => Number(/(\d+)/.exec(s)?.[1]);
+  if (num(plannerTarget) !== num(raceTarget)) {
+    throw new Error(`race panel says ${raceTarget}, planner says ${plannerTarget}`);
+  }
+
+  // Hand the suite back the screen it was on: the steps after this one are
+  // still working through Connect.
+  await page.click('button.topnav-tab:has-text("Connect")');
+  await page.waitForSelector(".route-picker", { timeout: 15000 });
+});
+
 await step("a run can be chosen, not just the latest ride", async () => {
   const chips = await page.locator(".route-picker .chip").allInnerTexts();
   const run = chips.find((c) => /^Run|^Trail run/.test(c));

@@ -649,6 +649,7 @@ export const fr: Dictionary = {
   "toast.paymentReceived": "Paiement reçu — merci !",
   "toast.planActive": "Votre abonnement {tier} est actif.",
   "toast.connected": "{provider} connecté — vos séances se synchronisent.",
+  "toast.planningRace": "Planification pour cette course — la séance ci-dessous s'y adapte.",
   "toast.planningRoute": "Planification de votre parcours — conditions appliquées",
   "toast.sessionLogged": "Enregistré — voici ce que cela nous apprend.",
   "toast.saveFailed": "Enregistrement impossible. Réessayez.",
