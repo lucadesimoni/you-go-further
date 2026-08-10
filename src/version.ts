@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.9.1";
+export const PLATFORM_VERSION = "0.10.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -201,12 +201,12 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "training",
     path: "src/training",
-    version: "0.1.0",
+    version: "0.2.0",
     layer: "domain",
     stability: "evolving",
     summary:
       "Periodised training plans for a named race: weekly volume built from the athlete's own recent hours, cut-back weeks, a taper, and carbohydrate-per-hour progressed alongside the training so race rate is rehearsed rather than met on the day.",
-    publicApi: ["buildTrainingPlan", "recentWeeklyHours", "longSessionShare"],
+    publicApi: ["buildTrainingPlan", "sessionFuelling", "prepStats", "planLearnings", "recentWeeklyHours"],
     caveat:
       "A template built on mainstream endurance-coaching practice, not individual coaching. It knows the athlete's volume and the race, and nothing about their injuries, their job or their calendar.",
   },

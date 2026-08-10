@@ -8,6 +8,26 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.10.0
+
+**Added**
+
+- **Every session of a race build now carries its own fuelling** — before,
+  during and after — computed by the same engine the session planner uses,
+  because a second dosing model living in the training module would eventually
+  disagree with the first and the athlete would be told two things. The one
+  exception is the during-rate on a long day, which the plan owns: that is the
+  gut-training progression and it is deliberately below what today alone would
+  need in the early weeks.
+- **Preparation statistics**: how many sessions the build asks for, how many
+  rehearse the full race rate, the week that rate is first reached, the longest
+  rehearsal, and the carbohydrate to be practised across the whole plan.
+- **Learnings from the athlete's own data.** A gut ceiling their logs have
+  demonstrated overrides the rate the race arithmetic wants — telling somebody
+  whose sessions show distress at 60 g/h to aim for 90 is how a plan loses an
+  athlete. With no logs at all the first item asks for one rather than
+  inventing an insight.
+
 ## 0.9.1
 
 Fuelling now changes your level, and not by the same amount every time.

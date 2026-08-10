@@ -120,7 +120,7 @@ launch.
 
 Public API: `effectiveTier`, `planFor`, `TIERS`.
 
-### `src/training` — 0.1.0, evolving
+### `src/training` — 0.2.0, evolving
 
 Periodised training plans for a named race. Picking a race and being handed only
 a fuelling plan answers the last question first: the athlete's problem between
@@ -141,7 +141,20 @@ individual coaching. It knows the athlete's volume and the race, and nothing
 about their injuries, their job, or the fact that they are moving house in
 August — and the screen that renders it says so.
 
-Public API: `buildTrainingPlan`, `recentWeeklyHours`, `longSessionShare`.
+`fuelling.ts` gives every session of the build a before, during and after, and
+computes them with the same engine the session planner uses — a second dosing
+model living here would eventually disagree with the first and the athlete
+would be told two things. The one exception is the *during* rate on a long day,
+which the plan owns: that is the gut-training progression, deliberately below
+what today alone would need in the early weeks.
+
+It also reports what the preparation adds up to — rehearsals at full race rate,
+carbohydrate to be practised, the week race rate is first reached — and what
+the athlete's own logs say about it. Nothing there is generic advice dressed as
+personalisation: with no logs, the first item asks for one.
+
+Public API: `buildTrainingPlan`, `sessionFuelling`, `prepStats`,
+`planLearnings`, `recentWeeklyHours`.
 
 ### `src/data` — 1.0.0, stable
 
