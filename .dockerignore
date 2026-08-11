@@ -7,3 +7,8 @@ dist
 tsconfig.tsbuildinfo
 docs
 .DS_Store
+
+# The deployment manifests are read by humans and orchestrators, not by the build.
+deploy
+mobile
+*.md

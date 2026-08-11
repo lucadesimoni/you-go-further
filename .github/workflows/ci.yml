@@ -21,6 +21,28 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      # The deployment rules, run against a representative production
+      # environment. It asserts the check still *fails* what it should fail —
+      # a preflight that has quietly stopped objecting to anything would pass
+      # a plain `npm run preflight` on a clean environment and tell us nothing.
+      - name: Preflight rules still bite
+        run: |
+          set -e
+          printf 'APP_ENV=production\n' > /tmp/broken.env
+          if npm run preflight -- /tmp/broken.env; then
+            echo "::error::preflight passed an environment with no secret and no database"
+            exit 1
+          fi
+          cat > /tmp/good.env <<'ENV'
+          APP_ENV=production
+          AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          ALLOW_ROLE_SWITCHING=false
+          DATABASE_URL=postgres://u:p@db.example.ch:5432/ygf?sslmode=require
+          MAIL_SMTP_URL=smtps://u:p@mail.example.ch:465
+          ALLOWED_ORIGINS=https://yougofurther.ch
+          TRUST_PROXY=true
+          ENV
+          npm run preflight -- /tmp/good.env
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
@@ -35,3 +57,31 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build image
         run: docker build -t you-go-further:ci .
+
+      # Building an image proves it compiles, not that it runs. Start it the
+      # way a host does, then check its behaviour over HTTP from outside.
+      - name: The image serves a deployment
+        run: |
+          set -e
+          docker run -d --name ygf -p 8787:8787 \
+            -e APP_ENV=production \
+            -e AUTH_SECRET=$(openssl rand -hex 32) \
+            -e ALLOW_ROLE_SWITCHING=false \
+            -e STORE_BACKEND=file \
+            -e DATA_DIR=/app/.data \
+            -e ALLOW_CONSOLE_MAIL=true \
+            -e ALLOWED_ORIGINS=https://yougofurther.ch \
+            you-go-further:ci
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:8787/api/health >/dev/null && break || sleep 2
+          done
+          node scripts/verify-deploy.mjs http://localhost:8787
+          # It must also refuse a bad production configuration rather than
+          # coming up looking healthy.
+          if docker run --rm -e APP_ENV=production you-go-further:ci; then
+            echo "::error::the image started with no AUTH_SECRET and no store"
+            exit 1
+          fi
+      - name: Container log
+        if: always()
+        run: docker logs ygf || true

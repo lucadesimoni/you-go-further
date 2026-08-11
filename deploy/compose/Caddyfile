@@ -1,0 +1,46 @@
+# TLS, and the two headers a reverse proxy owes the app behind it.
+#
+# Caddy obtains and renews a Let's Encrypt certificate for {$DOMAIN} on its own,
+# redirects http→https, and speaks HTTP/3. What it must not forget is
+# `X-Forwarded-Proto` and `X-Forwarded-For`: the app sends HSTS only on a
+# request it knows arrived over TLS, and rate-limits per client address only
+# when it can see one. Caddy's `reverse_proxy` sets both by default — they are
+# named here because deleting the directive silently removes them.
+
+{
+	email {$ACME_EMAIL}
+	# Uncomment to rehearse against Let's Encrypt's staging CA first. Real
+	# certificates are rate-limited; a misconfigured DNS record burns them.
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# The app sets its own security headers (including HSTS, which it withholds
+	# until a request has actually arrived over TLS). Nothing is duplicated here
+	# so there is one place to change them.
+	reverse_proxy app:8787 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-For {remote_host}
+		# A slow gut-training upload is not a dead backend.
+		transport http {
+			read_timeout 60s
+		}
+	}
+
+	log {
+		# A magic sign-in link is a bearer credential in a query string, and an
+		# access log is the last place it should be readable. The filter encoder
+		# rewrites that one parameter before the line is written; everything
+		# else about the request is logged normally.
+		format filter {
+			wrap json
+			fields {
+				request>uri query {
+					replace magic REDACTED
+				}
+			}
+		}
+	}
+}

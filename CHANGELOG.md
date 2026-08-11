@@ -8,6 +8,60 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.11.0
+
+**Added**
+
+- **This runs on Swiss infrastructure now**, and the documentation says exactly
+  what that does and does not mean. `docs/hosting-switzerland.md` covers three
+  deployment shapes — one instance, managed Kubernetes, managed Node — on
+  Infomaniak or any of the Swiss alternatives, plus a table of what still leaves
+  the country (Strava and Garmin, unavoidably; Stripe, Databricks, map tiles and
+  the mail provider, all optional) and a go-live checklist.
+- **`npm run preflight`** — the settings that are safe in development and wrong
+  in production, written down and executable: the signing key that ships in this
+  repository, the in-memory store, the demo role switcher (which the API honours
+  as an unauthenticated admin login), a plaintext SMTP password, a Stripe key
+  with no webhook secret. Rules are unit-tested, run by CI, and **run by the
+  server itself at start-up** — a misconfigured production container now exits
+  instead of coming up looking healthy.
+- **`npm run verify:deploy`** — the same question asked of a *running*
+  deployment over HTTP, because a config file and the container actually running
+  are not always the same generation. Checks security headers, HSTS and the
+  HTTP→HTTPS redirect, that `config.js` is uncached and hashed assets are not,
+  that `/v1` refuses an unauthenticated call, and that `x-role: admin` is
+  refused — against an endpoint that provably tells the two states apart.
+- **An SMTP mailer**, no dependency: implicit TLS or STARTTLS, AUTH PLAIN and
+  LOGIN, header-injection and dot-stuffing handled, tested against a real socket.
+  Sign-in mail can go through a Swiss mailbox instead of a foreign HTTP API.
+- **A production container image.** One origin (SPA + API in one process), built
+  in stages so no build tooling ships, non-root under `tini` so SIGTERM reaches
+  the new graceful shutdown, configured at start rather than at build so one tag
+  is promoted from staging to production instead of rebuilt.
+- **Deployment manifests** under `deploy/`: a Compose stack with Caddy for
+  automatic Let's Encrypt TLS, Kubernetes manifests with probes that tell
+  "stuck" apart from "cannot reach the database", an annotated `env.example`,
+  and Postgres backup and *restore-check* scripts — the second because an
+  untested backup is a belief.
+
+**Fixed**
+
+- **The security headers were never applied to the deployment that matters.**
+  They lived in `nginx.conf`, and the single-origin deploy serves the SPA from
+  the Node process with nginx nowhere in the path — so production shipped with
+  no `X-Content-Type-Options`, no framing policy and no HSTS. They are set in
+  the server now, covering both surfaces, with HSTS withheld until a request has
+  actually arrived over TLS.
+- **Static files were served with no cache headers at all** by that same path:
+  fingerprinted assets re-downloaded on every visit, and `config.js` — which is
+  how a deployment is reconfigured without a rebuild — cacheable, so a
+  configuration change could appear to do nothing.
+- **SIGTERM killed in-flight requests.** The server now stops accepting
+  connections, finishes what it is serving, and exits — which is what makes a
+  rolling deploy invisible instead of a scatter of failed requests.
+- **CORS answered every origin.** `ALLOWED_ORIGINS` narrows it; unset, the
+  single-origin behaviour is unchanged.
+
 ## 0.10.3
 
 **Fixed**

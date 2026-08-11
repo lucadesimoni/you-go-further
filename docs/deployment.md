@@ -4,6 +4,33 @@ The app is a static SPA that reads its configuration **at runtime**, so a single
 build artifact runs unchanged in dev, staging, production, and on-prem. You
 reconfigure a deployment by editing `config.js`, not by rebuilding.
 
+> **Swiss hosting** — Infomaniak, Exoscale, cloudscale.ch and the rest, plus
+> what data still leaves the country and the go-live checklist:
+> [`docs/hosting-switzerland.md`](./hosting-switzerland.md).
+
+## Two checks, before and after
+
+Every production deployment runs these. They are not documentation of good
+intentions; both exit non-zero.
+
+```bash
+npm run preflight -- deploy/prod.env        # the configuration, before starting
+npm run verify:deploy -- https://your-host  # the behaviour, once it is running
+```
+
+`preflight` (`src/preflight.ts`, unit-tested) refuses the development defaults
+that are wrong in production: the signing key that ships in this repository, the
+in-memory store, the demo role switcher — which the API honours as an
+unauthenticated admin login — a plaintext SMTP password, a Stripe key with no
+webhook secret. **The server runs it at start-up too**, and exits rather than
+coming up misconfigured but healthy-looking.
+
+`verify:deploy` reads the running deployment over HTTP: security headers, HSTS
+and the HTTP→HTTPS redirect, that `config.js` is uncached and hashed assets are
+not, that `/v1` refuses an unauthenticated call, and that `x-role: admin` is
+refused — checked from outside, because the file you edited and the container
+that is running are not always the same generation.
+
 ## Configuration
 
 Resolution order (highest wins): `window.__APP_CONFIG__` (from `public/config.js`)
@@ -72,15 +99,43 @@ npm test            # tests
 > Set provider credentials (`STRAVA_*`, …) and `AUTH_SECRET` as Codespace secrets
 > for real OAuth + non-dev sessions; without them the flow runs in dev mode.
 
-### Docker (any host / on-prem)
+### Docker (any host / on-prem) ⭐
+`Dockerfile` builds the **production image**: the SPA and the API served by one
+Node process on one origin, so there is no CORS surface and no second deployment
+to keep in step.
+
 ```bash
-docker compose up --build          # serves on http://localhost:8080
-# or, sub-path hosting:
-docker build --build-arg BASE_PATH=/app -t you-go-further .
-docker run -p 8080:80 you-go-further
+docker compose up --build                    # app on :8787, file-backed
+docker compose --profile full up --build     # app + Postgres
+docker compose --profile static up --build   # SPA only, behind nginx, :8080
 ```
-The image is a multi-stage build → nginx with SPA fallback, asset caching, a
-`no-store` rule for `config.js`, and a healthcheck.
+
+For a real deployment use `deploy/compose/docker-compose.prod.yml`, which adds
+Caddy for automatic Let's Encrypt TLS, keeps the app off a published port, and
+takes its settings from a `prod.env` you have run `preflight` against. See
+[`docs/hosting-switzerland.md`](./hosting-switzerland.md).
+
+What the image does deliberately:
+
+- **Configures at start, not at build.** The entrypoint writes `dist/config.js`
+  from the runtime environment, so one tag is promoted from staging to
+  production rather than rebuilt — an image that bakes its API URL is how
+  staging ends up pointing at prod.
+- **Runs the preflight before the server**, and exits non-zero on a blocker.
+- **Non-root, under `tini`**, so SIGTERM reaches the graceful shutdown during a
+  rolling deploy instead of cutting requests in flight.
+- **Ships runtime dependencies only** (`npm ci --omit=dev`); `tsx` is a runtime
+  dependency on purpose, so the server that runs in production is the same
+  TypeScript the unit suite and the e2e journey exercise.
+
+`Dockerfile.static` is the SPA-only nginx image, for hosting the front end
+separately from the API.
+
+### Kubernetes
+`deploy/kubernetes/` — plain manifests, `kubectl apply -k`. Two replicas, a
+disruption budget, a startup/readiness/liveness split that tells "stuck" apart
+from "cannot reach the database", and a `preStop` delay so a rolling deploy does
+not serve 502s. See the README beside them.
 
 ### Vercel (full stack — SPA + serverless API)
 The repo is deploy-ready for Vercel: `vercel.json` builds the Vite SPA to `dist/`
@@ -241,11 +296,22 @@ not a nicety.
 ## Transactional email
 | Env | Why |
 | --- | --- |
-| `MAIL_API_URL` / `MAIL_API_KEY` | transactional provider for magic-link sign-in |
+| `MAIL_SMTP_URL` | SMTP submission, e.g. `smtps://user%40host:pass@mail.infomaniak.com:465` |
+| `MAIL_SMTP_STARTTLS` | upgrade a plain `smtp://` connection; defaults to on for port 587 |
+| `MAIL_API_URL` / `MAIL_API_KEY` | an HTTP transactional provider instead |
 | `MAIL_FROM` | sender address (default `no-reply@yougofurther.ch`) |
+| `ALLOW_CONSOLE_MAIL` | ship without email sign-in, deliberately |
 
-Any provider accepting a JSON `{from,to,subject,text}` POST works (Resend, Brevo,
-Postmark, Mailgun). Unset, the console mailer logs the link for dev.
+**SMTP is preferred where it is available.** Every HTTP transactional provider
+(Resend, Brevo, Postmark, Mailgun) is a foreign company processing your athletes'
+addresses; a Swiss deployment usually already has a Swiss mailbox, and the
+built-in SMTP client (`src/auth/smtp.ts` — no dependency, implicit TLS and
+STARTTLS, AUTH PLAIN/LOGIN, tested against a real socket) talks to it directly.
+Any provider accepting a JSON `{from,to,subject,text}` POST still works.
+
+Unset, the console mailer logs the link — which means nobody outside the
+operations team can create an account, so the preflight treats it as a blocker
+in production unless `ALLOW_CONSOLE_MAIL=true` says the choice was deliberate.
 
 ## Route map & network policy
 The route map (`RouteMap`) is the **one feature that fetches from an external

@@ -17,8 +17,15 @@ import { getConfig } from "../src/config.ts";
 import { PERSONAS } from "../src/personas.ts";
 import type { Principal } from "../src/auth/roles.ts";
 import { verifySession, DEV_AUTH_SECRET } from "../src/auth/jwt.ts";
+import { preflight, passes, formatFindings } from "../src/preflight.ts";
 
 const PORT = Number(process.env.PORT) || 8787;
+/**
+ * Bind address. Containers must listen on every interface or the orchestrator's
+ * health probe never reaches them; a bare VM alongside a reverse proxy is safer
+ * bound to loopback. Default stays 0.0.0.0 because that is the container case.
+ */
+const HOST = process.env.HOST || "0.0.0.0";
 const DIST = join(process.cwd(), "dist");
 const runtime = createRuntime();
 const route = createApiRouter(runtime);
@@ -76,13 +83,73 @@ function clientIpFrom(req: http.IncomingMessage): string | undefined {
   return req.socket.remoteAddress ?? undefined;
 }
 
-function cors(res: http.ServerResponse) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+/**
+ * Which origins may call this API from a browser.
+ *
+ * `*` is right for the demo and for a single-origin deploy where the SPA is
+ * served by this same process — the SPA's own requests are same-origin and
+ * never preflight. It is wrong the moment a deployment is public and the API
+ * holds sessions, so a comma-separated `ALLOWED_ORIGINS` narrows it. The header
+ * is echoed only for origins on the list, because `Access-Control-Allow-Origin`
+ * takes one value, not a list.
+ */
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+function cors(req: http.IncomingMessage, res: http.ServerResponse) {
+  const origin = String(req.headers.origin ?? "");
+  if (ALLOWED_ORIGINS.length === 0) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  } else if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    // Two different origins must not share one cached preflight.
+    res.setHeader("Vary", "Origin");
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "content-type,x-role,authorization,x-api-key");
 }
 
-async function serveStatic(pathname: string, res: http.ServerResponse): Promise<boolean> {
+/**
+ * The headers nginx was adding for the static-only image.
+ *
+ * They were never applied on the deployment that actually matters: in a
+ * single-origin deploy this process serves the SPA itself and nginx is not in
+ * the path, so the app shipped with no `X-Content-Type-Options`, no framing
+ * policy and no HSTS. Set here, they cover both surfaces at once.
+ *
+ * HSTS is sent only when the request already arrived over TLS — announcing it
+ * on a plain-HTTP development server would pin `localhost` to https in the
+ * browser for a year.
+ */
+function securityHeaders(req: http.IncomingMessage, res: http.ServerResponse) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  // The app needs no camera, microphone or geolocation; say so.
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  const proto = String(req.headers["x-forwarded-proto"] ?? "");
+  if (process.env.TRUST_PROXY === "true" && proto === "https") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+}
+
+/**
+ * How long a static file may be cached.
+ *
+ * Vite fingerprints everything under `/assets/`, so those are immutable for a
+ * year. `config.js` is the opposite: it is how a deployment is reconfigured
+ * without a rebuild, and a cached copy would pin the old API base URL. The
+ * entry HTML sits in between — revalidate every time so a deploy is picked up.
+ */
+function cacheControlFor(pathname: string): string {
+  if (pathname === "/config.js") return "no-store, must-revalidate";
+  if (pathname.startsWith("/assets/")) return "public, max-age=31536000, immutable";
+  return "no-cache";
+}
+
+async function serveStatic(pathname: string, req: http.IncomingMessage, res: http.ServerResponse): Promise<boolean> {
   try {
     const safe = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
     let filePath = join(DIST, safe === "/" ? "index.html" : safe);
@@ -93,7 +160,11 @@ async function serveStatic(pathname: string, res: http.ServerResponse): Promise<
       if (!s) return false;
     }
     const data = await readFile(filePath);
-    res.writeHead(200, { "content-type": MIME[extname(filePath)] ?? "application/octet-stream" });
+    securityHeaders(req, res);
+    res.writeHead(200, {
+      "content-type": MIME[extname(filePath)] ?? "application/octet-stream",
+      "cache-control": cacheControlFor(pathname),
+    });
     res.end(data);
     return true;
   } catch {
@@ -102,7 +173,7 @@ async function serveStatic(pathname: string, res: http.ServerResponse): Promise<
 }
 
 const server = http.createServer(async (req, res) => {
-  cors(res);
+  cors(req, res);
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     return res.end();
@@ -167,29 +238,91 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(302, { Location: redirect });
       return res.end();
     }
-    res.writeHead(result.status, { "content-type": "application/json", ...(result.headers ?? {}) });
+    securityHeaders(req, res);
+    res.writeHead(result.status, {
+      "content-type": "application/json",
+      // An API answer is never a cacheable document; several of these carry the
+      // signed-in athlete's own data and must not sit in a shared proxy.
+      "cache-control": "no-store",
+      ...(result.headers ?? {}),
+    });
     return res.end(JSON.stringify(result.data));
   }
 
   // Static frontend (if built).
-  if (await serveStatic(pathname, res)) return;
+  if (await serveStatic(pathname, req, res)) return;
   res.writeHead(404, { "content-type": "application/json" });
   res.end(JSON.stringify({ error: "Not found" }));
 });
 
+/**
+ * Stop taking new connections, let the ones in flight finish, then exit.
+ *
+ * An orchestrator rolling out a new version sends SIGTERM and waits. Without a
+ * handler the process dies on the default action, which cuts every in-flight
+ * request — including, at exactly the wrong moment, a payment webhook. The
+ * timeout is the backstop: a connection that will not close must not hold the
+ * deployment open forever.
+ */
+const SHUTDOWN_GRACE_MS = Number(process.env.SHUTDOWN_GRACE_MS) || 10_000;
+let shuttingDown = false;
+
+function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  // eslint-disable-next-line no-console
+  console.log(`${signal} received — finishing in-flight requests (up to ${SHUTDOWN_GRACE_MS} ms)`);
+  const timer = setTimeout(() => {
+    // eslint-disable-next-line no-console
+    console.error("Grace period elapsed; exiting with connections still open.");
+    process.exit(1);
+  }, SHUTDOWN_GRACE_MS);
+  timer.unref();
+  server.close(() => {
+    clearTimeout(timer);
+    process.exit(0);
+  });
+}
+
 async function start() {
+  const cfg = getConfig();
+
+  // Refuse to serve a production deployment that is misconfigured, rather than
+  // starting and looking healthy. The rules are in `src/preflight.ts`; running
+  // them here means a deploy cannot skip the check by not calling the script.
+  const findings = preflight({ ...process.env });
+  if (findings.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(formatFindings(findings));
+  }
+  if (!passes(findings)) {
+    // eslint-disable-next-line no-console
+    console.error("\nRefusing to start: the blockers above would make this deployment unsafe or lossy.");
+    console.error("Fix them, or run with APP_ENV unset to start in development mode.");
+    process.exit(1);
+  }
+
   if (runtime.init) {
     try {
       await runtime.init();
     } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
       // eslint-disable-next-line no-console
-      console.error("Backend init failed:", e instanceof Error ? e.message : e);
+      console.error("Backend init failed:", message);
+      // In production this is the database: serving without it means every
+      // request fails one at a time instead of the deploy failing once, loudly.
+      if (cfg.environment === "production") process.exit(1);
     }
   }
-  server.listen(PORT, () => {
-    const cfg = getConfig();
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+
+  server.listen(PORT, HOST, () => {
     // eslint-disable-next-line no-console
-    console.log(`You Go Further API on http://localhost:${PORT} · store=${cfg.storeBackend}`);
+    console.log(
+      `You Go Further ${cfg.version} on http://${HOST}:${PORT} · env=${cfg.environment} · store=${cfg.storeBackend}`,
+    );
   });
 }
 

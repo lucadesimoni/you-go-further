@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.10.3";
+export const PLATFORM_VERSION = "0.11.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -213,11 +213,21 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "auth",
     path: "src/auth",
-    version: "1.0.0",
+    version: "1.1.0",
     layer: "platform",
     stability: "stable",
-    summary: "Sessions, signed JWTs, magic-link email sign-in, Google/Apple OIDC verification, roles and permissions.",
-    publicApi: ["signSession", "verifySession", "requestMagicLink", "verifyMagicLink", "verifyOidcToken", "can"],
+    summary:
+      "Sessions, signed JWTs, magic-link email sign-in over SMTP or an HTTP provider, Google/Apple OIDC verification, roles and permissions.",
+    publicApi: [
+      "signSession",
+      "verifySession",
+      "requestMagicLink",
+      "verifyMagicLink",
+      "verifyOidcToken",
+      "can",
+      "mailerFromEnv",
+      "SmtpMailer",
+    ],
   },
   {
     id: "persistence",
@@ -378,11 +388,12 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "scripts",
     path: "scripts",
-    version: "1.0.0",
+    version: "1.1.0",
     layer: "surface",
     stability: "stable",
-    summary: "Build and verification tooling: the browser e2e journey, the mobile parity smoke, host config, icons, payment checks.",
-    publicApi: ["e2e-smoke.mjs", "mobile-smoke.mjs", "host-config.mjs"],
+    summary:
+      "Build, deployment and verification tooling: the production preflight, the deployed-behaviour check, the browser e2e journey, the mobile parity smoke, host config, icons, payment checks.",
+    publicApi: ["preflight.ts", "verify-deploy.mjs", "e2e-smoke.mjs", "mobile-smoke.mjs", "host-config.mjs"],
   },
 ] as const;
 

@@ -1,0 +1,107 @@
+# One Swiss VM: app, database and TLS.
+#
+# The smallest deployment that is genuinely production-grade. It runs on any
+# provider that gives you a Linux instance with a public IP — Infomaniak Public
+# Cloud, an Infomaniak VPS, Exoscale, cloudscale.ch — and it keeps every byte on
+# that machine, in that country.
+#
+#   cp ../env.example prod.env && $EDITOR prod.env
+#   npm run preflight -- deploy/compose/prod.env      # from the repo root
+#   DOMAIN=yougofurther.ch ACME_EMAIL=ops@yougofurther.ch \
+#     docker compose -f docker-compose.prod.yml up -d --build
+#
+# Caddy gets a Let's Encrypt certificate for $DOMAIN on first start and renews
+# it by itself; there is no certbot cron to forget. Point the domain's A/AAAA
+# record at the instance before starting, or the challenge fails.
+#
+# The database lives in prod.env, as `DATABASE_URL`. Out of the box that points
+# at the `db` container below; managed Postgres is the better choice as soon as
+# the data matters to someone other than you — point DATABASE_URL at it, run
+# `docker compose stop db`, and backups, PITR and failover become the provider's
+# problem rather than yours. Both are in docs/hosting-switzerland.md.
+name: you-go-further
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: you-go-further:latest
+    # Every setting comes from prod.env — the one file `npm run preflight`
+    # reads. Nothing is overridden here, because a value set in two places is a
+    # value that will disagree with itself: an operator who points DATABASE_URL
+    # at a managed instance must not silently keep talking to the container.
+    env_file: [prod.env]
+    depends_on:
+      db:
+        condition: service_healthy
+    # No published port: only Caddy talks to it, over the internal network.
+    expose: ["8787"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ygf
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ygf
+      # Swiss deployment, Swiss collation defaults; and a checksummed cluster,
+      # because silent corruption is worse than a loud failure.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ygf"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN to the hostname this deployment answers on}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL for certificate expiry notices}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [app]
+    restart: unless-stopped
+
+  # Nightly dump to Swiss object storage. Off unless you ask for it:
+  #   docker compose -f docker-compose.prod.yml --profile backup up -d
+  backup:
+    profiles: ["backup"]
+    image: postgres:16-alpine
+    env_file: [prod.env]
+    environment:
+      PGHOST: db
+      PGUSER: ygf
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      PGDATABASE: ygf
+    volumes:
+      - ../backup:/opt/backup:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "apk add --no-cache aws-cli age >/dev/null &&
+       while true; do /opt/backup/pg-backup.sh || echo 'backup failed'; sleep 86400; done"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:

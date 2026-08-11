@@ -14,7 +14,7 @@ services:
     plan: starter
     # host-config.mjs points the SPA at its own origin (relative /api) post-build.
     buildCommand: npm ci && npm run build && node scripts/host-config.mjs
-    startCommand: npm run server
+    startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
@@ -32,6 +32,18 @@ services:
         value: strava,garmin,polar,suunto
       - key: ALLOW_ROLE_SWITCHING
         value: "false"
+      - key: TRUST_PROXY
+        value: "true"
+      # The server runs `npm run preflight` at start-up and refuses to serve a
+      # production deployment with no way to send a sign-in link. Set
+      # MAIL_SMTP_URL (or MAIL_API_URL + MAIL_API_KEY) in the dashboard, or
+      # leave this true to ship with Google/Apple sign-in only — deliberately.
+      - key: ALLOW_CONSOLE_MAIL
+        value: "true"
+      - key: MAIL_SMTP_URL
+        sync: false
+      - key: MAIL_FROM
+        sync: false
       # --- Optional real provider OAuth (dev stubs are used if unset) ---
       - key: STRAVA_CLIENT_ID
         sync: false

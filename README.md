@@ -40,7 +40,7 @@ spelling is a convention, kept by review.
 | **Domain spec** | `docs/nutrition-spec.md` | The nutrition logic, goal taxonomy, and fuelling formulas. |
 | **Versions** | `CHANGELOG.md`, `GET /api/version` | One platform version per release, one contract version per module, reported by the running server. |
 | **Public engine API** | `/v1`, `docs/public-api.md` | The licensable surface: per-tenant keys, scopes, rate limits, usage metering, and a versioned contract with golden shape tests. |
-| **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `user-flows.md`. |
+| **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `hosting-switzerland.md`, `user-flows.md`. |
 | **Vision & roadmap** | `docs/vision.md` | The seven phases, plus an honest read of where this code stands against Phase 1. |
 | **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |
 | **Tests** | `src/**/*.test.ts`, `scripts/` | 630 Vitest cases across engine, analysis, geo, i18n, auth, data pipeline, subscription and RBAC; plus a real-browser e2e journey and a mobile parity smoke. |
@@ -52,9 +52,28 @@ Same build, any environment — configuration is read at runtime (`config.js` / 
 ```bash
 npm run dev                          # Codespaces / local dev (Vite, :5173)
 npm run server                       # HTTP API + static app on :8787
-docker compose up --build            # container → nginx on :8080
+docker compose up --build            # the production image, locally, on :8787
 npm run build                        # static dist/ for Vercel/Netlify/S3/Pages
 ```
+
+For a real deployment there are two gates, and both exit non-zero:
+
+```bash
+npm run preflight -- deploy/prod.env        # the configuration, before starting
+npm run verify:deploy -- https://your-host  # the behaviour, once it is running
+```
+
+The first refuses the development defaults that are wrong in production — the
+signing key that ships in this repository, the in-memory store, the demo role
+switcher that the API honours as an unauthenticated admin login — and the server
+runs it at start-up too, so a misconfigured container exits instead of coming up
+looking healthy. The second checks the running deployment over HTTP: security
+headers, HSTS, cache rules, and that `x-role: admin` really is refused.
+
+**Swiss hosting** — Infomaniak and the alternatives, what data still leaves the
+country, and the go-live checklist: **`docs/hosting-switzerland.md`**. Manifests
+for a single instance (Compose + automatic TLS) and for managed Kubernetes are
+in `deploy/`.
 
 The app runs fully client-side by default; set `apiBaseUrl` to route through the
 HTTP API (`server/index.ts`, sharing `src/api/handlers.ts` with the browser). See

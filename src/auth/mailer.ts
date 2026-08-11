@@ -6,6 +6,8 @@
  *
  * Server-only.
  */
+import { SmtpMailer, parseSmtpUrl } from "./smtp";
+
 export interface OutboundEmail {
   to: string;
   subject: string;
@@ -13,7 +15,7 @@ export interface OutboundEmail {
 }
 
 export interface Mailer {
-  readonly id: "http" | "console";
+  readonly id: "http" | "console" | "smtp";
   send(email: OutboundEmail): Promise<void>;
 }
 
@@ -51,6 +53,13 @@ export function mailerFromEnv(): Mailer {
   const url = env("MAIL_API_URL");
   const key = env("MAIL_API_KEY");
   const from = env("MAIL_FROM") ?? "no-reply@yougofurther.ch";
+  // SMTP first: a deployment that has configured a mailbox of its own meant to
+  // use it, and it is the transport a Swiss host actually offers.
+  const smtpUrl = env("MAIL_SMTP_URL");
+  if (smtpUrl) {
+    const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+    return new SmtpMailer(parseSmtpUrl(smtpUrl, from, proc));
+  }
   if (url && key) return new HttpApiMailer(url, key, from);
   return new ConsoleMailer();
 }

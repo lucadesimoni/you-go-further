@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: you-go-further
+  labels: { app: you-go-further }
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: { app: you-go-further }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels: { app: you-go-further }
+    spec:
+      # Two replicas on one node survive nothing. Preferred rather than required
+      # so a single-node cluster still schedules both.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels: { app: you-go-further }
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: app
+          image: ghcr.io/lucadesimoni/you-go-further:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8787
+          envFrom:
+            - configMapRef: { name: ygf-config }
+            - secretRef: { name: ygf-secrets }
+          # Liveness asks only whether the process is stuck; readiness asks
+          # whether it can serve, which includes reaching the database. Using
+          # the same deep check for both would restart every pod during a
+          # database blip instead of just taking them out of rotation.
+          startupProbe:
+            httpGet: { path: /api/health, port: http }
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            tcpSocket: { port: http }
+            periodSeconds: 20
+            timeoutSeconds: 3
+          lifecycle:
+            preStop:
+              # Let the ingress controller drop this pod from its upstreams
+              # before it stops answering. Without it, a rolling deploy serves
+              # a scatter of 502s to whoever is mid-session.
+              exec: { command: ["/bin/sh", "-c", "sleep 5"] }
+          terminationGracePeriodSeconds: 30
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { cpu: "1", memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false # dist/config.js is written at start-up
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: you-go-further
+  labels: { app: you-go-further }
+spec:
+  selector: { app: you-go-further }
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: you-go-further
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: you-go-further }

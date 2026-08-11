@@ -217,13 +217,18 @@ date here is still the curated one.
 Public API: `SWISS_EVENTS`, `eventCountdown`, `eventAdvice`, `carryLegs`,
 `planEvent`, `fetchRaceDayWeather`, `refreshEvent`, `applyConfirmed`.
 
-### `src/auth` — 1.0.0, stable
+### `src/auth` — 1.1.0, stable
 
 Sessions, signed JWTs, magic-link email sign-in, Google and Apple OIDC token
 verification, roles and permissions. See [`docs/auth.md`](./auth.md).
 
+Outbound mail has three transports behind one interface: a dependency-free SMTP
+client (implicit TLS or STARTTLS, AUTH PLAIN/LOGIN — so a Swiss deployment can
+send through its own mailbox rather than a foreign HTTP API), an HTTP
+transactional provider, and a console mailer for development.
+
 Public API: `signSession`, `verifySession`, `requestMagicLink`,
-`verifyMagicLink`, `verifyOidcToken`, `can`.
+`verifyMagicLink`, `verifyOidcToken`, `can`, `mailerFromEnv`, `SmtpMailer`.
 
 ### `src/persistence` — 0.9.0, **preview**
 
@@ -374,11 +379,13 @@ parity is proven in CI rather than asserted.
 *Preview because:* native HealthKit and Health Connect reads need a physical
 device.
 
-### `scripts` — 1.0.0, stable
+### `scripts` — 1.1.0, stable
 
-Build and verification tooling: `e2e-smoke.mjs` (the full browser journey),
-`mobile-smoke.mjs` (mobile parity), `host-config.mjs`, `gen-icons.mjs`,
-`stripe-verify.mjs`.
+Build, deployment and verification tooling: `preflight.ts` (the production
+configuration gate, also run by the server at start-up), `verify-deploy.mjs`
+(the deployed deployment's behaviour, over HTTP), `e2e-smoke.mjs` (the full
+browser journey), `mobile-smoke.mjs` (mobile parity), `host-config.mjs`,
+`gen-icons.mjs`, `stripe-verify.mjs`.
 
 ---
 
@@ -390,5 +397,6 @@ Build and verification tooling: `e2e-smoke.mjs` (the full browser journey),
 | `src/config.ts` | runtime configuration, resolved once; the single source for feature switches |
 | `src/model.ts` | the shared `Activity` shape every module agrees on |
 | `src/runtime.ts` | wiring: which stores and providers a given configuration gets |
+| `src/preflight.ts` | what has to be true before this is a production deployment; run by `npm run preflight`, by CI, and by the server at start-up |
 | `src/App.tsx` | the shell — navigation, routing, providers |
 | `src/styles.css` | the whole design system: one token set, no component hard-codes a colour |

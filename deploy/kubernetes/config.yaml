@@ -1,0 +1,21 @@
+# Non-secret settings. Everything with a credential in it lives in the
+# `ygf-secrets` Secret instead — see the README for the create command.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ygf-config
+data:
+  APP_ENV: "production"
+  PORT: "8787"
+  HOST: "0.0.0.0"
+  STORE_BACKEND: "postgres"
+  # The API accepts an unauthenticated `x-role` header when this is on.
+  ALLOW_ROLE_SWITCHING: "false"
+  # An ingress terminates TLS in front of every pod, so the forwarded headers
+  # are trustworthy and per-IP rate limits count real clients.
+  TRUST_PROXY: "true"
+  ALLOWED_ORIGINS: "https://yougofurther.ch"
+  ENABLED_PROVIDERS: "strava,garmin,polar,suunto"
+  MAIL_FROM: "no-reply@yougofurther.ch"
+  SUBSCRIPTIONS_ENABLED: "false"
+  EXPORT_ENABLED: "false"

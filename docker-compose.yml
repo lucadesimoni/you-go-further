@@ -1,34 +1,49 @@
-# Local / on-prem deployment.
+# Local and on-prem, with the same image production runs.
 #
-#   docker compose up --build web          → static SPA only (nginx, :8080)
-#   docker compose --profile full up --build → API + Postgres (:8787) + SPA
+#   docker compose up --build                    → app on :8787, file-backed
+#   docker compose --profile full up --build     → app + Postgres on :8787
+#   docker compose --profile static up --build   → SPA only behind nginx, :8080
+#
+# For an actual public deployment use `deploy/compose/docker-compose.prod.yml`,
+# which adds TLS, refuses to start on a bad configuration, and keeps the app off
+# a published port. This file is the development convenience; that one is the
+# deployment.
 services:
-  # Static SPA (client-side only; no server needed).
-  web:
+  # The production image, run with development-safe settings. APP_ENV stays
+  # unset on purpose: with it set to production the preflight would (correctly)
+  # refuse to start against a throwaway secret and a container-local database.
+  app:
     build:
       context: .
       args:
         BASE_PATH: /
+    environment:
+      APP_ENV: development
+      STORE_BACKEND: file
+      DATA_DIR: /app/.data
+      ALLOW_ROLE_SWITCHING: "true"
+      ALLOW_CONSOLE_MAIL: "true"
     ports:
-      - "8080:80"
+      - "8787:8787"
+    volumes:
+      - app-data:/app/.data
     restart: unless-stopped
 
-  # Full stack: API server backed by Postgres, also serving the SPA.
+  # Same image, Postgres behind it — the shape a real deployment has.
   api:
     profiles: ["full"]
     build:
       context: .
-      dockerfile: Dockerfile.api
-    ports:
-      - "8787:8787"
     environment:
-      PORT: "8787"
-      VITE_APP_ENV: production
+      APP_ENV: development
       STORE_BACKEND: postgres
       DATABASE_URL: postgres://ygf:ygf@db:5432/ygf
       AUTH_SECRET: ${AUTH_SECRET:-change-me-in-prod}
       ALLOW_ROLE_SWITCHING: "false"
-      # STRAVA_CLIENT_ID / STRAVA_CLIENT_SECRET, GARMIN_* … set for live OAuth
+      ALLOW_CONSOLE_MAIL: "true"
+      # STRAVA_CLIENT_ID / STRAVA_CLIENT_SECRET, GARMIN_* … for live OAuth
+    ports:
+      - "8788:8787"
     depends_on:
       db:
         condition: service_healthy
@@ -50,5 +65,19 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # The SPA on its own, behind nginx — for hosting the front end separately
+  # from the API. Everything except sign-in and sync works client-side.
+  static:
+    profiles: ["static"]
+    build:
+      context: .
+      dockerfile: Dockerfile.static
+      args:
+        BASE_PATH: /
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
 volumes:
   ygf-db:
+  app-data:

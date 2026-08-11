@@ -1,0 +1,29 @@
+# TLS and the route in. Two strings are cluster-specific: the ingress class and
+# the cert-manager issuer. Change them to match your cluster; everything else is
+# portable.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: you-go-further
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    # An elevation profile is the largest thing this API accepts, and the
+    # server caps bodies at 1 MB itself — refuse anything bigger at the edge
+    # rather than carrying it across the cluster first.
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [yougofurther.ch]
+      secretName: ygf-tls
+  rules:
+    - host: yougofurther.ch
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: you-go-further
+                port: { name: http }

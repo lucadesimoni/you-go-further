@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: you-go-further
+resources:
+  - config.yaml
+  - deployment.yaml
+  - ingress.yaml
+
+# Pin the image to a release rather than `latest`, so a rollback is a one-line
+# change and a restarted pod cannot quietly pick up a different build.
+images:
+  - name: ghcr.io/lucadesimoni/you-go-further
+    newTag: latest
+
+commonLabels:
+  app.kubernetes.io/name: you-go-further
+  app.kubernetes.io/part-of: you-go-further
