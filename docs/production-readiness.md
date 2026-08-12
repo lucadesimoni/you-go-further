@@ -13,7 +13,7 @@ blocker rather than a nice-to-have.
 
 | Suite | What it covers | Where it runs |
 | --- | --- | --- |
-| 857 unit tests, 57 files | the engine, the stores, auth, i18n, the router, the style tokens, the version manifest | CI, every push |
+| 858 unit tests, 57 files | the engine, the stores, auth, i18n, the router, the style tokens, the version manifest | CI, every push |
 | e2e journey (~50 steps) | sign-in → onboarding → plan → route → debrief → checkout, four languages, a phone in German, the athlete's own data | CI, against a real Node server |
 | demo suite | the client-side build a static host serves, with no API at all | CI |
 | mobile suite | the Expo screens through react-native-web, against the same API a phone talks to | locally; not yet in CI |
@@ -37,11 +37,11 @@ Beyond the tests:
   with the map split into a further 45 kB that loads only when a map does.
 
 The journey moving into CI earned its keep on the first run: it exposed a race
-in which an athlete's saved weight could revert to the old value with no error
-anywhere, because a screen mounting straight after a save read the server
-before the save arrived. It never reproduced on this machine — a faster one
-loses the race more often — which is the whole argument for running the suite
-somewhere other than where it was written.
+in which an athlete's saved weight reverted to the old value with no error
+anywhere — a read already in flight when they typed came back stale and landed
+on top of them. It never reproduced on this machine; a faster one loses the
+race more often, which is the whole argument for running the suite somewhere
+other than where it was written. It is now a deterministic step of its own.
 
 ## What is not ready
 

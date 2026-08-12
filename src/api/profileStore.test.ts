@@ -65,6 +65,27 @@ describe("the profile cache", () => {
     expect(calls).toEqual(["save:83", "get"]);
   });
 
+  it("throws away a read that was already in the air when the athlete typed", async () => {
+    // The one that actually happened: the profile screen mounts and syncs, the
+    // athlete edits their weight before the answer comes back, and the answer —
+    // the *old* profile — lands on top of the new one. The next screen then
+    // shows the weight they just replaced, with nothing to retry.
+    const read = syncProfile();
+    await Promise.resolve();
+    expect(calls).toEqual(["get"]);
+
+    saveProfile({ ...DEFAULT_PROFILE, bodyWeightKg: 83 });
+    const settled = await read;
+
+    expect(settled.bodyWeightKg).toBe(83);
+    expect(loadProfile().bodyWeightKg).toBe(83);
+
+    // Leave the shared chain settled for the next test.
+    await Promise.resolve();
+    resolveSave?.();
+    await new Promise((r) => setTimeout(r, 0));
+  });
+
   it("keeps two quick edits in the order they were made", async () => {
     saveProfile({ ...DEFAULT_PROFILE, bodyWeightKg: 81 });
     // The POST starts on the next microtask, the way it does after a keystroke.

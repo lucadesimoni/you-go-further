@@ -60,8 +60,13 @@ The platform version answers "which release is this?". A module version answers
   that window called `syncProfile`, read the *old* server profile and wrote it
   back over the new one. Nothing errored — the number simply changed back, and
   the faster the machine the more often it happened, which is why it showed up
-  first on a CI runner and never here. Reads now queue behind writes, and
-  writes behind each other.
+  first on a CI runner and never here. Reads now queue behind writes, writes
+  behind each other, and — the part that actually mattered — a read discards
+  its answer if the athlete has written while it was in the air. Queueing alone
+  never caught that one: by the time there is anything to queue behind, the GET
+  has already left. Reproduced in a browser by holding the read open for three
+  seconds, failing in both directions before and after, and the journey now
+  carries that scenario as a step.
 - **A session outlived the account it named.** Tokens are stateless and signed,
   so deleting the athlete could not revoke one: their browser forgot it, but a
   copy kept anywhere else still verified, and an ingest with it would have

@@ -351,6 +351,42 @@ await step("a weight set in the profile reaches the plan and the analysis", asyn
   });
 });
 
+await step("a slow read cannot overwrite the weight the athlete just typed", async () => {
+  // The bug this pins: the profile screen syncs on mount, the athlete edits
+  // before that read answers, and the answer — the *old* profile — lands on
+  // top of the new one. No error, nothing to retry; the number simply changes
+  // back. It surfaced first on a CI runner, because a faster machine loses the
+  // race more often, so here it is made deterministic: read the server now,
+  // hand the answer back three seconds later.
+  await page.route("**/api/profile", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const response = await route.fetch();
+    const body = await response.text();
+    await new Promise((r) => setTimeout(r, 3000));
+    await route.fulfill({ response, body });
+  });
+  try {
+    await page.click(".account-btn");
+    await page.click("text=Profile & health");
+    await page.waitForSelector("#p-weight");
+    await page.locator("#p-weight").fill("77");
+    await page.waitForResponse(
+      (r) =>
+        r.url().includes("/api/profile") &&
+        r.request().method() === "POST" &&
+        (r.request().postData() ?? "").includes('"bodyWeightKg":77') &&
+        r.ok(),
+      { timeout: 15000 },
+    );
+    // Long enough for the stale answer to land, which is the whole point.
+    await page.waitForTimeout(4000);
+    const shown = await page.locator("#p-weight").inputValue();
+    if (shown !== "77") throw new Error(`the stale read won: the field says ${shown}`);
+  } finally {
+    await page.unroute("**/api/profile");
+  }
+});
+
 console.log("── commerce ──");
 await step("a hand-off to a partner shop is recorded, so commission can be reconciled", async () => {
   await planMode("A session");

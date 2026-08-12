@@ -47,13 +47,31 @@ function writeCache(profile: AthleteProfile): AthleteProfile {
  */
 let inFlight: Promise<unknown> = Promise.resolve();
 
+/**
+ * How many times the athlete has changed their profile.
+ *
+ * Sequencing the reads behind the writes is not enough on its own: a read
+ * issued *before* the edit is already on its way, and its answer — the old
+ * profile — arrives afterwards and overwrites the new one. That is the actual
+ * shape of the bug, and no amount of queueing catches it, because by the time
+ * there is anything to queue behind the GET has left.
+ *
+ * So a read remembers the count it started at, and throws its answer away if
+ * the athlete has written since. The cache is then the newest thing there is,
+ * which is what a cache is for.
+ */
+let writes = 0;
+
 /** Pull the authoritative profile from the server (no-op without an API). */
 export async function syncProfile(): Promise<AthleteProfile> {
   if (!isApiConfigured()) return loadProfile();
   // Never read past a write that has not landed yet.
   await inFlight;
+  const startedAt = writes;
   try {
     const { profile } = await api.profileGet();
+    // Someone typed while this was in the air. Their value is newer.
+    if (writes !== startedAt) return loadProfile();
     return writeCache({ ...DEFAULT_PROFILE, ...profile });
   } catch {
     return loadProfile();
@@ -62,6 +80,7 @@ export async function syncProfile(): Promise<AthleteProfile> {
 
 /** Save locally for instant feedback, then persist to the server. */
 export function saveProfile(profile: AthleteProfile): AthleteProfile {
+  writes++;
   writeCache(profile);
   if (isApiConfigured()) {
     inFlight = inFlight.then(() => api.profileSave(profile)).catch(() => {});

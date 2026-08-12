@@ -296,7 +296,7 @@ translated into all four languages.
 
 Public API: `nutritionGuide`.
 
-### `src/api` — 1.7.1, stable
+### `src/api` — 1.7.2, stable
 
 Two HTTP surfaces behind one pure router. `handlers.ts` is request in, response
 out, with no Node and no Vercel in it — which is what lets `server/index.ts` and
@@ -397,7 +397,7 @@ parity is proven in CI rather than asserted.
 *Preview because:* native HealthKit and Health Connect reads need a physical
 device.
 
-### `scripts` — 1.4.0, stable
+### `scripts` — 1.5.0, stable
 
 Build, deployment and verification tooling: `preflight.ts` (the production
 configuration gate, also run by the server at start-up), `verify-deploy.mjs`
