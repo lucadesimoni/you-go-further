@@ -231,7 +231,7 @@ transactional provider, and a console mailer for development.
 Public API: `signSession`, `verifySession`, `requestMagicLink`,
 `verifyMagicLink`, `verifyOidcToken`, `can`, `mailerFromEnv`, `SmtpMailer`.
 
-### `src/persistence` — 0.9.0, **preview**
+### `src/persistence` — 0.10.0, **preview**
 
 Store implementations behind the domain interfaces: in-memory, JSON file, and
 PostgreSQL.
@@ -273,7 +273,7 @@ which the UI states plainly rather than implying a partnership.
 Public API: `buildCart`, `createCheckout`, `verifyWebhook`, `affiliateLinks`,
 `recordAffiliateClick`.
 
-### `src/users` — 1.0.0, stable
+### `src/users` — 1.1.0, stable
 
 Accounts, roles, org membership, and the athlete's body & health profile — which
 lives on the server so it follows the athlete across devices, with localStorage
@@ -296,7 +296,7 @@ translated into all four languages.
 
 Public API: `nutritionGuide`.
 
-### `src/api` — 1.5.0, stable
+### `src/api` — 1.6.0, stable
 
 Two HTTP surfaces behind one pure router. `handlers.ts` is request in, response
 out, with no Node and no Vercel in it — which is what lets `server/index.ts` and
@@ -306,6 +306,11 @@ out, with no Node and no Vercel in it — which is what lets `server/index.ts` a
 principal; the OAuth flow binds identity to a one-time `state` minted by an
 authenticated call, so a consent redirect carrying no Authorization header still
 lands on the right account.
+
+`GET /api/me/export` and `DELETE /api/me` are the athlete's own data rights, and
+sit outside the tier checks on purpose — a copy of your data and the ability to
+erase it are not features to be sold. Deletion reports what it kept: paid orders
+remain as accounting records, detached from the account.
 
 **`/v1/*`** is the public engine contract — see [`public-api.md`](./public-api.md).
 It is deliberately a different surface with different rules: its own
@@ -326,17 +331,23 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.9.0, stable
+### `src/components` — 1.10.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
 onboarding, and the shared primitives (`Stat`, `Switch`, `Explain`, `BuyLink`,
 `Icon`, `ChoiceRow`/`ChoiceCards`, `ReadMore`/`MoreList`).
 
+`ErrorBoundary` is the exception to every convention here: no hooks, no i18n, no
+design system. It renders because something else in this module failed, so it
+depends on nothing that could have been the thing that failed. `PrivacyView`
+states what is held and who holds it, reading the operator's identity from
+configuration rather than inventing one.
+
 Public API: `App`, `Planner`, `RouteInsights`, `RaceForecast`, `SessionDebrief`,
 `LoadProfileCard`.
 
-### `src/i18n` — 1.2.0, stable
+### `src/i18n` — 1.3.0, stable
 
 Four typed dictionaries — German, French, Italian, English — with `{placeholder}`
 interpolation and `_one` plural siblings. `de`, `fr` and `it` are typed against
@@ -383,7 +394,7 @@ parity is proven in CI rather than asserted.
 *Preview because:* native HealthKit and Health Connect reads need a physical
 device.
 
-### `scripts` — 1.2.0, stable
+### `scripts` — 1.3.0, stable
 
 Build, deployment and verification tooling: `preflight.ts` (the production
 configuration gate, also run by the server at start-up), `verify-deploy.mjs`

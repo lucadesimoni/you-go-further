@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.14.0";
+export const PLATFORM_VERSION = "0.15.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -232,7 +232,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "persistence",
     path: "src/persistence",
-    version: "0.9.0",
+    version: "0.10.0",
     layer: "platform",
     stability: "preview",
     summary: "Store implementations behind the domain interfaces: in-memory, JSON file, and PostgreSQL.",
@@ -265,7 +265,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "users",
     path: "src/users",
-    version: "1.0.0",
+    version: "1.1.0",
     layer: "platform",
     stability: "stable",
     summary: "Accounts, roles, org membership and the athlete's body & health profile.",
@@ -293,7 +293,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "api",
     path: "src/api",
-    version: "1.5.0",
+    version: "1.6.0",
     layer: "platform",
     stability: "stable",
     summary:
@@ -320,7 +320,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "components",
     path: "src/components",
-    version: "1.9.0",
+    version: "1.10.0",
     layer: "interface",
     stability: "stable",
     summary: "Every screen and shared control, from the planner and the race forecast to the admin views.",
@@ -329,7 +329,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "i18n",
     path: "src/i18n",
-    version: "1.2.0",
+    version: "1.3.0",
     layer: "interface",
     stability: "stable",
     summary:
@@ -389,7 +389,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "scripts",
     path: "scripts",
-    version: "1.2.0",
+    version: "1.3.0",
     layer: "surface",
     stability: "stable",
     summary:

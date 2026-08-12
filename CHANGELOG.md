@@ -8,6 +8,42 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.15.0
+
+**Added**
+
+- **The athlete can take their data and leave.** `GET /api/me/export` returns
+  everything the platform holds — account, body profile, activities, session
+  logs, orders — and `DELETE /api/me` erases it along with the account.
+  Neither is gated by tier: portability and erasure are rights, not upgrades.
+  The export names the connected providers but never their tokens, because an
+  export is a file people forward and a token is a live credential to somebody
+  else's Strava. Paid orders survive deletion — bookkeeping law requires ten
+  years — and the response says so rather than keeping them quietly.
+- **Privacy & your data**, reachable from the account menu: what is held and
+  why, the four things that leave the platform, the two buttons above, and who
+  runs the deployment. The operator's identity comes from `OPERATOR_NAME`,
+  `OPERATOR_ADDRESS`, `PRIVACY_CONTACT` and `TERMS_URL`, and an unconfigured
+  build says outright that nobody is named instead of showing a placeholder.
+- **An error boundary**, so a thrown error is a screen with a way back rather
+  than a white page. It uses no translation lookup and no hooks, because it
+  runs precisely when something else has failed. Unhandled promise rejections —
+  a failed save in an event handler, which React's boundary never sees — are
+  logged instead of vanishing.
+- **An offline banner**, shown only in the build that has a server to be cut
+  off from. The plan still computes in a valley; nothing syncs, and silence was
+  the wrong way to say that.
+
+**Changed**
+
+- `preflight` blocks a production deployment that names nobody responsible for
+  the data, and warns when the terms the sign-in screen refers to do not exist.
+- `host-config.mjs` passes the operator's details to the browser. Setting them
+  only in the server's environment would have passed preflight and still shown
+  an unnamed controller, since the privacy screen runs client-side.
+- The e2e journey ends with export, then deletion, then a fresh sign-in that
+  proves the deletion — last, because the account does not survive it.
+
 ## 0.14.0
 
 **Changed**
