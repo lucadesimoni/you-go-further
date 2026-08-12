@@ -15,6 +15,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # The smoke suites drive a real browser. Nothing else installs one, and a
+      # missing browser is a launch failure rather than a skipped test.
+      - name: Install Chromium
+        run: npx playwright-core install --with-deps chromium
       - name: Typecheck
         run: npm run typecheck
       - name: Test
@@ -41,6 +45,10 @@ jobs:
           MAIL_SMTP_URL=smtps://u:p@mail.example.ch:465
           ALLOWED_ORIGINS=https://yougofurther.ch
           TRUST_PROXY=true
+          OPERATOR_NAME=Fuel Labs GmbH
+          OPERATOR_ADDRESS=Musterstrasse 1, 8000 Zurich
+          PRIVACY_CONTACT=privacy@yougofurther.ch
+          TERMS_URL=https://yougofurther.ch/terms
           ENV
           npm run preflight -- /tmp/good.env
       # The client-side build, which is what a static host serves and what
@@ -54,6 +62,22 @@ jobs:
             curl -fsS http://localhost:4173/ >/dev/null && break || sleep 2
           done
           npm run e2e:demo
+      # The whole journey against the real server: sign-in, onboarding, plan,
+      # route, debrief, checkout, four languages, a phone in German, and the
+      # athlete's own data. It is the suite that covers the most, and until now
+      # it ran only on a developer's machine.
+      - name: The full journey against a real server
+        run: |
+          set -e
+          node scripts/host-config.mjs
+          STORE_BACKEND=file DATA_DIR=/tmp/ygf-ci PORT=8830 npm run server &
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:8830/api/health >/dev/null && break || sleep 2
+          done
+          BASE_URL=http://localhost:8830 npm run e2e
+          # The SPA is rebuilt without the single-origin config, because the
+          # demo step below is the client-side build and must stay one.
+          npm run build
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
@@ -82,6 +106,10 @@ jobs:
             -e DATA_DIR=/app/.data \
             -e ALLOW_CONSOLE_MAIL=true \
             -e ALLOWED_ORIGINS=https://yougofurther.ch \
+            -e OPERATOR_NAME="Fuel Labs GmbH" \
+            -e OPERATOR_ADDRESS="Musterstrasse 1, 8000 Zurich" \
+            -e PRIVACY_CONTACT=privacy@yougofurther.ch \
+            -e TERMS_URL=https://yougofurther.ch/terms \
             you-go-further:ci
           for i in $(seq 1 30); do
             curl -fsS http://localhost:8787/api/health >/dev/null && break || sleep 2

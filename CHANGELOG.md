@@ -44,6 +44,18 @@ The platform version answers "which release is this?". A module version answers
 - The e2e journey ends with export, then deletion, then a fresh sign-in that
   proves the deletion — last, because the account does not survive it.
 
+**Fixed**
+
+- **CI was red on every push, and had been for a while.** The smoke suites
+  pinned Chromium to this sandbox's fixed path, which does not exist on a
+  runner — so the demo step could not launch a browser at all. All three
+  suites now resolve a browser (`CHROME_PATH`, the sandbox, a system Chrome,
+  or Playwright's own), and CI installs one.
+- CI now runs the **full e2e journey against a real server**, not only the
+  client-side demo. It is the suite that covers the most and it ran nowhere.
+- The workflow's production fixtures name an operator, since preflight now
+  refuses a deployment that does not.
+
 ## 0.14.0
 
 **Changed**

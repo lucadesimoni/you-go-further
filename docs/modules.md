@@ -394,7 +394,7 @@ parity is proven in CI rather than asserted.
 *Preview because:* native HealthKit and Health Connect reads need a physical
 device.
 
-### `scripts` — 1.3.0, stable
+### `scripts` — 1.4.0, stable
 
 Build, deployment and verification tooling: `preflight.ts` (the production
 configuration gate, also run by the server at start-up), `verify-deploy.mjs`

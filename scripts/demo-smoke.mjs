@@ -18,14 +18,14 @@
  * Every assertion below is one of those.
  */
 import { chromium } from "playwright-core";
+import { launchOptions } from "./chrome.mjs";
 
 const B = process.env.BASE_URL ?? "http://localhost:4173";
-const CHROME = process.env.CHROME_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
 const errors = [];
 let failed = 0;
 
-const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
+const browser = await chromium.launch(launchOptions());
 const page = await browser.newPage({ viewport: { width: 1180, height: 900 } });
 page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
 // Map tiles and geodata are blocked in CI sandboxes; the app is supposed to

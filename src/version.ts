@@ -389,7 +389,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "scripts",
     path: "scripts",
-    version: "1.3.0",
+    version: "1.4.0",
     layer: "surface",
     stability: "stable",
     summary:

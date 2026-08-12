@@ -8,14 +8,13 @@
  *   BASE_URL=http://localhost:8830 node scripts/e2e-smoke.mjs
  */
 import { chromium } from "playwright-core";
+import { launchOptions } from "./chrome.mjs";
 
 const B = process.env.BASE_URL ?? "http://localhost:8787";
-const CHROME =
-  process.env.CHROME_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 const errors = [];
 let failed = 0;
 
-const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
+const browser = await chromium.launch(launchOptions());
 const page = await browser.newPage({ viewport: { width: 1180, height: 900 } });
 page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
 // Blocked tile/geodata hosts are an environment limit, not an app defect: the

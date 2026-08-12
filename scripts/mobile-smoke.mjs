@@ -12,18 +12,18 @@
  * or simply: npm run e2e:mobile
  */
 import { chromium } from "playwright-core";
+import { launchOptions } from "./chrome.mjs";
 
 const API = process.env.API_URL ?? "http://localhost:8791";
 // `health=apple-health` swaps in a stand-in for HealthKit, which cannot run in a
 // browser. Only the device *read* is faked; the sync, validation, readiness and
 // profile update below are the real paths.
 const APP = `${process.env.APP_URL ?? "http://localhost:5199"}/?api=${encodeURIComponent(API)}&health=apple-health`;
-const CHROME = process.env.CHROME_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
 const errors = [];
 let failed = 0;
 
-const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
+const browser = await chromium.launch(launchOptions());
 // iPhone-ish viewport: the layout has to work at phone width, not just fit.
 const page = await browser.newPage({ viewport: { width: 414, height: 896 } });
 page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
