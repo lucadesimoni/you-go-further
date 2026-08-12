@@ -32,6 +32,15 @@ export const DEFAULT_PROFILE: AthleteProfile = {
 export interface ProfileStore {
   get(userId: string): Promise<AthleteProfile>;
   save(userId: string, patch: Partial<AthleteProfile>): Promise<AthleteProfile>;
+  /**
+   * Erase an athlete's body data.
+   *
+   * Required rather than convenient: weight, sweat rate and readiness are
+   * health-adjacent personal data, and an athlete who deletes their account has
+   * to take these with them. A store that can only ever accumulate cannot
+   * honour that.
+   */
+  remove(userId: string): Promise<void>;
 }
 
 const SWEAT: SweatLevel[] = ["light", "average", "heavy"];
@@ -64,5 +73,9 @@ export class InMemoryProfileStore implements ProfileStore {
     const next = { ...(await this.get(userId)), ...normalizeProfile(patch) };
     this.byUser.set(userId, next);
     return next;
+  }
+
+  async remove(userId: string): Promise<void> {
+    this.byUser.delete(userId);
   }
 }

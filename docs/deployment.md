@@ -49,6 +49,10 @@ Resolution order (highest wins): `window.__APP_CONFIG__` (from `public/config.js
 | exportEnabled | `VITE_EXPORT_ENABLED` | `false` | Attach an export sink. |
 | defaultTier | `VITE_DEFAULT_TIER` | `free` | Starting subscription tier. |
 | allowRoleSwitching | `VITE_ALLOW_ROLE_SWITCHING` | `true` | Demo persona switcher (turn **off** in prod). |
+| operatorName | `OPERATOR_NAME` | — | Legal name of the controller, shown on Privacy & your data. **Required in prod.** |
+| operatorAddress | `OPERATOR_ADDRESS` | — | Postal address; `\n` in the value becomes a line break. **Required in prod.** |
+| privacyContact | `PRIVACY_CONTACT` | — | Email or form URL for access/erasure requests. **Required in prod.** |
+| termsUrl | `TERMS_URL` | — | Where the sign-in screen's "our terms" actually points. |
 
 Runtime override example (`config.js`, no rebuild):
 
@@ -158,6 +162,7 @@ Two things matter for a *functional* deploy:
    | `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET` | real Strava OAuth (optional) |
    | `GARMIN_CLIENT_ID` / `GARMIN_CLIENT_SECRET` | real Garmin OAuth (optional) |
    | `VITE_GOOGLE_CLIENT_ID` / `VITE_APPLE_CLIENT_ID` | real Google/Apple sign-in (optional) |
+   | `OPERATOR_NAME` / `OPERATOR_ADDRESS` / `PRIVACY_CONTACT` | who is responsible for the data (required) |
    | `VITE_ENABLED_PROVIDERS` | e.g. `strava,garmin,polar,suunto` |
 
    The SPA calls the API on its own origin (relative `/api/*`), so no

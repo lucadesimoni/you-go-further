@@ -48,6 +48,7 @@ describe("dictionary parity", () => {
         "home.hours",
         "home.distance",
         "guide.articles", // "articles" is the same word in French
+        "privacy.tpProviders", // four brand names and a dash, in every language
         "nav.guide", // "Guide" is the same word in French
         "account.menu", // Italian uses the English "Account"
         "absorb.ceiling", // "max ~90 g/h" is the same abbreviation everywhere

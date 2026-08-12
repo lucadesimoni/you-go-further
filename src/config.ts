@@ -52,6 +52,20 @@ export interface AppConfig {
   /** Public OAuth client ids for real social sign-in (empty = simulated). */
   googleClientId: string;
   appleClientId: string;
+  /**
+   * Who operates this deployment, shown on the privacy screen.
+   *
+   * Not decoration: Swiss law requires a business offering a service online to
+   * identify itself, and both the revised FADP and the GDPR require a named
+   * controller and a contact for data-protection requests. This app cannot
+   * know them — they belong to whoever runs it — so they are configuration,
+   * and `npm run preflight` refuses a production deployment that leaves them
+   * empty rather than letting the screen ship with a placeholder.
+   */
+  operatorName: string;
+  operatorAddress: string;
+  privacyContact: string;
+  termsUrl: string;
   version: string;
 }
 
@@ -71,6 +85,10 @@ interface RawConfig {
   sellDirect?: string | boolean;
   googleClientId?: string;
   appleClientId?: string;
+  operatorName?: string;
+  operatorAddress?: string;
+  privacyContact?: string;
+  termsUrl?: string;
   version?: string;
 }
 
@@ -88,6 +106,10 @@ const DEFAULTS: AppConfig = {
   sellDirect: false,
   googleClientId: "",
   appleClientId: "",
+  operatorName: "",
+  operatorAddress: "",
+  privacyContact: "",
+  termsUrl: "",
   version: PLATFORM_VERSION,
 };
 
@@ -112,6 +134,10 @@ function readEnv(): RawConfig {
     sellDirect: get("SELL_DIRECT"),
     googleClientId: get("GOOGLE_CLIENT_ID"),
     appleClientId: get("APPLE_CLIENT_ID"),
+    operatorName: get("OPERATOR_NAME"),
+    operatorAddress: get("OPERATOR_ADDRESS"),
+    privacyContact: get("PRIVACY_CONTACT"),
+    termsUrl: get("TERMS_URL"),
     version: get("APP_VERSION"),
   };
 }
@@ -157,6 +183,13 @@ function resolve(): AppConfig {
     sellDirect: asBool(raw.sellDirect, DEFAULTS.sellDirect),
     googleClientId: raw.googleClientId || DEFAULTS.googleClientId,
     appleClientId: raw.appleClientId || DEFAULTS.appleClientId,
+    operatorName: raw.operatorName || DEFAULTS.operatorName,
+    // A postal address has lines. An env file cannot hold a real newline, so
+    // `\n` written in one becomes one here rather than showing up as literal
+    // backslash-n on the privacy screen.
+    operatorAddress: (raw.operatorAddress || DEFAULTS.operatorAddress).replace(/\\n/g, "\n"),
+    privacyContact: raw.privacyContact || DEFAULTS.privacyContact,
+    termsUrl: raw.termsUrl || DEFAULTS.termsUrl,
     version: raw.version || DEFAULTS.version,
   };
 }

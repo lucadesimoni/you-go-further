@@ -111,6 +111,11 @@ export function AccountMenu({
               {t("account.billing")}
             </button>
           )}
+          {/* Where the athlete's data goes, and the two buttons that make that
+              a promise rather than a paragraph. */}
+          <button type="button" className="dropdown-item" onClick={() => go("privacy")} role="menuitem">
+            {t("privacy.title")}
+          </button>
           <button type="button" className="dropdown-item" onClick={() => go("connect")} role="menuitem">
             {t("account.connections")}
           </button>

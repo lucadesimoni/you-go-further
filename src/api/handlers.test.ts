@@ -1090,3 +1090,127 @@ describe("API hardening", () => {
     expect(limited.headers?.["retry-after"]).toMatch(/^\d+$/);
   });
 });
+
+/**
+ * Portability and erasure.
+ *
+ * These are rights rather than features, which changes what the tests have to
+ * prove: not that the endpoints respond, but that the export is complete, that
+ * it leaks no credential, that deletion actually empties every store, and that
+ * what is deliberately kept is *reported* rather than quietly retained.
+ */
+describe("the athlete's own data", () => {
+  let route: ReturnType<typeof createApiRouter>;
+  const me: Principal = { id: "own1", name: "Own", role: "athlete", tier: "free" };
+
+  /** Give this athlete something to export: a connection, sessions, a log, a profile. */
+  const populate = async () => {
+    await route(req("POST", "/api/ingest", { principal: me, body: { provider: "strava", days: 21 } }));
+    // Ingesting does not itself record a connection — the OAuth callback and
+    // the on-device health sync do. Use the latter, which needs no redirect.
+    await route(
+      req("POST", "/api/health/sync", {
+        principal: me,
+        body: { platform: "apple-health", activities: [], wellness: [] },
+      }),
+    );
+    await route(req("POST", "/api/profile", { principal: me, body: { bodyWeightKg: 61 } }));
+    const acts = (await route(req("GET", "/api/activities", { principal: me }))).data as {
+      activities: { id: string }[];
+    };
+    await route(
+      req("POST", "/api/feedback", {
+        principal: me,
+        body: { activityId: acts.activities[0]?.id, gi: "none", energy: "strong", durationMin: 90, plannedCarbPerHourG: 60 },
+      }),
+    );
+    return acts.activities.length;
+  };
+
+  beforeEach(() => {
+    route = createApiRouter(createRuntime({ ...getConfig(), enabledProviders: ["garmin", "strava"] }));
+  });
+
+  it("exports everything the platform holds, for any tier", async () => {
+    const count = await populate();
+    const res = await route(req("GET", "/api/me/export", { principal: me }));
+    expect(res.status).toBe(200);
+    const data = res.data as Record<string, unknown> & {
+      activities: unknown[];
+      sessionLogs: unknown[];
+      connections: { provider: string }[];
+      profile: { bodyWeightKg: number };
+      account: { id: string };
+    };
+    expect(data.account.id).toBe(me.id);
+    expect(data.activities.length).toBe(count);
+    expect(data.sessionLogs.length).toBe(1);
+    expect(data.connections.length).toBeGreaterThan(0);
+    expect(data.profile.bodyWeightKg).toBe(61);
+    // A free athlete gets their own data. Portability is not a paid feature —
+    // the organisation-wide export elsewhere is the licensed one.
+    expect(me.tier).toBe("free");
+  });
+
+  it("never puts a working credential in the export", async () => {
+    await populate();
+    const res = await route(req("GET", "/api/me/export", { principal: me }));
+    const body = JSON.stringify(res.data);
+    expect(body).not.toMatch(/accessToken|refreshToken|"secret"/);
+  });
+
+  it("hands back one athlete's data and nobody else's", async () => {
+    await populate();
+    const other: Principal = { id: "own2", name: "Other", role: "athlete", tier: "free" };
+    await route(req("POST", "/api/ingest", { principal: other, body: { provider: "garmin", days: 21 } }));
+    const mine = (await route(req("GET", "/api/me/export", { principal: me }))).data as { activities: unknown[] };
+    const theirs = (await route(req("GET", "/api/me/export", { principal: other }))).data as { activities: unknown[] };
+    expect(mine.activities.length).toBeGreaterThan(0);
+    expect(theirs.activities.length).toBeGreaterThan(0);
+    const mineJson = JSON.stringify(mine);
+    // No id from the other athlete's sessions may appear in this one's export.
+    for (const a of theirs.activities as { id: string }[]) expect(mineJson).not.toContain(a.id);
+  });
+
+  it("deletes the account and empties every store behind it", async () => {
+    await populate();
+    const res = await route(req("DELETE", "/api/me", { principal: me }));
+    expect(res.status).toBe(200);
+    const report = res.data as { deleted: Record<string, number | boolean> };
+    expect(report.deleted.activities).toBeGreaterThan(0);
+    expect(report.deleted.sessionLogs).toBe(1);
+    expect(report.deleted.connections).toBeGreaterThan(0);
+
+    // The proof is what is left, not what the response claims.
+    const after = (await route(req("GET", "/api/me/export", { principal: me }))).data as {
+      activities: unknown[];
+      sessionLogs: unknown[];
+      connections: unknown[];
+      profile: { bodyWeightKg: number };
+    };
+    expect(after.activities).toEqual([]);
+    expect(after.sessionLogs).toEqual([]);
+    expect(after.connections).toEqual([]);
+    // Back to the population default rather than the athlete's own figure.
+    expect(after.profile.bodyWeightKg).not.toBe(61);
+  });
+
+  it("says plainly what it keeps, instead of keeping it quietly", async () => {
+    await populate();
+    const res = await route(req("DELETE", "/api/me", { principal: me }));
+    const report = res.data as { retained: { orders: number; reason: string } };
+    expect(typeof report.retained.orders).toBe("number");
+    // Bookkeeping law requires paid orders to survive; a claim that everything
+    // is gone would be false, so the response has to carry the exception.
+    expect(report.retained.reason).toMatch(/accounting/i);
+  });
+
+  it("leaves other athletes untouched", async () => {
+    await populate();
+    const other: Principal = { id: "own3", name: "Other", role: "athlete", tier: "free" };
+    await route(req("POST", "/api/ingest", { principal: other, body: { provider: "garmin", days: 21 } }));
+    await route(req("DELETE", "/api/me", { principal: me }));
+    const theirs = (await route(req("GET", "/api/me/export", { principal: other }))).data as { activities: unknown[] };
+    expect(theirs.activities.length).toBeGreaterThan(0);
+  });
+});

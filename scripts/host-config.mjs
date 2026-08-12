@@ -19,6 +19,17 @@ const lines = [
 if (process.env.GOOGLE_CLIENT_ID) lines.push(`  googleClientId: ${JSON.stringify(process.env.GOOGLE_CLIENT_ID)},`);
 if (process.env.APPLE_CLIENT_ID) lines.push(`  appleClientId: ${JSON.stringify(process.env.APPLE_CLIENT_ID)},`);
 if (process.env.ENABLED_PROVIDERS) lines.push(`  enabledProviders: ${JSON.stringify(process.env.ENABLED_PROVIDERS)},`);
+// Who is responsible for the data. These are rendered on the privacy screen,
+// which runs in the browser — so a deployment that sets them only in the
+// server's environment would pass preflight and still name nobody.
+for (const [key, env] of [
+  ["operatorName", "OPERATOR_NAME"],
+  ["operatorAddress", "OPERATOR_ADDRESS"],
+  ["privacyContact", "PRIVACY_CONTACT"],
+  ["termsUrl", "TERMS_URL"],
+]) {
+  if (process.env[env]) lines.push(`  ${key}: ${JSON.stringify(process.env[env])},`);
+}
 
 writeFileSync("dist/config.js", `window.__APP_CONFIG__ = {\n${lines.join("\n")}\n};\n`);
 console.log(`wrote dist/config.js → apiBaseUrl = window.location.origin (env=${env})`);

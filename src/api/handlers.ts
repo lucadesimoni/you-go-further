@@ -678,6 +678,64 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         });
       }
 
+      /**
+       * --- The athlete's own data ------------------------------------------
+       *
+       * Portability and erasure are rights, not features: they are not gated by
+       * tier, not behind a support request, and not something an operator has
+       * to run by hand. The organisation-wide NDJSON export elsewhere is a
+       * different thing — that is a business capability and stays licensed.
+       */
+      if (key === "GET /api/me/export") {
+        const [acts, logs, conns, profile, myOrders] = await Promise.all([
+          store.query({ userId: principal.id }),
+          feedback.list(principal.id),
+          connections.list(principal.id),
+          profiles.get(principal.id),
+          orders.list(principal.id),
+        ]);
+        return ok({
+          exportedAt: new Date().toISOString(),
+          platform: versionManifest().platform,
+          account: { id: principal.id, name: principal.name, role: principal.role, tier: principal.tier },
+          profile,
+          // The provider, not the token: an export must not hand out a
+          // credential that still works against somebody else's API.
+          connections: conns.map((c) => ({ provider: c.provider, connectedAt: c.connectedAt })),
+          activities: acts,
+          sessionLogs: logs,
+          orders: myOrders,
+        });
+      }
+
+      if (key === "DELETE /api/me") {
+        const [acts, logs, conns, myOrders] = await Promise.all([
+          store.count(principal.id),
+          feedback.list(principal.id),
+          connections.list(principal.id),
+          orders.list(principal.id),
+        ]);
+        await store.clear(principal.id);
+        await feedback.clear(principal.id);
+        for (const c of conns) await connections.remove(principal.id, c.provider);
+        await profiles.remove(principal.id);
+        await users.remove(principal.id);
+        return ok({
+          deleted: { activities: acts, sessionLogs: logs.length, connections: conns.length, profile: true, account: true },
+          /*
+           * Paid orders are not deleted, and saying so is part of doing this
+           * honestly. Swiss and EU bookkeeping law requires a business to keep
+           * its transaction records for ten years, so an "everything is gone"
+           * claim would be false. What is gone is the account they were
+           * attached to.
+           */
+          retained: {
+            orders: myOrders.filter((o) => o.status === "paid").length,
+            reason: "Paid orders are kept as accounting records; they are no longer linked to an account.",
+          },
+        });
+      }
+
       // --- Athlete profile (per user, follows them across devices) ---------
       if (key === "GET /api/profile") return ok({ profile: await profiles.get(principal.id) });
       if (key === "POST /api/profile") {

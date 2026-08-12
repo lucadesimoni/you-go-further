@@ -194,6 +194,14 @@ export const api = {
     call<EmailRequestResponse>("POST", "/api/auth/email/request", { body: { email, returnTo } }),
   emailLinkVerify: (token: string) =>
     call<EmailVerifyResponse>("POST", "/api/auth/email/verify", { body: { token } }),
+  /** Everything the platform holds about the signed-in athlete. Never gated. */
+  exportMyData: () => call<Record<string, unknown>>("GET", "/api/me/export"),
+  /** Erase the account and the data attached to it. */
+  deleteMe: () =>
+    call<{ deleted: Record<string, number | boolean>; retained: { orders: number; reason: string } }>(
+      "DELETE",
+      "/api/me",
+    ),
   /** Who the server thinks you are *now* — including a tier bought since sign-in. */
   me: () => call<{ principal: { id: string; name: string; role: Role; tier: Tier } }>("GET", "/api/me"),
 };

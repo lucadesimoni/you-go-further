@@ -980,6 +980,51 @@ await step("no screen is wider than the phone it is on, in German", async () => 
   if (bad.length) throw new Error([...new Set(bad)].join("; "));
 });
 
+// Last on purpose: the second of these two steps ends the account, so nothing
+// can follow it.
+console.log("── the athlete's own data ──");
+await step("privacy is reachable from the account menu and names the third parties", async () => {
+  await page.goto(B, { waitUntil: "networkidle" });
+  await page.waitForTimeout(1200);
+  await page.click(".account-btn");
+  await page.waitForTimeout(400);
+  await page.click("text=Privacy & your data");
+  await page.waitForSelector(".privacy", { timeout: 15000 });
+  const parties = await page.locator(".privacy-third-parties li").count();
+  if (parties < 4) throw new Error(`only ${parties} third parties disclosed`);
+});
+
+await step("the export is a real file, holds this athlete's sessions, and leaks no token", async () => {
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 30000 }),
+    page.click('button:has-text("Download everything we hold")'),
+  ]);
+  const path = await download.path();
+  const { readFileSync } = await import("node:fs");
+  const dump = JSON.parse(readFileSync(path, "utf8"));
+  if (!dump.activities?.length) throw new Error("export contained no activities");
+  if (!dump.profile) throw new Error("export contained no body profile");
+  // An export is handed to the athlete and often forwarded onwards. A provider
+  // access token in it is a live credential to someone else's Strava account.
+  if (/"(accessToken|refreshToken)"/.test(JSON.stringify(dump))) throw new Error("export leaked provider tokens");
+});
+
+await step("deleting the account really deletes it — the same address comes back empty", async () => {
+  await page.click('button:has-text("Delete my account")');
+  await page.waitForTimeout(600);
+  await page.click('button:has-text("Delete everything")');
+  await page.waitForSelector(".auth-card", { timeout: 20000 });
+
+  // The server's word for it, not the browser's: signing in again with the
+  // same address must start onboarding, which only happens with no profile.
+  await page.click("text=Continue with email");
+  await page.fill('input[type="email"]', email);
+  await page.click("text=Email me a sign-in link");
+  await page.waitForSelector("text=Check your inbox");
+  await page.click("text=Open the link (dev mailer)");
+  await page.waitForSelector("text=Fuel your body to go further", { timeout: 20000 });
+});
+
 await browser.close();
 if (errors.length) console.log("\nconsole/page errors:\n  " + errors.join("\n  "));
 console.log(`\n${failed === 0 && errors.length === 0 ? "PASS" : "FAIL"} — ${failed} failed step(s), ${errors.length} error(s)`);

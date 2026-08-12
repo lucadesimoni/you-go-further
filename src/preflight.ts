@@ -225,6 +225,35 @@ export function preflight(env: Env): PreflightFinding[] {
     );
   }
 
+  // --- Who is responsible for this ------------------------------------------
+  // A service that holds health-adjacent data about named people has to say who
+  // is holding it and how to reach them about it. The app cannot know — the
+  // details belong to whoever runs the deployment — so an empty one here means
+  // the privacy screen ships without a controller, which is both a legal
+  // failure and, for an athlete deciding whether to trust it, a plain one.
+  for (const [key, id, what] of [
+    ["OPERATOR_NAME", "operator-name-missing", "the legal name of whoever runs this"],
+    ["OPERATOR_ADDRESS", "operator-address-missing", "a postal address for the operator"],
+    ["PRIVACY_CONTACT", "privacy-contact-missing", "a contact for data-protection requests"],
+  ] as const) {
+    if (!read(env, key)) {
+      add(
+        id,
+        "blocker",
+        `${key} is not set, so the privacy screen names nobody as responsible for the data.`,
+        `Set ${key} to ${what}. Swiss law requires a service to identify itself, and both the revised FADP and the GDPR require a named controller.`,
+      );
+    }
+  }
+  if (!read(env, "TERMS_URL")) {
+    add(
+      "terms-url-missing",
+      "warning",
+      "TERMS_URL is not set, and the sign-in screen already tells people they agree to terms.",
+      "Publish the terms and point TERMS_URL at them, or remove the claim from the sign-in screen.",
+    );
+  }
+
   // --- Analytics egress ----------------------------------------------------
   if (isTrue(read(env, "EXPORT_ENABLED")) && !(env.DATABRICKS_HOST && env.DATABRICKS_TOKEN)) {
     add(

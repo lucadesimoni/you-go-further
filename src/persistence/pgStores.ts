@@ -409,6 +409,10 @@ export class PgProfileStore implements ProfileStore {
     );
     return next;
   }
+
+  async remove(userId: string): Promise<void> {
+    await this.pool.query("DELETE FROM profiles WHERE user_id = $1", [userId]);
+  }
 }
 
 export interface PgStores {

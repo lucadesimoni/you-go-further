@@ -182,4 +182,12 @@ Node 22, a PostgreSQL, outbound HTTPS, and somewhere to put a backup.
       repository's sandbox blocks `*.geo.admin.ch`, so that path has never been
       exercised against the live service and the first real network is where it
       gets proven.
-- [ ] A privacy notice that names the table above.
+- [ ] `OPERATOR_NAME`, `OPERATOR_ADDRESS` and `PRIVACY_CONTACT` name the real
+      controller, and `TERMS_URL` points at terms that exist. The app renders
+      them on Privacy & your data; preflight blocks the deployment without
+      them. Nobody may invent these on the operator's behalf.
+- [ ] The privacy screen's third-party list still matches the table above —
+      re-read it after changing `ENABLED_PROVIDERS`, `TILE_URL` or the mailer.
+- [ ] Someone has actually used the two buttons on that screen against
+      production: the export downloads a file with their data in it, and
+      deleting the account really removes it.

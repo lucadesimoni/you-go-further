@@ -16,6 +16,10 @@ const GOOD: Env = {
   MAIL_SMTP_URL: "smtps://no-reply%40yougofurther.ch:pw@mail.infomaniak.com:465",
   ALLOWED_ORIGINS: "https://yougofurther.ch",
   TRUST_PROXY: "true",
+  OPERATOR_NAME: "Fuel Labs GmbH",
+  OPERATOR_ADDRESS: "Musterstrasse 1, 8000 Zürich",
+  PRIVACY_CONTACT: "privacy@yougofurther.ch",
+  TERMS_URL: "https://yougofurther.ch/terms",
 };
 
 const ids = (env: Env) => preflight(env).map((f) => f.id);
@@ -103,6 +107,19 @@ describe("production preflight", () => {
     expect(found.length).toBeGreaterThan(3);
     expect(found.every((f) => f.level === "warning")).toBe(true);
     expect(passes(found)).toBe(true);
+  });
+
+  it("blocks a deployment that names nobody as responsible for the data", () => {
+    // A service holding health-adjacent data about named people has to say who
+    // is holding it and how to reach them about it.
+    expect(blockers({ ...GOOD, OPERATOR_NAME: undefined })).toContain("operator-name-missing");
+    expect(blockers({ ...GOOD, OPERATOR_ADDRESS: undefined })).toContain("operator-address-missing");
+    expect(blockers({ ...GOOD, PRIVACY_CONTACT: undefined })).toContain("privacy-contact-missing");
+    // The sign-in screen already claims the athlete agrees to terms; having
+    // none is a broken promise rather than a legal failure, so it warns.
+    const noTerms = { ...GOOD, TERMS_URL: undefined };
+    expect(ids(noTerms)).toContain("terms-url-missing");
+    expect(blockers(noTerms)).not.toContain("terms-url-missing");
   });
 
   it("says what to do about every finding it reports", () => {

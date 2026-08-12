@@ -307,6 +307,11 @@ export class FileProfileStore implements ProfileStore {
     this.file.write(this.data);
     return next;
   }
+
+  async remove(userId: string): Promise<void> {
+    delete this.data[userId];
+    this.file.write(this.data);
+  }
 }
 
 /**

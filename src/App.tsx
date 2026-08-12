@@ -7,6 +7,7 @@ import { AdminView } from "./components/AdminView";
 import { LoginScreen } from "./components/LoginScreen";
 import { ProgressView } from "./components/ProgressView";
 import { ProfileView } from "./components/ProfileView";
+import { PrivacyView } from "./components/PrivacyView";
 import { SubscriptionView } from "./components/SubscriptionView";
 import { AccountMenu } from "./components/AccountMenu";
 import { HomeView } from "./components/HomeView";
@@ -15,6 +16,7 @@ import { NutritionGuide } from "./components/NutritionGuide";
 import { useMediaQuery, PHONE } from "./ui/useMediaQuery";
 import { EventPlanner } from "./components/EventPlanner";
 import { ToastHost } from "./components/ToastHost";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { ConfirmHost } from "./components/ConfirmHost";
 import { Onboarding } from "./components/Onboarding";
 import { isOnboarded, setOnboarded, getOnboardStep, enterDemo, seedDemoFeedback, connectDemoSource } from "./api/onboarding";
@@ -232,7 +234,7 @@ export function App() {
     // hid it by setting the tab itself at the end; skip onboarding, as a demo
     // account now does, and you landed on Plan instead of your own start screen.
     if (!account) return;
-    const menuScreens = ["profile", "subscription"];
+    const menuScreens = ["profile", "subscription", "privacy"];
     if (!visibleTabs.some((t) => t.id === tab) && !menuScreens.includes(tab)) {
       setTab(visibleTabs[0]?.id ?? "plan");
     }
@@ -521,6 +523,7 @@ export function App() {
           <ProgressView profile={progress} fuelling={fuelling} hasData={hasSyncedData} onConnect={() => setTab("connect")} />
         )}
         {tab === "profile" && <ProfileView account={account} />}
+        {tab === "privacy" && <PrivacyView account={account} />}
         {tab === "subscription" && config.subscriptionsEnabled && (
           <SubscriptionView tier={storedTier} onChoose={setStoredTier} canBilling={canBilling} />
         )}
@@ -537,6 +540,7 @@ export function App() {
         {config.environment} · v{config.version} · {t("app.disclaimer")}
       </footer>
 
+      <OfflineBanner />
       <ToastHost />
       <ConfirmHost />
     </div>

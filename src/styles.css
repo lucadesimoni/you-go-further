@@ -4942,6 +4942,103 @@ code {
 .score-next-list strong { display: block; }
 .score-next-list span { display: block; font-size: var(--text-base); color: var(--muted); line-height: 1.55; margin-top: 2px; }
 
+/* ---- When it breaks, and when the network does -------------------------- */
+
+/* The crash screen. Plain on purpose: it renders because something else did
+   not, so it leans on as little of the design system as it can. */
+.crash {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-8);
+  background: var(--bg);
+}
+.crash-card {
+  max-width: 44ch;
+  padding: var(--space-9);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+}
+.crash-kicker {
+  margin: 0;
+  font-size: var(--text-2xs);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+.crash-title { margin: var(--space-3) 0 var(--space-4); font-size: var(--text-2xl); }
+.crash-body { margin: 0; color: var(--muted); line-height: 1.6; }
+.crash-actions { display: flex; flex-wrap: wrap; gap: var(--space-4); margin: var(--space-7) 0 0; }
+.crash-details { margin-top: var(--space-7); font-size: var(--text-sm); color: var(--muted); }
+.crash-details summary { cursor: pointer; }
+.crash-details pre {
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  font-size: var(--text-xs);
+}
+.crash-hint { margin: var(--space-4) 0; line-height: 1.5; }
+
+/* Offline. Above the bottom bar on a phone so it is not hidden behind it. */
+.offline-banner {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-8);
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: calc(100vw - var(--space-8) * 2);
+  padding: var(--space-4) var(--space-6);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--panel);
+  box-shadow: var(--shadow-md);
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+.offline-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warn-ink);
+}
+
+/* ---- Privacy & data ----------------------------------------------------- */
+.privacy-list { margin: 0; display: flex; flex-direction: column; gap: var(--space-5); }
+.privacy-list dt { font-weight: 700; color: var(--text); }
+.privacy-list dd { margin: var(--space-1) 0 0; color: var(--muted); line-height: 1.55; }
+.privacy-third-parties {
+  margin: var(--space-4) 0 0;
+  padding-left: var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--muted);
+  line-height: 1.55;
+}
+.privacy-third-parties strong { color: var(--text); }
+.privacy-actions { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-5); }
+.privacy-retain { margin-top: var(--space-5); }
+.privacy-operator {
+  font-style: normal;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  color: var(--muted);
+  line-height: 1.55;
+}
+.privacy-operator strong { color: var(--text); font-size: 1.02rem; }
+/* An address is written over several lines; the config carries it as one
+   string with newlines, so keep them. */
+.privacy-address { white-space: pre-line; }
+
 /* ---------------------------------------------------------------------------
  * Phone refinements, last on purpose.
  *
@@ -4952,6 +5049,9 @@ code {
  * declared earlier, so it lives at the end where it can win.
  * ------------------------------------------------------------------------ */
 @media (max-width: 640px) {
+  /* Clear of the bottom navigation bar. */
+  .offline-banner { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+
   /* Press feedback. A control that does not acknowledge the tap feels broken
      on a touch screen, where there is no hover to fall back on. */
   .btn:active,
