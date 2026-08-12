@@ -17,6 +17,7 @@ blocker rather than a nice-to-have.
 | e2e journey (~50 steps) | sign-in → onboarding → plan → route → debrief → checkout, four languages, a phone in German, the athlete's own data | CI, against a real Node server |
 | demo suite | the client-side build a static host serves, with no API at all | CI |
 | mobile suite | the Expo screens through react-native-web, against the same API a phone talks to | locally; not yet in CI |
+| container check | the production image starts, serves, and answers `verify:deploy` from outside | CI, every push |
 
 Beyond the tests:
 
@@ -41,7 +42,11 @@ in which an athlete's saved weight reverted to the old value with no error
 anywhere — a read already in flight when they typed came back stale and landed
 on top of them. It never reproduced on this machine; a faster one loses the
 race more often, which is the whole argument for running the suite somewhere
-other than where it was written. It is now a deterministic step of its own.
+other than where it was written. It is now a deterministic step of its own. Making the pipeline honest turned up two more things nothing here could
+have seen: a session token that kept working after its account was deleted,
+and a production image that could not start at all with the file store,
+because it runs as `node` and `/app/.data` was root-owned. That last one is
+the path `docker compose up` takes.
 
 ## What is not ready
 
