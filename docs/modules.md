@@ -296,7 +296,7 @@ translated into all four languages.
 
 Public API: `nutritionGuide`.
 
-### `src/api` — 1.6.0, stable
+### `src/api` — 1.7.0, stable
 
 Two HTTP surfaces behind one pure router. `handlers.ts` is request in, response
 out, with no Node and no Vercel in it — which is what lets `server/index.ts` and
@@ -310,7 +310,10 @@ lands on the right account.
 `GET /api/me/export` and `DELETE /api/me` are the athlete's own data rights, and
 sit outside the tier checks on purpose — a copy of your data and the ability to
 erase it are not features to be sold. Deletion reports what it kept: paid orders
-remain as accounting records, detached from the account.
+remain as accounting records, detached from the account. A session is a stateless
+signed token and cannot be revoked by deleting a row, so a request that presents
+one for an account that no longer exists is refused — otherwise a copied token
+could still file activities under an erased athlete's id.
 
 **`/v1/*`** is the public engine contract — see [`public-api.md`](./public-api.md).
 It is deliberately a different surface with different rules: its own

@@ -272,6 +272,27 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
     const limited = limitFor(key, req);
     if (limited) return limited;
 
+    /**
+     * A token outlives the account it names.
+     *
+     * Sessions are stateless signed tokens, so `DELETE /api/me` cannot revoke
+     * one: the athlete's browser forgets it, but a copy kept anywhere else
+     * still verifies. Nothing catastrophic follows — every route is scoped to
+     * the principal, and the data is gone — but an ingest with that token
+     * would file new activities under an id whose owner asked to be erased,
+     * which is precisely what they asked not to happen.
+     *
+     * So an account that no longer exists is refused. Only for requests that
+     * actually presented a session: demo personas and the sign-in routes carry
+     * no Authorization header, and `/v1` presents an API key in that same
+     * header — a different credential, belonging to a tenant rather than an
+     * athlete, with no account to check.
+     */
+    const isV1 = segs[0] === "v1" || (segs[0] === "api" && segs[1] === "v1");
+    if (!isV1 && String(headers?.["authorization"] ?? "").startsWith("Bearer ") && !(await users.get(principal.id))) {
+      return { status: 401, data: { error: "This account no longer exists." } };
+    }
+
     try {
       /**
        * --- The public engine API: `/v1/*` -----------------------------------

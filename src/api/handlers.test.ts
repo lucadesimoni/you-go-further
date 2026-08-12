@@ -1213,4 +1213,29 @@ describe("the athlete's own data", () => {
     const theirs = (await route(req("GET", "/api/me/export", { principal: other }))).data as { activities: unknown[] };
     expect(theirs.activities.length).toBeGreaterThan(0);
   });
+
+  it("refuses a session token whose account has been deleted", async () => {
+    // Sessions are stateless signed tokens, so deletion cannot revoke one: the
+    // athlete's browser forgets it, but a copy kept anywhere else still
+    // verifies. Using it to ingest would file fresh activities under the id of
+    // someone who asked to be erased.
+    const owner: Principal = { id: "own-admin", name: "Owner", role: "owner", tier: "elite" };
+    const email = "token-holder@club.ch";
+    const created = await route(
+      req("POST", "/api/admin/users", { principal: owner, body: { name: "Token Holder", email } }),
+    );
+    expect(created.status).toBe(200);
+    const holder: Principal = { id: `user:${email}`, name: "Token Holder", role: "athlete", tier: "free" };
+    const signedIn = { principal: holder, headers: { authorization: "Bearer a-token-the-transport-verified" } };
+
+    // While the account exists, that token works — otherwise the assertion
+    // below would pass for the wrong reason.
+    const before = await route(req("POST", "/api/ingest", { ...signedIn, body: { provider: "strava", days: 7 } }));
+    expect(before.status).toBe(200);
+
+    await route(req("DELETE", "/api/me", { ...signedIn }));
+
+    const after = await route(req("POST", "/api/ingest", { ...signedIn, body: { provider: "strava", days: 7 } }));
+    expect(after.status).toBe(401);
+  });
 });

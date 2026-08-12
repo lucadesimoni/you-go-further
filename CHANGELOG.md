@@ -55,6 +55,13 @@ The platform version answers "which release is this?". A module version answers
   client-side demo. It is the suite that covers the most and it ran nowhere.
 - The workflow's production fixtures name an operator, since preflight now
   refuses a deployment that does not.
+- **A session outlived the account it named.** Tokens are stateless and signed,
+  so deleting the athlete could not revoke one: their browser forgot it, but a
+  copy kept anywhere else still verified, and an ingest with it would have
+  filed fresh activities under the id of someone who asked to be erased. A
+  request presenting a session for an account that no longer exists is now
+  refused. The API-key surface is exempt — it presents a tenant's credential in
+  the same header and has no account to check.
 
 ## 0.14.0
 
