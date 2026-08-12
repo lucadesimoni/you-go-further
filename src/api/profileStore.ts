@@ -32,9 +32,26 @@ function writeCache(profile: AthleteProfile): AthleteProfile {
   return profile;
 }
 
+/**
+ * The write that is still in the air.
+ *
+ * `saveProfile` returns immediately so typing stays instant, which leaves a
+ * window where the new value is in the browser but not yet on the server. A
+ * screen that mounts inside that window calls `syncProfile`, reads the *old*
+ * server profile, and writes it back over the new one — the athlete watches
+ * their weight revert to what it was, with no error and nothing to retry.
+ *
+ * Reads now queue behind writes, and writes behind each other, so two quick
+ * edits cannot land out of order either. It is one shared chain rather than a
+ * lock because the only thing that has to be true is the ordering.
+ */
+let inFlight: Promise<unknown> = Promise.resolve();
+
 /** Pull the authoritative profile from the server (no-op without an API). */
 export async function syncProfile(): Promise<AthleteProfile> {
   if (!isApiConfigured()) return loadProfile();
+  // Never read past a write that has not landed yet.
+  await inFlight;
   try {
     const { profile } = await api.profileGet();
     return writeCache({ ...DEFAULT_PROFILE, ...profile });
@@ -46,7 +63,9 @@ export async function syncProfile(): Promise<AthleteProfile> {
 /** Save locally for instant feedback, then persist to the server. */
 export function saveProfile(profile: AthleteProfile): AthleteProfile {
   writeCache(profile);
-  if (isApiConfigured()) void api.profileSave(profile).catch(() => {});
+  if (isApiConfigured()) {
+    inFlight = inFlight.then(() => api.profileSave(profile)).catch(() => {});
+  }
   return profile;
 }
 

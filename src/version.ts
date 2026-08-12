@@ -293,7 +293,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "api",
     path: "src/api",
-    version: "1.7.0",
+    version: "1.7.1",
     layer: "platform",
     stability: "stable",
     summary:

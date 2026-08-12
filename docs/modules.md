@@ -296,7 +296,7 @@ translated into all four languages.
 
 Public API: `nutritionGuide`.
 
-### `src/api` — 1.7.0, stable
+### `src/api` — 1.7.1, stable
 
 Two HTTP surfaces behind one pure router. `handlers.ts` is request in, response
 out, with no Node and no Vercel in it — which is what lets `server/index.ts` and

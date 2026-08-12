@@ -55,6 +55,13 @@ The platform version answers "which release is this?". A module version answers
   client-side demo. It is the suite that covers the most and it ran nowhere.
 - The workflow's production fixtures name an operator, since preflight now
   refuses a deployment that does not.
+- **An athlete's weight could revert on its own.** `saveProfile` writes the
+  cache and returns before the server has the value; a screen mounting inside
+  that window called `syncProfile`, read the *old* server profile and wrote it
+  back over the new one. Nothing errored — the number simply changed back, and
+  the faster the machine the more often it happened, which is why it showed up
+  first on a CI runner and never here. Reads now queue behind writes, and
+  writes behind each other.
 - **A session outlived the account it named.** Tokens are stateless and signed,
   so deleting the athlete could not revoke one: their browser forgot it, but a
   copy kept anywhere else still verified, and an ingest with it would have

@@ -331,19 +331,24 @@ await step("a weight set in the profile reaches the plan and the analysis", asyn
   // The save is what the rest of this step depends on; wait for the server to
   // acknowledge it rather than for a guessed number of milliseconds.
   await page.waitForResponse(
-    (r) => r.url().includes("/api/profile") && r.request().method() === "POST" && r.ok(),
+    (r) =>
+      r.url().includes("/api/profile") &&
+      r.request().method() === "POST" &&
+      // This save, not one still in flight from the step before.
+      (r.request().postData() ?? "").includes('"bodyWeightKg":83') &&
+      r.ok(),
     { timeout: 15000 },
   );
   await page.click('button.topnav-tab:has-text("Connect")');
-  await waitFor(
-    "connect ignored the profile",
-    async () => /83 kg/.test(await page.locator(".from-profile span").first().innerText()),
-  );
+  await waitFor("connect ignored the profile", async () => {
+    const seen = await page.locator(".from-profile span").first().innerText();
+    return /83 kg/.test(seen) || seen;
+  });
   await planMode("A session");
-  await waitFor(
-    "planner ignored the profile",
-    async () => /83 kg/.test(await page.locator(".from-profile span").first().innerText()),
-  );
+  await waitFor("planner ignored the profile", async () => {
+    const seen = await page.locator(".from-profile span").first().innerText();
+    return /83 kg/.test(seen) || seen;
+  });
 });
 
 console.log("── commerce ──");
