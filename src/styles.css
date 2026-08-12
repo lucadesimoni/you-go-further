@@ -2411,6 +2411,102 @@ code {
 
 /* --- Route map (Leaflet) --- */
 .route-wrap { margin-top: 4px; }
+
+/* The layer switcher sits *on* the map, the way every map does it — so it
+   costs a corner of the picture instead of a row of chips above it. */
+.route-map-frame { position: relative; }
+
+.map-switcher {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  /* Above Leaflet's own panes and controls, which sit at 400–1000. */
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.map-switcher-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.map-switcher-toggle:hover { border-color: var(--border-strong); }
+.map-switcher.open .map-switcher-toggle { border-color: var(--accent); }
+
+.map-switcher-body {
+  min-width: 200px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow-md);
+}
+
+.map-switcher-group { border: 0; margin: 0 0 var(--space-3); padding: 0; }
+.map-switcher-group:last-of-type { margin-bottom: 0; }
+.map-switcher-group legend {
+  padding: 0 0 var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.map-opt {
+  display: flex;
+  align-items: flex-start;
+  /* The global `label` rule pushes its children apart; a checkbox and its name
+     belong together on the left. */
+  justify-content: flex-start;
+  text-align: left;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  cursor: pointer;
+}
+.map-opt.on { color: var(--text); font-weight: 600; }
+.map-opt input { accent-color: var(--accent-ink); margin-top: 2px; }
+.map-opt input:disabled { cursor: not-allowed; }
+.map-opt-label { display: flex; flex-direction: column; min-width: 0; }
+.map-opt-hint { font-size: var(--text-2xs); font-weight: 400; color: var(--muted); }
+
+.map-switcher-source {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The point the height profile is pointing at. */
+.map-cursor {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--panel);
+  box-shadow: 0 0 0 2px var(--accent-line);
+}
+
 .route-map {
   width: 100%;
   height: 340px;
@@ -3054,11 +3150,36 @@ code {
 .elev-chart { margin: 0; }
 .elev-svg {
   width: 100%;
-  height: 96px;
   display: block;
   background: var(--surface-inset);
   border-radius: var(--radius-sm);
+  /* The chart is measured and drawn at its real pixel width, so the height is
+     set by the component rather than stretched by CSS — a profile scaled to a
+     box misreports every gradient on it, which is the one thing it exists to
+     show. */
+  touch-action: pan-y;
 }
+.elev-grid line {
+  stroke: var(--border);
+  stroke-width: 1;
+  opacity: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+.elev-axis-label,
+.elev-axis-unit {
+  fill: var(--muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.elev-axis-unit { font-weight: 700; }
+/* The shared cursor: the same place, marked on the map above. */
+.elev-cursor line {
+  stroke: var(--accent);
+  stroke-width: 1;
+  opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+.elev-cursor circle { fill: var(--accent); stroke: var(--panel); stroke-width: 2; }
 /* Climbs shaded: the demanding stretches should read before any label does. */
 .elev-climb { fill: var(--chart-climb); opacity: 0.10; }
 .elev-area { fill: var(--chart-terrain-fill); stroke: none; opacity: 0.9; }
@@ -3070,10 +3191,25 @@ code {
 .elev-foot {
   display: flex;
   justify-content: space-between;
+  gap: var(--space-3);
   margin-top: var(--space-2);
   font-size: var(--text-2xs);
   color: var(--muted);
+  /* The readout replaces the summary in place; without a floor the row jumps
+     by a line as the pointer enters and leaves the chart. */
+  min-height: 1.4em;
+  font-variant-numeric: tabular-nums;
 }
+/* Reading the cursor: the three figures belong together, not spread across the
+   width the way the static summary is. */
+.elev-foot.reading { justify-content: flex-start; gap: var(--space-6); }
+.elev-read-km,
+.elev-read-alt { color: var(--text); font-weight: 700; }
+.elev-read-grade { font-weight: 700; }
+.elev-read-grade.steep { color: var(--during-ink); }
+.elev-exaggeration { opacity: 0.8; }
+/* The stop nearest the cursor, so the list and the chart agree on which one. */
+.elev-stop-row.near { background: var(--surface-inset); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
 
 .elev-stops {
   list-style: none;
@@ -3106,7 +3242,6 @@ code {
 
 @media (max-width: 560px) {
   .elev-stop-row { grid-template-columns: 44px 1fr auto; }
-  .elev-svg { height: 84px; }
 }
 
 /* --- Session debrief: what a past run actually asked for, and what happened ---
@@ -3320,22 +3455,11 @@ code {
 .chip-meta { font-weight: 500; font-size: var(--text-2xs); color: var(--muted); }
 .chip-active .chip-meta { color: var(--text); opacity: 0.8; }
 
-.route-picker,
-.map-layers {
+.route-picker {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
-}
-.map-layers { align-items: center; }
-.map-layers .chip { flex-direction: row; align-items: center; }
-.map-source {
-  margin-left: auto;
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
 }
 .geo-implications {
   margin: var(--space-5) 0 0;

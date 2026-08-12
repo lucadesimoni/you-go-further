@@ -1,37 +1,20 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Activity, ProviderId } from "../model";
 import { ALL_PROVIDER_IDS, DEVICE_PLATFORM_IDS, DESCRIPTORS, generateSampleWellness, ProviderRegistry } from "../providers";
 import type { ProviderCredential } from "../providers/types";
 import { IngestionPipeline, InMemoryActivityStore, lastNDays, toNdjson } from "../data";
-import { analyze, derivePhysiology, logForActivity, sportToActivity } from "../analysis";
-import type { SessionInput } from "./Planner";
+import { analyze, derivePhysiology } from "../analysis";
 import { GOALS } from "../options";
 import { can, limit, PLANS, requiredTierFor, type Tier } from "../subscription";
 import type { AthleteInput } from "../engine";
 import { api, isApiConfigured } from "../api/client";
-import type { SessionFeedback } from "../feedback";
 import { getConfig } from "../config";
 import { loadProfile } from "../api/profileStore";
 import { ChoiceRow } from "./Choice";
 import { GOAL_ICONS } from "./optionIcons";
 import { Stat } from "./Stat";
-import { useI18n, type TranslationKey } from "../i18n";
-import { RouteInsights } from "./RouteInsights";
+import { useI18n } from "../i18n";
 import { Explain } from "./Explain";
-// Code-split: Leaflet (~150 KB) loads only when a route map is actually shown.
-const RouteMap = lazy(() => import("./RouteMap").then((m) => ({ default: m.RouteMap })));
-
-/**
- * Sport names for the route picker — the same translated names the start screen
- * uses, so a session called "Trail running" there isn't "Trail run" here.
- */
-const SPORT_KEY: Record<string, TranslationKey> = {
-  run: "activity.running",
-  "trail-run": "activity.trail-running",
-  ride: "activity.cycling",
-  swim: "activity.swimming",
-  triathlon: "activity.triathlon",
-};
 
 const STATUS_LABEL: Record<string, string> = {
   detraining: "Detraining",
@@ -41,31 +24,12 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 /** Connections + analysis workspace. Feature access is gated by the active tier. */
-export function Dashboard({
-  tier,
-  feedback = [],
-  onLogSession,
-  focusActivityId,
-  onPlanRoute,
-  onEditProfile,
-}: {
+export function Dashboard({ tier, onEditProfile }: {
   tier: Tier;
-  /** The athlete's session logs, so a past route can be debriefed here. */
-  feedback?: SessionFeedback[];
-  onLogSession?: (
-    activityId: string,
-    entry: Pick<SessionFeedback, "gi" | "energy" | "actualCarbPerHourG"> & {
-      durationMin: number;
-      plannedCarbPerHourG: number;
-    },
-  ) => Promise<void> | void;
-  /** Open on a specific session — e.g. "How did it go?" from the start screen. */
-  focusActivityId?: string;
-  onPlanRoute?: (prefill: Partial<SessionInput>) => void;
   /** Opens the one place body data is edited. */
   onEditProfile?: () => void;
 }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const registry = useRef(new ProviderRegistry());
   const store = useRef(new InMemoryActivityStore());
   const pipeline = useRef(new IngestionPipeline(registry.current, store.current));
@@ -187,43 +151,6 @@ export function Dashboard({
     () => (activities.length ? analyze(activities, profile, goal) : null),
     [activities, profile, goal],
   );
-  /**
-   * Sessions with a GPS track, offered as a picker.
-   *
-   * Simply taking the newest few would often show an athlete four bike rides and
-   * no run, so the most recent session of *each* sport is seeded first and the
-   * remaining slots are filled with the newest others. That guarantees a runner
-   * sees a run.
-   */
-  const routedActivities = useMemo(() => {
-    const withRoute = [...activities]
-      .filter((a) => a.route && a.route.length > 1)
-      .sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime));
-    const picked: typeof withRoute = [];
-    const seenSport = new Set<string>();
-    for (const a of withRoute) {
-      if (seenSport.has(a.sport)) continue;
-      seenSport.add(a.sport);
-      picked.push(a);
-    }
-    for (const a of withRoute) {
-      if (picked.length >= 6) break;
-      if (!picked.includes(a)) picked.push(a);
-    }
-    return picked.sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime));
-  }, [activities]);
-
-  const dateFmt = useMemo(
-    () => new Intl.DateTimeFormat(lang === "de" ? "de-CH" : "en-GB", { day: "numeric", month: "short" }),
-    [lang],
-  );
-  const [routeId, setRouteId] = useState<string | null>(null);
-  // Arriving from "How did it go?" on the start screen: open that session.
-  useEffect(() => {
-    if (focusActivityId) setRouteId(focusActivityId);
-  }, [focusActivityId]);
-  const routedActivity = routedActivities.find((a) => a.id === routeId) ?? routedActivities[0] ?? null;
-  const unreviewed = (id: string) => !logForActivity(feedback, id);
   const physiology = useMemo(() => {
     const wellness = [...connected].flatMap((p) => generateSampleWellness(p, 21));
     return derivePhysiology(wellness);
@@ -362,64 +289,6 @@ export function Dashboard({
               instead of population averages.
             </p>
           </Explain>
-        </section>
-      )}
-
-      {/* Route, terrain and weather for a chosen session */}
-      {routedActivity && (
-        <section className="panel">
-          <div className="section-head">
-            <h2>{t("connect.route")}</h2>
-            <span className="pill">{t("connect.withGps", { count: routedActivities.length })}</span>
-          </div>
-          <p className="detail">
-            {t("connect.routeIntro")}
-          </p>
-          {/* Pick which session to look at: the latest is often a ride, and an
-              athlete wants to see the run they actually care about. */}
-          {routedActivities.length > 1 && (
-            <div className="route-picker" role="group" aria-label={t("connect.chooseSession")}>
-              {routedActivities.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className={`chip${a.id === routedActivity.id ? " chip-active" : ""}${
-                    unreviewed(a.id) ? " chip-todo" : ""
-                  }`}
-                  aria-pressed={a.id === routedActivity.id}
-                  onClick={() => setRouteId(a.id)}
-                >
-                  {SPORT_KEY[a.sport] ? t(SPORT_KEY[a.sport]) : a.sport}
-                  <span className="chip-meta">
-                    {dateFmt.format(new Date(a.startTime))}
-                    {a.distanceM ? ` · ${(a.distanceM / 1000).toFixed(0)} km` : ""}
-                  </span>
-                  {/* A quiet dot marks the sessions still waiting for a debrief,
-                      so the athlete sees where the gap is without reading. */}
-                  {unreviewed(a.id) && <span className="chip-dot" aria-label={t("debrief.notLogged")} />}
-                </button>
-              ))}
-            </div>
-          )}
-          <Suspense fallback={<p className="detail">{t("map.loading")}</p>}>
-            <RouteMap activity={routedActivity} />
-          </Suspense>
-          {routedActivity.route && (
-            <RouteInsights
-              key={routedActivity.id}
-              route={routedActivity.route}
-              hintGainM={routedActivity.elevationGainM}
-              hintDistanceKm={
-                routedActivity.distanceM ? Math.round((routedActivity.distanceM / 1000) * 10) / 10 : undefined
-              }
-              activity={sportToActivity(routedActivity.sport)}
-              durationMin={Math.round(routedActivity.durationSec / 60)}
-              activityId={routedActivity.id}
-              feedback={feedback}
-              onLogSession={onLogSession}
-              onPlan={onPlanRoute}
-            />
-          )}
         </section>
       )}
 

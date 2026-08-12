@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isInSwitzerland, layersForRoute, OSM_LAYER, SWISS_LAYERS } from "./basemap";
+import { isInSwitzerland, layersForRoute, OSM_LAYER, SWISS_LAYERS, SWISS_OVERLAYS } from "./basemap";
 import type { LatLng } from "../model";
 
 const ZURICH: LatLng = [47.3769, 8.5417];
@@ -42,6 +42,25 @@ describe("layersForRoute", () => {
   it("a single stray GPS point cannot demote a Swiss route", () => {
     const { swiss } = layersForRoute([ZURICH, ZURICH, ZURICH, PARIS]);
     expect(swiss).toBe(true);
+  });
+
+  it("offers the federal overlays on a Swiss route, and none outside", () => {
+    // The overlays are Swiss federal datasets. Outside the country there is
+    // nothing behind them, so offering the switch would be a lie.
+    expect(layersForRoute([ZURICH, ZERMATT]).overlays.map((o) => o.id)).toEqual(
+      SWISS_OVERLAYS.map((o) => o.id),
+    );
+    expect(layersForRoute([PARIS, PARIS]).overlays).toEqual([]);
+  });
+
+  it("credits the source of every overlay and keeps it readable under the route line", () => {
+    for (const o of SWISS_OVERLAYS) {
+      expect(o.attribution, `${o.id} credits nobody`).toMatch(/swisstopo|ASTRA/);
+      expect(o.hint.length, `${o.id} does not say what it shows`).toBeGreaterThan(8);
+      // Full-strength overlays bury the red route line the map is drawn for.
+      expect(o.opacity).toBeLessThan(1);
+      expect(o.url).toMatch(/\.png$/); // transparent, or it is a base map
+    }
   });
 
   it("handles an empty route without throwing", () => {

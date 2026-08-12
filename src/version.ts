@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.11.0";
+export const PLATFORM_VERSION = "0.12.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -168,7 +168,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "geo",
     path: "src/geo",
-    version: "1.1.0",
+    version: "1.2.0",
     layer: "platform",
     stability: "stable",
     summary:
@@ -320,7 +320,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "components",
     path: "src/components",
-    version: "1.6.0",
+    version: "1.7.0",
     layer: "interface",
     stability: "stable",
     summary: "Every screen and shared control, from the planner and the race forecast to the admin views.",

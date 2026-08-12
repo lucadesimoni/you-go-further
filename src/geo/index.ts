@@ -9,6 +9,7 @@ export {
   estimateTerrain,
   fetchTerrain,
   type TerrainProfile,
+  type ElevationSample,
   type TerrainType,
 } from "./swisstopo";
 export {

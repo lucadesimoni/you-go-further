@@ -37,6 +37,8 @@ export function RouteInsights({
   activity,
   durationMin,
   onPlan,
+  hoverKm,
+  onHoverKm,
 }: {
   route: LatLng[];
   hintGainM?: number;
@@ -53,6 +55,9 @@ export function RouteInsights({
   activity?: Activity;
   durationMin?: number;
   onPlan?: (prefill: Partial<SessionInput>) => void;
+  /** Shared with the map above: one cursor across both views of the route. */
+  hoverKm?: number | null;
+  onHoverKm?: (km: number | null) => void;
 }) {
   const t = useT();
   const [data, setData] = useState<RouteConditions | null>(null);
@@ -234,7 +239,16 @@ export function RouteInsights({
             <h4 className="geo-title">{debrief?.hasLog ? t("debrief.whereToTake") : t("route.fuelByTerrain")}</h4>
             <span className="pill">{fuelPlan.climbs.length > 0 ? t("route.byTerrain") : t("route.evenSpacing")}</span>
           </div>
-          <ElevationFuelChart plan={fuelPlan} estimated={terrain.source === "estimated"} />
+          {/* The measured samples, not the fuelling segments: segments are the
+              handful of units the engine reasons in, and drawing a marathon
+              from them gave a dozen straight lines instead of a profile. */}
+          <ElevationFuelChart
+            plan={fuelPlan}
+            samples={terrain.samples}
+            estimated={terrain.source === "estimated"}
+            hoverKm={hoverKm}
+            onHoverKm={onHoverKm}
+          />
           {/* The physiology behind where the stops sit: worth being able to
               read, not worth reading past every time. */}
           <Explain>

@@ -10,7 +10,7 @@ import { ProfileView } from "./components/ProfileView";
 import { SubscriptionView } from "./components/SubscriptionView";
 import { AccountMenu } from "./components/AccountMenu";
 import { HomeView } from "./components/HomeView";
-import { RaceImport } from "./components/RaceImport";
+import { RoutePanel } from "./components/RoutePanel";
 import { EventPlanner } from "./components/EventPlanner";
 import { ToastHost } from "./components/ToastHost";
 import { ConfirmHost } from "./components/ConfirmHost";
@@ -399,7 +399,8 @@ export function App() {
               // Straight to the debrief for that run, not to a generic screen
               // the athlete then has to search through.
               setReviewActivityId(a.id);
-              setTab("connect");
+              setPlanMode("route");
+              setTab("plan");
             }}
             onFuelSession={(a) => {
               // Carry the session's own shape into the planner rather than
@@ -440,7 +441,11 @@ export function App() {
               />
             )}
             {planMode === "route" && (
-              <RaceImport
+              <RoutePanel
+                activities={activities}
+                feedback={feedback}
+                onLogSession={logSession}
+                focusActivityId={reviewActivityId}
                 onPlan={(prefill) => {
                   planFor(prefill);
                   toast.info(t("toast.planningRoute"));
@@ -465,17 +470,7 @@ export function App() {
           <SubscriptionView tier={storedTier} onChoose={setStoredTier} canBilling={canBilling} />
         )}
         {tab === "connect" && (
-          <Dashboard
-            tier={tier}
-            feedback={feedback}
-            onLogSession={logSession}
-            focusActivityId={reviewActivityId}
-            onEditProfile={() => setTab("profile")}
-            onPlanRoute={(prefill) => {
-              planFor(prefill);
-              toast.info(t("toast.planningRoute"));
-            }}
-          />
+          <Dashboard tier={tier} onEditProfile={() => setTab("profile")} />
         )}
         {tab === "team" && <TeamView canExport={hasPermission(account, "data:export")} />}
         {tab === "catalog" && <CatalogView canEdit={hasPermission(account, "catalog:edit")} role={account.role} />}

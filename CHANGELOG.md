@@ -8,6 +8,46 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.12.0
+
+**Changed**
+
+- **A route is not a setting, so it left Connect.** The map, the height profile
+  and the fuelling stops were three panels below the provider cards on the
+  screen you open to link Strava. They are now Plan → *A route*, beside the race
+  and the session — with your own recorded routes and an imported GPX as two
+  sources of one view rather than two features. "How did it go?" on the start
+  screen lands there too, which is where the debrief already lived.
+
+**Added**
+
+- **A layer switcher on the map**, collapsed to one button in the corner the way
+  every map does it. Base maps as a radio group — national map, aerial, muted,
+  OpenStreetMap — and the federal overlays stacked on top as checkboxes: marked
+  hiking trails, signed cycle routes, ground over 30°. An overlay whose tiles
+  the service will not serve switches itself off and says so, rather than
+  looking like a tick that does nothing.
+- **The height profile and the map share one cursor.** Point at a climb on the
+  profile and it is marked on the map; move along the track on the map and the
+  profile follows, with a readout of distance, altitude and gradient. "Where is
+  that climb, actually?" was work the athlete was doing by eye.
+
+**Fixed**
+
+- **The height profile was drawn from the wrong data.** It plotted the fuelling
+  *segments* — the handful of units the engine reasons in — so a marathon was a
+  dozen straight lines. It now draws the elevation samples themselves, which is
+  the measurement, at whatever resolution swisstopo returned.
+- **And it was stretched.** A fixed 320×96 viewBox scaled to the panel width
+  with `preserveAspectRatio="none"`, so every gradient on screen misreported its
+  own steepness. It is measured and drawn at real pixel size, and the vertical
+  exaggeration is now stated (×70 on a flat route) rather than silently applied.
+- **It had no scale at all** — no altitude gridlines, no distance ticks. A
+  picture with no numbers on it.
+- **The layer control could not be opened with a mouse.** Opening on hover and
+  toggling on click meant the hover opened it and the click that followed closed
+  it again. Click-only now.
+
 ## 0.11.0
 
 **Added**

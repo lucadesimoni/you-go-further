@@ -348,20 +348,39 @@ console.log("── route, terrain & weather ──");
 await step("Swiss routes are drawn on the swisstopo national map", async () => {
   const swisstopo = [];
   page.on("request", (r) => r.url().includes("wmts.geo.admin.ch") && swisstopo.push(r.url()));
-  await page.click('button.topnav-tab:has-text("Connect")');
-  await page.waitForSelector("text=Route & fuel stops", { timeout: 15000 });
-  await page.waitForSelector(".map-layers", { timeout: 15000 });
+  // A route is something you plan, not a setting — it lives on Plan beside the
+  // race and the session, and no longer three panels below the provider cards.
+  await planMode("A route");
+  await page.waitForSelector(".route-map", { timeout: 15000 });
   await page.waitForTimeout(2500);
   if (swisstopo.length === 0) throw new Error("no swisstopo tiles were requested");
+
+  // The layer control sits on the map and is collapsed until it is wanted.
+  await page.locator(".map-switcher-toggle").click();
+  await page.waitForSelector(".map-switcher-body", { timeout: 5000 });
+  const labels = await page.locator(".map-opt-label").allInnerTexts();
+  const flat = labels.map((l) => l.split("\n")[0]);
   // The official editions must all be offered, not just a generic basemap.
-  const labels = await page.locator(".map-layers .chip").allInnerTexts();
   for (const want of ["National map", "Aerial", "Muted"]) {
-    if (!labels.includes(want)) throw new Error(`missing swisstopo layer "${want}" (got ${labels.join(", ")})`);
+    if (!flat.includes(want)) throw new Error(`missing swisstopo layer "${want}" (got ${flat.join(", ")})`);
   }
+  // And the overlays an athlete actually asks a Swiss map for.
+  for (const want of ["Hiking trails", "Cycle routes"]) {
+    if (!flat.includes(want)) throw new Error(`missing overlay "${want}" (got ${flat.join(", ")})`);
+  }
+  // Ticking one must reach the tile service rather than doing nothing quietly.
+  const before = swisstopo.length;
+  await page.locator('.map-opt:has-text("Hiking trails") input').check();
+  await page.waitForTimeout(1500);
+  if (swisstopo.length === before) throw new Error("enabling an overlay requested no tiles");
+  await page.locator('.map-opt:has-text("Hiking trails") input').uncheck();
+  await page.locator(".map-switcher-toggle").click();
 });
 await step("the service connected during setup shows as connected", async () => {
   // The connection belongs to the signed-in athlete, so Connect must read it
   // with the session — not as an anonymous demo role.
+  await page.click('button.topnav-tab:has-text("Connect")');
+  await page.waitForSelector(".provider-card", { timeout: 15000 });
   const strava = await page.locator('.provider-card:has-text("Strava")').innerText();
   if (!/Disconnect/.test(strava)) throw new Error(`Strava was connected in setup but reads: ${strava}`);
 });
@@ -402,8 +421,8 @@ await step("'Plan for this race' actually reaches the session planner", async ()
   }
 
   // Hand the suite back the screen it was on: the steps after this one are
-  // still working through Connect.
-  await page.click('button.topnav-tab:has-text("Connect")');
+  // still working through the route view.
+  await planMode("A route");
   await page.waitForSelector(".route-picker", { timeout: 15000 });
 });
 
@@ -607,6 +626,9 @@ await step("a race GPX becomes a fuelling plan for that exact course", async () 
   writeFileSync(file, `<?xml version="1.0"?><gpx version="1.1"><trk><name>Jungfrau Marathon</name><trkseg>${pts}</trkseg></trk></gpx>`);
 
   await planMode("A route");
+  // The route view opens on your own recorded routes when there are any; the
+  // importer is the other source, one click away.
+  await choose("Which route", "Import a course").catch(() => {});
   await page.waitForSelector(".race", { timeout: 15000 });
   await page.locator(".race input[type=file]").setInputFiles(file);
   await page.waitForSelector(".race-head", { timeout: 20000 });

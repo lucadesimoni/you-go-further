@@ -4,6 +4,8 @@ import type { Activity } from "../engine";
 import { parseGpx, estimateDurationMin, type GpxRoute } from "../geo/gpx";
 import { formatClock } from "../engine";
 import { RouteInsights } from "./RouteInsights";
+import { ChoiceRow } from "./Choice";
+import { ACTIVITY_ICONS } from "./optionIcons";
 import type { SessionInput } from "./Planner";
 import { useT } from "../i18n";
 
@@ -37,6 +39,8 @@ export function RaceImport({ onPlan }: { onPlan?: (prefill: Partial<SessionInput
   const [pace, setPace] = useState(7);
   const [durationMin, setDurationMin] = useState(0);
   const [dragging, setDragging] = useState(false);
+  /** One cursor across the map and the height profile of the same course. */
+  const [hoverKm, setHoverKm] = useState<number | null>(null);
 
   const load = async (file: File) => {
     setError(null);
@@ -124,26 +128,21 @@ export function RaceImport({ onPlan }: { onPlan?: (prefill: Partial<SessionInput
           </div>
 
           <div className="race-controls">
-            <div className="field">
-              <label htmlFor="race-kind">{t("plan.activity")}</label>
-              <select
-                id="race-kind"
-                value={kind}
-                onChange={(e) => {
-                  const next = e.target.value as Activity;
-                  const p = KINDS.find((k) => k.value === next)?.paceMinPerKm ?? pace;
-                  setKind(next);
-                  setPace(p);
-                  reEstimate(p, next);
-                }}
-              >
-                {KINDS.map((k) => (
-                  <option key={k.value} value={k.value}>
-                    {t(`activity.${k.value}` as never)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <ChoiceRow
+              label={t("plan.activity")}
+              value={kind}
+              onChange={(next) => {
+                const p = KINDS.find((k) => k.value === next)?.paceMinPerKm ?? pace;
+                setKind(next);
+                setPace(p);
+                reEstimate(p, next);
+              }}
+              options={KINDS.map((k) => ({
+                value: k.value,
+                label: t(`activity.${k.value}` as never),
+                icon: ACTIVITY_ICONS[k.value],
+              }))}
+            />
             <div className="field">
               <label htmlFor="race-duration">
                 {t("race.finishTime")} <span className="value">{formatClock(durationMin)}</span>
@@ -164,7 +163,7 @@ export function RaceImport({ onPlan }: { onPlan?: (prefill: Partial<SessionInput
           {/* The map draws a synced session; an imported course is the same
               shape, so it is presented as one rather than duplicating the map. */}
           <Suspense fallback={<p className="detail">{t("race.loadingMap")}</p>}>
-            <RouteMap activity={asActivity(route, kind, durationMin)} />
+            <RouteMap activity={asActivity(route, kind, durationMin)} hoverKm={hoverKm} onHoverKm={setHoverKm} />
           </Suspense>
 
           <RouteInsights
@@ -175,6 +174,8 @@ export function RaceImport({ onPlan }: { onPlan?: (prefill: Partial<SessionInput
             activity={kind}
             durationMin={durationMin}
             onPlan={onPlan}
+            hoverKm={hoverKm}
+            onHoverKm={setHoverKm}
           />
         </>
       )}

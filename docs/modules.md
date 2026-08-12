@@ -167,12 +167,13 @@ Public API: `ingest`, `activityStore`, `exportActivities`, `databricksSink`.
 
 ## Platform
 
-### `src/geo` — 1.1.0, stable
+### `src/geo` — 1.2.0, stable
 
-Swiss terrain and weather. swisstopo elevation profiles and national basemaps,
-MeteoSwiss SwissMetNet stations with an ICON-CH model fallback, and a tolerant
-GPX parser that accepts namespaced elements, either attribute order, CRLF and
-self-closing tags.
+Swiss terrain and weather. swisstopo elevation profiles, the national basemaps
+and the federal overlays an athlete asks a Swiss map for — marked hiking trails,
+signed cycle routes, ground over 30° — MeteoSwiss SwissMetNet stations with an
+ICON-CH model fallback, and a tolerant GPX parser that accepts namespaced
+elements, either attribute order, CRLF and self-closing tags.
 
 *Caveat:* every remote source has a labelled offline fallback, and the UI always
 names which one it used. The live responses cannot be exercised from a
@@ -325,7 +326,7 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.6.0, stable
+### `src/components` — 1.7.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
