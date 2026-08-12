@@ -144,6 +144,8 @@ export const fr: Dictionary = {
 
   // ---- Planner (detail) ---------------------------------------------------
   "plan.sessionDetails": "Détails de la séance",
+  "plan.adjust": "Ajuster",
+  "plan.done": "Terminé",
   "plan.carbTotal": "Glucides au total",
   "plan.sodiumPerLitreLong": "Sodium / litre",
   "plan.measured": "mesuré",

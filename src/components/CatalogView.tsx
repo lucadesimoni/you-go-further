@@ -9,6 +9,7 @@ import { useT, type TranslationKey } from "../i18n";
 import { BuyLink } from "./BuyLink";
 import { ChoiceRow } from "./Choice";
 import { ProductThumb } from "./ProductThumb";
+import { ReadMore } from "./ReadMore";
 import { PHASE_KEYS } from "../options";
 
 /** Category names, keyed so the library reads in the athlete's language. */
@@ -145,23 +146,28 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
   };
 
   return (
-    <main className="dash">
+    <main className="dash catalog">
       <section className="panel">
         <div className="section-head">
           <h2>{t("catalog.title")}</h2>
           <span className="pill">{t("catalog.count", { count: catalog.length })}</span>
         </div>
-        <p className="detail">
-          {t("catalog.intro", { brands: brands.join(" · ") })}{" "}
-          {canEdit ? (
-            <>
-              {t("catalog.houseCount", { count: customCount })} ·{" "}
-              {catalogPersistence.mode() === "server" ? t("catalog.savedServer") : t("catalog.savedBrowser")}.
-            </>
-          ) : (
-            <>{t("catalog.readOnly")}</>
-          )}
-        </p>
+        {/* Which brands, and who curates this — worth saying once, not worth a
+            paragraph above the products on a phone where it costs half a
+            screen before the first thing you came to look at. */}
+        <ReadMore lines={2}>
+          <p className="detail">
+            {t("catalog.intro", { brands: brands.join(" · ") })}{" "}
+            {canEdit ? (
+              <>
+                {t("catalog.houseCount", { count: customCount })} ·{" "}
+                {catalogPersistence.mode() === "server" ? t("catalog.savedServer") : t("catalog.savedBrowser")}.
+              </>
+            ) : (
+              <>{t("catalog.readOnly")}</>
+            )}
+          </p>
+        </ReadMore>
 
         {canEdit && (
           <div className="catalog-actions">
@@ -183,7 +189,11 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
-          <span className="shop-count">{t("catalog.showing", { count: items.length })}</span>
+          {/* Only when it differs from the header's total — a filtered count
+              is news, an unfiltered one is the same number twice. */}
+          {items.length !== catalog.length && (
+            <span className="shop-count">{t("catalog.showing", { count: items.length })}</span>
+          )}
         </div>
 
         {/* Six category names in equal columns fit in English and nowhere else;
@@ -199,6 +209,8 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
           ]}
         />
 
+        {/* The label stays: without it "Name · Price · Most carbs" reads as
+            three more category filters in the row above. */}
         <ChoiceRow
           label={t("catalog.sortBy")}
           value={sort}

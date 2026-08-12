@@ -142,6 +142,8 @@ export const it: Dictionary = {
 
   // ---- Planner (detail) ---------------------------------------------------
   "plan.sessionDetails": "Dettagli dell'allenamento",
+  "plan.adjust": "Modifica",
+  "plan.done": "Fatto",
   "plan.carbTotal": "Carboidrati totali",
   "plan.sodiumPerLitreLong": "Sodio / litro",
   "plan.measured": "misurato",

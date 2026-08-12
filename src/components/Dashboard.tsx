@@ -309,7 +309,7 @@ export function Dashboard({ tier, onEditProfile }: {
 
                 <div className="nutrition-demand">
                   {t("dash.thisWeek")} <strong>{report.nutrition.fuelledSessions}</strong>{" "}
-                  {t("dash.ofSessions", { total: report.nutrition.totalSessions })}
+                  {t("dash.ofSessions", { total: report.nutrition.totalSessions })}{" "}
                   need in-session fuel · avg <strong>{report.nutrition.avgCarbPerHourG} g/h</strong> · total{" "}
                   <strong>{report.nutrition.weeklyDuringCarbG} g</strong> carbohydrate on the bike/run.
                 </div>

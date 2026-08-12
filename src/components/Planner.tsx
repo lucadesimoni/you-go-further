@@ -8,6 +8,8 @@ import { loadCatalog } from "../api/productLibrary";
 import { loadProfile } from "../api/profileStore";
 import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_KEYS, SWEAT_TEXT_KEYS } from "../options";
 import { ChoiceCards, ChoiceRow } from "./Choice";
+import { Icon } from "./Icon";
+import { useMediaQuery, PHONE } from "../ui/useMediaQuery";
 import { ACTIVITY_ICONS, CONDITION_ICONS, GOAL_ICONS } from "./optionIcons";
 import { Stat } from "./Stat";
 import { SessionTimeline } from "./SessionTimeline";
@@ -78,6 +80,10 @@ export function Planner({
     onPrefillUsed?.();
   }, [initial, onPrefillUsed]);
 
+  const isPhone = useMediaQuery(PHONE);
+  /** Only meaningful on a phone; the wide layout always shows the form. */
+  const [formOpen, setFormOpen] = useState(false);
+
   const [feedbacks, setFeedbacks] = useState<SessionFeedback[]>([]);
   const insight = useMemo(() => deriveAdaptation(feedbacks), [feedbacks]);
   const [catalog, setCatalog] = useState<Product[]>(CATALOG);
@@ -137,7 +143,42 @@ export function Planner({
 
   return (
     <main className="layout" id="session-planner">
-      <section className="panel form" aria-label={t("plan.sessionDetails")}>
+      {/*
+       * On a phone the form is folded away behind what it produced.
+       *
+       * On a wide screen the inputs are a sticky column beside the plan, so
+       * both are visible and neither is in the way. Stacked on a phone they
+       * were five controls and about a screen and a half of scrolling *before*
+       * the first number — and changing one meant scrolling back up past the
+       * answer. The plan is what the athlete came for, so it comes first; the
+       * summary line says what it was built from, and opens the form.
+       */}
+      {isPhone && (
+        <button
+          type="button"
+          className={formOpen ? "session-summary open" : "session-summary"}
+          aria-expanded={formOpen}
+          aria-controls="session-form"
+          onClick={() => setFormOpen((v) => !v)}
+        >
+          <span className="session-summary-line">
+            <Icon name={ACTIVITY_ICONS[input.activity]} />
+            <strong>{durationLabel}</strong>
+            <span>{t(ACTIVITIES.find((a) => a.value === input.activity)!.labelKey)}</span>
+            <span>·</span>
+            <span>{t(INTENSITIES.find((i) => i.value === input.intensity)!.labelKey)}</span>
+            <span>·</span>
+            <span>{t(CONDITIONS.find((c) => c.value === input.conditions)!.labelKey)}</span>
+          </span>
+          <span className="session-summary-action">{formOpen ? t("plan.done") : t("plan.adjust")}</span>
+        </button>
+      )}
+
+      <section
+        id="session-form"
+        className={isPhone && !formOpen ? "panel form form-folded" : "panel form"}
+        aria-label={t("plan.sessionDetails")}
+      >
         {/* Cards, not a dropdown: the blurb is the difference between "Race
             preparation" and "Endurance performance" for anyone choosing
             between them for the first time, and a native select cut it off. */}

@@ -8,6 +8,48 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.14.0
+
+**Changed**
+
+- **A panel stops being a box on a phone.** A 390 px screen has ~360 px of
+  usable width, and it was spending a border, 32 px of panel padding and then
+  another border on every card *inside* — so the content sat in a column
+  narrower than the chrome around it, and a page of white boxes on grey read as
+  a form. Top-level panels now give up their frame and separate by space and a
+  heading, the way a page does. Things that are genuinely objects — the next
+  move, the week's figures, a product — keep theirs.
+- **The session planner shows the plan first.** On a wide screen the inputs are
+  a sticky column beside the answer; stacked on a phone they were five controls
+  and a screen and a half of scrolling *before* the first number, and changing
+  one meant scrolling back past the answer. The form is folded behind a summary
+  line — "1 h 30 min · Running · Moderate · Temperate — Adjust" — so the page
+  opens on the plan. The screen is 24% shorter and its first view is the four
+  targets rather than a form.
+- **Recent sessions are cards, not rows.** Each carries the sport's own shape,
+  so a run is findable among three identical lines, and the debrief link now
+  looks like the primary action instead of one of six identical blue links.
+- **The catalogue starts at its products.** Six rows of chrome preceded the
+  first one, with the count printed twice; the intro folds, the duplicate count
+  is gone, and the filter and sort rows scroll sideways instead of wrapping onto
+  four lines. Cards are denser: 354 px → 328 px, so the page went from ~11
+  screens to ~10 and shows nearly two products at a time.
+- **The greeting gets the hero back.** Readiness was the largest thing on the
+  screen and pushed "Good afternoon, Nina" onto two lines; it is a compact chip
+  beside the streak now.
+- Tap feedback on every control, since a touch screen has no hover to fall back
+  on.
+
+**Fixed**
+
+- **Half the mobile stylesheet was dead.** Its `@media` block sat *above* the
+  rules it meant to override, and CSS breaks a specificity tie by document
+  order — so those rules silently lost. The phone refinements now live at the
+  end of the file, where they can win, and the ones that had never applied do
+  now.
+- The weekly fuelling summary read "4 of 4 sessionsneed in-session fuel" — a
+  missing space between two translated fragments.
+
 ## 0.13.1
 
 **Fixed**

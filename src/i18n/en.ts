@@ -137,6 +137,8 @@ export const en = {
 
   // ---- Planner (detail) ---------------------------------------------------
   "plan.sessionDetails": "Session details",
+  "plan.adjust": "Adjust",
+  "plan.done": "Done",
   "plan.carbTotal": "Carb total",
   "plan.sodiumPerLitreLong": "Sodium / litre",
   "plan.measured": "measured",

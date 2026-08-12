@@ -10,12 +10,22 @@ import { loadProfile } from "../api/profileStore";
 import { useI18n, type TranslationKey } from "../i18n";
 import { actionText } from "../i18n/actions";
 import { Stat } from "./Stat";
+import { Icon, type IconName } from "./Icon";
 
 const BAND_KEY: Record<FuellingScore["band"], TranslationKey> = {
   "getting-started": "insights.bandGettingStarted",
   building: "insights.bandBuilding",
   solid: "insights.bandSolid",
   "dialled-in": "insights.bandDialledIn",
+};
+
+/** The sport's own shape, so a run is findable in a list of identical rows. */
+const SPORT_ICON: Record<string, IconName> = {
+  run: "run",
+  "trail-run": "trail",
+  ride: "bike",
+  swim: "swim",
+  triathlon: "triathlon",
 };
 
 const SPORT_KEY: Record<string, TranslationKey> = {
@@ -112,7 +122,7 @@ export function HomeView({
 
       {/* The one thing to do, front and centre. */}
       {next && (
-        <section className="panel home-next">
+        <section className="panel panel-card home-next">
           <span className="home-next-kicker">{t("home.doNext")}</span>
           <h2 className="home-next-title">{nextText!.title}</h2>
           <p className="home-next-why">{nextText!.why}</p>
@@ -171,7 +181,7 @@ export function HomeView({
           )}
         </section>
 
-        <section className="panel home-score">
+        <section className="panel panel-card home-score">
           <div className="section-head">
             <h2>{t("home.fuelling")}</h2>
             <span className="pill">{t("insights.sessionsLogged", { count: fuelling.sessionsLogged })}</span>
@@ -210,6 +220,9 @@ export function HomeView({
           <ul className="home-sessions">
             {recent.map((a) => (
               <li key={a.id} className="home-session">
+                <span className="home-session-icon" aria-hidden>
+                  <Icon name={SPORT_ICON[a.sport] ?? "session"} />
+                </span>
                 <span className="home-session-date">{dateFmt.format(new Date(a.startTime))}</span>
                 {/* The athlete's own title when the provider sent one — that is
                     what they recognise the session by. "Trail running" is the

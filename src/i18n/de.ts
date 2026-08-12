@@ -142,6 +142,8 @@ export const de: Dictionary = {
 
   // ---- Planner (detail) ---------------------------------------------------
   "plan.sessionDetails": "Angaben zur Einheit",
+  "plan.adjust": "Anpassen",
+  "plan.done": "Fertig",
   "plan.carbTotal": "Kohlenhydrate gesamt",
   "plan.sodiumPerLitreLong": "Natrium / Liter",
   "plan.measured": "gemessen",
