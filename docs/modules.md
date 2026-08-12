@@ -296,7 +296,7 @@ translated into all four languages.
 
 Public API: `nutritionGuide`.
 
-### `src/api` — 1.4.0, stable
+### `src/api` — 1.5.0, stable
 
 Two HTTP surfaces behind one pure router. `handlers.ts` is request in, response
 out, with no Node and no Vercel in it — which is what lets `server/index.ts` and
@@ -383,13 +383,14 @@ parity is proven in CI rather than asserted.
 *Preview because:* native HealthKit and Health Connect reads need a physical
 device.
 
-### `scripts` — 1.1.0, stable
+### `scripts` — 1.2.0, stable
 
 Build, deployment and verification tooling: `preflight.ts` (the production
 configuration gate, also run by the server at start-up), `verify-deploy.mjs`
 (the deployed deployment's behaviour, over HTTP), `e2e-smoke.mjs` (the full
-browser journey), `mobile-smoke.mjs` (mobile parity), `host-config.mjs`,
-`gen-icons.mjs`, `stripe-verify.mjs`.
+browser journey against the API server), `demo-smoke.mjs` (the same app with
+**no** server — the client-side build a demo runs on), `mobile-smoke.mjs`
+(mobile parity), `host-config.mjs`, `gen-icons.mjs`, `stripe-verify.mjs`.
 
 ---
 

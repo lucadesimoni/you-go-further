@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Activity, ProviderId } from "../model";
-import { ALL_PROVIDER_IDS, DEVICE_PLATFORM_IDS, DESCRIPTORS, generateSampleWellness, ProviderRegistry } from "../providers";
-import type { ProviderCredential } from "../providers/types";
-import { IngestionPipeline, InMemoryActivityStore, lastNDays, toNdjson } from "../data";
+import { ALL_PROVIDER_IDS, DEVICE_PLATFORM_IDS, DESCRIPTORS, generateSampleWellness } from "../providers";
+import { toNdjson } from "../data";
 import { analyze, derivePhysiology } from "../analysis";
 import { GOALS } from "../options";
 import { can, limit, PLANS, requiredTierFor, type Tier } from "../subscription";
 import type { AthleteInput } from "../engine";
 import { api, isApiConfigured } from "../api/client";
+import { connectProvider, disconnectProvider, loadActivities, loadConnections } from "../api/trainingData";
 import { getConfig } from "../config";
 import { loadProfile } from "../api/profileStore";
 import { ChoiceRow } from "./Choice";
@@ -30,9 +30,6 @@ export function Dashboard({ tier, onEditProfile }: {
   onEditProfile?: () => void;
 }) {
   const { t } = useI18n();
-  const registry = useRef(new ProviderRegistry());
-  const store = useRef(new InMemoryActivityStore());
-  const pipeline = useRef(new IngestionPipeline(registry.current, store.current));
 
   const [connected, setConnected] = useState<Set<ProviderId>>(new Set());
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -56,94 +53,66 @@ export function Dashboard({ tier, onEditProfile }: {
   const loadAnalytics = can(tier, "loadAnalytics");
   const exportEnabled = can(tier, "dataExport");
 
-  // Rebuild the store from the currently-connected providers.
-  const sync = useCallback(
-    async (providers: Set<ProviderId>) => {
-      setBusy("all");
-      await store.current.clear();
-      // With an API, the server already holds the athlete's imported sessions —
-      // and the start screen reads that same list. Re-generating them here would
-      // give the two screens different sessions with different ids, so a
-      // "review this run" handoff would silently land on the wrong one.
-      if (isApiConfigured()) {
-        try {
-          setActivities((await api.activities()).activities);
-          setBusy(null);
-          return;
-        } catch {
-          /* API unreachable — fall back to the local pipeline below */
-        }
-      }
-      const creds: ProviderCredential[] = [...providers].map((p) => ({ provider: p, accessToken: "demo" }));
-      const window = lastNDays(Math.min(historyDays, 120));
-      if (creds.length) await pipeline.current.ingestAll(creds, window);
-      setActivities(await store.current.query());
-      setBusy(null);
-    },
-    [historyDays],
-  );
+  /**
+   * Reload the athlete's sessions after a connection changed.
+   *
+   * `trainingData` answers this for the whole app — with a server it is the
+   * server's list, without one it is the same ingestion pipeline over the
+   * connections held in session storage. This screen used to keep its own
+   * pipeline and its own copy of the connections, which is why connecting a
+   * provider here was forgotten the moment you left the screen.
+   */
+  const sync = useCallback(async () => {
+    setBusy("all");
+    setActivities(await loadActivities(historyDays));
+    setBusy(null);
+  }, [historyDays]);
 
   // If a downgrade drops the provider cap below the connected count, trim.
   useEffect(() => {
-    if (connected.size > maxProviders) {
-      const trimmed = new Set([...connected].slice(0, maxProviders));
-      setConnected(trimmed);
-      void sync(trimmed);
-    }
+    if (connected.size <= maxProviders) return;
+    void (async () => {
+      for (const id of [...connected].slice(maxProviders)) await disconnectProvider(id);
+      setConnected(new Set(await loadConnections()));
+      await sync();
+    })();
   }, [maxProviders, connected, sync]);
 
-  // In API mode, load real connections and handle the OAuth return (?connected=).
+  // Load the athlete's connections, and handle the OAuth return (?connected=).
   useEffect(() => {
-    if (!oauthMode) return;
     const justConnected = new URLSearchParams(window.location.search).get("connected");
-    (async () => {
-      try {
-        // Through the API client, so the request carries the session: a
-        // role header would read the demo persona's connections instead.
-        const data = await api.connections();
-        const provs = new Set(data.connections.map((c) => c.provider as ProviderId));
-        setConnected(provs);
-        await sync(provs);
-        if (justConnected) {
-          setBanner(`${justConnected} connected via OAuth — your activities were imported to your account.`);
-          window.history.replaceState({}, "", window.location.pathname);
-        }
-      } catch {
-        /* API unreachable — stay in mock mode */
+    void (async () => {
+      setConnected(new Set(await loadConnections()));
+      await sync();
+      if (justConnected) {
+        setBanner(`${justConnected} connected via OAuth — your activities were imported to your account.`);
+        window.history.replaceState({}, "", window.location.pathname);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggle = async (id: ProviderId) => {
-    // Real OAuth: redirect to the provider's consent screen; disconnect via API.
+    if (connected.has(id)) {
+      setBusy(id);
+      setConnected(new Set(await disconnectProvider(id)));
+      await sync();
+      return;
+    }
+    if (connected.size >= maxProviders) return;
+
+    // With a server, connecting means real consent: fetch the authorize URL
+    // *with the session attached*, so the `state` it carries binds whatever
+    // comes back to this athlete, then leave the page for the provider.
     if (oauthMode) {
-      if (connected.has(id)) {
-        setBusy(id);
-        await api.connectionRemove(id);
-        const next = new Set(connected);
-        next.delete(id);
-        setConnected(next);
-        await sync(next);
-        return;
-      }
-      if (connected.size >= maxProviders) return;
-      // Fetch the consent URL with the session attached, so the `state` it
-      // carries binds the imported sessions to this athlete (see the router).
       const { authorizeUrl } = await api.oauthAuthorizeUrl(id, window.location.href);
       window.location.href = authorizeUrl.startsWith("http") ? authorizeUrl : `${apiBase}${authorizeUrl}`;
       return;
     }
 
-    const next = new Set(connected);
-    if (next.has(id)) next.delete(id);
-    else {
-      if (next.size >= maxProviders) return;
-      next.add(id);
-    }
-    setConnected(next);
     setBusy(id);
-    await sync(next);
+    setConnected(new Set(await connectProvider(id)));
+    await sync();
   };
 
   const profile = useMemo(() => ({ bodyWeightKg, maxHr }), [bodyWeightKg, maxHr]);

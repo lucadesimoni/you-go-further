@@ -3,6 +3,8 @@ import { api, isApiConfigured, type NewFeedback } from "./client";
 import { getConfig } from "../config";
 import type { Persona } from "../personas";
 import { loadProfile, saveProfile } from "./profileStore";
+import { connectProvider, loadConnections } from "./trainingData";
+import type { ProviderId } from "../model";
 
 /**
  * First-run onboarding flag (per browser). Keeps the guided journey a one-time
@@ -139,7 +141,14 @@ export async function seedDemoFeedback(
  * athlete who chose their own.
  */
 export async function connectDemoSource(provider = "strava"): Promise<boolean> {
-  if (!isApiConfigured()) return false;
+  // Without a server there is no consent screen to visit, and staging one would
+  // be theatre. Record the connection where every screen reads it from, and let
+  // the same ingestion pipeline produce the sessions.
+  if (!isApiConfigured()) {
+    if ((await loadConnections()).length > 0) return false;
+    await connectProvider(provider as ProviderId);
+    return true;
+  }
   try {
     const existing = await api.connections();
     if (existing.connections.length > 0) return false;

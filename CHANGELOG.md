@@ -8,6 +8,39 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.13.1
+
+**Fixed**
+
+- **The demo did not work.** On the client-side build — the one a static host
+  serves and the one "explore a demo account" opens — every screen asked an API
+  that was not there, caught the error and rendered an empty state. Home showed
+  no sessions, Insights had nothing to analyse, and Plan → *A route* fell
+  through to the GPX importer because the athlete appeared to have no routes.
+- **Connections were forgotten the moment you left the screen.** Connect had a
+  local fallback of its own, so linking a provider *looked* like it worked —
+  the connection lived in React state and nowhere else, so navigating away lost
+  it and a reload lost it again.
+
+Both were one missing piece: the client-side build had no store for connections
+or sessions. `src/api/trainingData.ts` is that store — connections in
+`sessionStorage`, sessions rebuilt through the same ingestion pipeline the
+server uses. Every screen now asks it the same question instead of each
+answering for itself, so Home, Insights, Connect and the route screen agree on
+one set of sessions with one set of ids — which is what makes "How did it go?"
+open the run it names.
+
+`sessionStorage` rather than `localStorage` on purpose: a demo is a sitting, and
+a demo world that outlives the tab becomes stale data pretending to be an
+account. Inside the tab it survives navigation and reloads.
+
+**Added**
+
+- `npm run e2e:demo` — the demo journey against the server-less build. The
+  existing e2e runs against the Node server, so this path had no coverage at
+  all; the new suite fails eight of its nine steps on the previous build and
+  passes on this one, and CI runs it on every push.
+
 ## 0.13.0
 
 **Changed**

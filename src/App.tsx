@@ -28,8 +28,9 @@ import { computeProgress, fuellingScore } from "./progress";
 import { sportToActivity } from "./analysis";
 import { addFeedback, loadFeedback } from "./api/feedbackStore";
 import type { SessionFeedback } from "./feedback";
-import { syncProfile, loadProfile } from "./api/profileStore";
-import { api, clearSessionToken, setSessionToken, isApiConfigured } from "./api/client";
+import { loadProfile } from "./api/profileStore";
+import { api, clearSessionToken, setSessionToken } from "./api/client";
+import { loadActivities, loadConnections } from "./api/trainingData";
 import { saveAccount } from "./auth";
 import { useI18n, type TranslationKey } from "./i18n";
 import { useTheme } from "./theme/useTheme";
@@ -180,47 +181,43 @@ export function App() {
   useEffect(() => {
     if (!account) return;
     let alive = true;
-    // Real synced sessions + connections (empty in the API-less build).
-    if (!isApiConfigured()) {
-      loadFeedback(account.role)
-        .then((list) => alive && setFeedback(list))
-        .catch(() => {});
-    } else {
-      // A demo account arrives connected. Without this "explore a demo account"
-      // lands on an empty Home with nothing to explore — no sessions, no week,
-      // no insights — because a real athlete's first job is to connect a
-      // provider, which is not what someone clicking "show me the product" is
-      // there to do. It goes through the real OAuth path, so what appears is
-      // genuinely ingested rather than injected behind the pipeline.
-      void (async () => {
-        const isDemo = account.authProvider === "demo";
-        if (isDemo) await connectDemoSource().catch(() => false);
-        const [acts, conns, logs] = await Promise.all([
-          api.activities().catch(() => null),
-          api.connections().catch(() => null),
-          loadFeedback(account.role).catch(() => [] as SessionFeedback[]),
-        ]);
-        if (!alive) return;
-        setFeedback(logs);
-        if (conns) setConnectionsCount(conns.connections.length);
-        if (!acts) return;
-        setActivities(acts.activities);
-        // A demo account also gets a few session logs the first time, so the
-        // half of the product that *learns* from outcomes has something to
-        // show. A real athlete is never seeded — their logs are their own.
-        //
-        // The "first time" is judged from the stored logs, not a local flag:
-        // the logs live on the server, so a flag in this browser let every
-        // fresh window seed another three on top of the last.
-        if (isDemo && acts.activities.length > 0 && logs.length === 0) {
-          await seedDemoFeedback(acts.activities, account.role, addFeedback);
-          const seeded = await loadFeedback(account.role).catch(() => null);
-          if (alive && seeded) setFeedback(seeded);
-        }
-      })();
-    }
-    // The profile is authoritative on the server — refresh the local cache.
-    void syncProfile();
+    /**
+     * Load this athlete's world: connections, sessions, logs.
+     *
+     * One path, whether or not there is a server behind it. It used to fork —
+     * with an API the whole bootstrap ran, without one it loaded the logs and
+     * stopped — so the client-side build (which is what a demo runs on) opened
+     * on an empty Home with nothing to explore, and connecting a provider on
+     * the Connect screen was forgotten the moment you left it.
+     */
+    void (async () => {
+      const isDemo = account.authProvider === "demo";
+      // A demo account arrives connected. A real athlete's first job is to
+      // choose a provider and go through consent, which is right for them and
+      // absurd for someone who clicked "show me the product".
+      if (isDemo) await connectDemoSource().catch(() => false);
+      const [acts, conns, logs] = await Promise.all([
+        loadActivities().catch(() => [] as Activity[]),
+        loadConnections().catch(() => [] as string[]),
+        loadFeedback(account.role).catch(() => [] as SessionFeedback[]),
+      ]);
+      if (!alive) return;
+      setFeedback(logs);
+      setConnectionsCount(conns.length);
+      setActivities(acts);
+      // A demo account also gets a few session logs the first time, so the
+      // half of the product that *learns* from outcomes has something to
+      // show. A real athlete is never seeded — their logs are their own.
+      //
+      // The "first time" is judged from the stored logs, not a local flag:
+      // the logs live on the server, so a flag in this browser let every
+      // fresh window seed another three on top of the last.
+      if (isDemo && acts.length > 0 && logs.length === 0) {
+        await seedDemoFeedback(acts, account.role, addFeedback);
+        const seeded = await loadFeedback(account.role).catch(() => null);
+        if (alive && seeded) setFeedback(seeded);
+      }
+    })();
     return () => {
       alive = false;
     };
