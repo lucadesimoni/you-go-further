@@ -41,6 +41,7 @@ spelling is a convention, kept by review.
 | **Versions** | `CHANGELOG.md`, `GET /api/version` | One platform version per release, one contract version per module, reported by the running server. |
 | **Public engine API** | `/v1`, `docs/public-api.md` | The licensable surface: per-tenant keys, scopes, rate limits, usage metering, and a versioned contract with golden shape tests. |
 | **Architecture / deploy / flows** | `docs/` | `architecture.md`, `deployment.md`, `hosting-switzerland.md`, `user-flows.md`. |
+| **How ready is this?** | `docs/production-readiness.md` | What is proven, what is unproven, and what is missing — written against what has been run, not what was intended. |
 | **Vision & roadmap** | `docs/vision.md` | The seven phases, plus an honest read of where this code stands against Phase 1. |
 | **Web app** | `src/App.tsx`, `src/components/` | React + Vite UI: planner, dashboard, team, catalog, admin — gated by role. |
 | **Tests** | `src/**/*.test.ts`, `scripts/` | 630 Vitest cases across engine, analysis, geo, i18n, auth, data pipeline, subscription and RBAC; plus a real-browser e2e journey and a mobile parity smoke. |
