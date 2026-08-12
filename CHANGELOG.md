@@ -67,6 +67,13 @@ The platform version answers "which release is this?". A module version answers
   has already left. Reproduced in a browser by holding the read open for three
   seconds, failing in both directions before and after, and the journey now
   carries that scenario as a step.
+- **The production image could not start with the file store.** It runs as
+  `node`, and `/app/.data` did not exist in the image — so Docker created it
+  root-owned and the server died at start-up with `EACCES: mkdir /app/.data`.
+  That is the path `docker compose up` and every "try it on a VM" instruction
+  take. The directory is now created and owned by the runtime user. Nobody had
+  noticed because the container check only runs after the test job, and the
+  test job had been failing for other reasons.
 - **A session outlived the account it named.** Tokens are stateless and signed,
   so deleting the athlete could not revoke one: their browser forgot it, but a
   copy kept anywhere else still verified, and an ingest with it would have

@@ -63,9 +63,16 @@ COPY server  ./server
 COPY scripts/host-config.mjs scripts/preflight.ts ./scripts/
 COPY docker-entrypoint.sh ./
 
-# `dist/config.js` is written at start-up, so the directory has to be writable
-# by the user that writes it — and that user is not root.
-RUN chmod +x docker-entrypoint.sh && chown -R node:node /app/dist
+# Two directories have to be writable by the user that writes them, and that
+# user is not root: `dist/`, because `config.js` is written at start-up, and
+# the data directory, because the file backend creates it on first write. The
+# image defaults to Postgres, but `docker compose up` and every "try it on a
+# VM" path use the file store — and without this the container died at
+# start-up with EACCES on /app/.data, which is not a failure anyone would
+# guess from "permission denied" in a log they had to go looking for.
+RUN chmod +x docker-entrypoint.sh \
+ && mkdir -p /app/.data \
+ && chown -R node:node /app/dist /app/.data
 USER node
 
 EXPOSE 8787
