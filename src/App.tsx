@@ -11,6 +11,8 @@ import { SubscriptionView } from "./components/SubscriptionView";
 import { AccountMenu } from "./components/AccountMenu";
 import { HomeView } from "./components/HomeView";
 import { RoutePanel } from "./components/RoutePanel";
+import { NutritionGuide } from "./components/NutritionGuide";
+import { useMediaQuery, PHONE } from "./ui/useMediaQuery";
 import { EventPlanner } from "./components/EventPlanner";
 import { ToastHost } from "./components/ToastHost";
 import { ConfirmHost } from "./components/ConfirmHost";
@@ -34,6 +36,17 @@ import { useTheme } from "./theme/useTheme";
 import { Icon, type IconName } from "./components/Icon";
 
 /** The three jobs the Plan screen does, one at a time. */
+/**
+ * The tabs a phone shows in its bottom bar.
+ *
+ * Seven navigation targets do not fit across a phone, and cramming them in is
+ * how a bar becomes a row of unreadable four-letter words. These four are what
+ * an athlete opens most days; everything else is one tap away behind "More",
+ * which is what that key was written for. On a tablet or a desktop the whole
+ * set is on screen and there is no "More" at all.
+ */
+const PHONE_TABS = ["home", "plan", "progress", "catalog"];
+
 export type PlanMode = "race" | "route" | "session";
 
 const PLAN_MODES: { id: PlanMode; labelKey: TranslationKey; blurbKey: TranslationKey; icon: IconName }[] = [
@@ -60,6 +73,7 @@ const TABS: TabDef[] = [
   { id: "connect", labelKey: "nav.connect", perm: "analysis:view_own", icon: "connect" },
   { id: "team", labelKey: "nav.team", perm: "analysis:view_team", icon: "team" },
   { id: "catalog", labelKey: "nav.catalog", perm: "catalog:read", icon: "catalog" },
+  { id: "guide", labelKey: "nav.guide", perm: "plan:use", icon: "guide" },
   { id: "admin", labelKey: "nav.admin", perm: "org:configure", icon: "admin" },
 ];
 
@@ -93,6 +107,10 @@ export function App() {
   const [reviewActivityId, setReviewActivityId] = useState<string>();
 
   const visibleTabs = useMemo(() => (account ? TABS.filter((t) => hasPermission(account, t.perm)) : []), [account]);
+  const isPhone = useMediaQuery(PHONE);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const barTabs = isPhone ? visibleTabs.filter((t2) => PHONE_TABS.includes(t2.id)) : visibleTabs;
+  const overflowTabs = isPhone ? visibleTabs.filter((t2) => !PHONE_TABS.includes(t2.id)) : [];
   // Billing only exists when there is something to bill for. The Phase-1 app is
   // free, so the screen and its menu entry are simply not there.
   const canBilling =
@@ -341,18 +359,58 @@ export function App() {
         </button>
 
         <nav className="topnav" aria-label={t("app.nav")}>
-          {visibleTabs.map((t2) => (
+          {barTabs.map((t2) => (
             <button
               key={t2.id}
               type="button"
               className={tab === t2.id ? "topnav-tab active" : "topnav-tab"}
-              onClick={() => setTab(t2.id)}
+              onClick={() => {
+                setMoreOpen(false);
+                setTab(t2.id);
+              }}
             >
               <Icon name={t2.icon} />
               <span className="topnav-label">{t2.labelKey ? t(t2.labelKey) : ""}</span>
             </button>
           ))}
+          {overflowTabs.length > 0 && (
+            <button
+              type="button"
+              className={
+                overflowTabs.some((t2) => t2.id === tab) ? "topnav-tab topnav-more active" : "topnav-tab topnav-more"
+              }
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((v) => !v)}
+            >
+              <Icon name="more" />
+              <span className="topnav-label">{t("nav.more")}</span>
+            </button>
+          )}
         </nav>
+
+        {/* The rest of the navigation, as a sheet over the bar it came from. */}
+        {moreOpen && overflowTabs.length > 0 && (
+          <>
+            <div className="nav-sheet-scrim" onClick={() => setMoreOpen(false)} />
+            <div className="nav-sheet" role="menu" aria-label={t("nav.more")}>
+              {overflowTabs.map((t2) => (
+                <button
+                  key={t2.id}
+                  type="button"
+                  role="menuitem"
+                  className={tab === t2.id ? "nav-sheet-item active" : "nav-sheet-item"}
+                  onClick={() => {
+                    setMoreOpen(false);
+                    setTab(t2.id);
+                  }}
+                >
+                  <Icon name={t2.icon} />
+                  <span>{t2.labelKey ? t(t2.labelKey) : ""}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <AccountMenu
           account={account}
@@ -472,6 +530,7 @@ export function App() {
         {tab === "connect" && (
           <Dashboard tier={tier} onEditProfile={() => setTab("profile")} />
         )}
+        {tab === "guide" && <NutritionGuide />}
         {tab === "team" && <TeamView canExport={hasPermission(account, "data:export")} />}
         {tab === "catalog" && <CatalogView canEdit={hasPermission(account, "catalog:edit")} role={account.role} />}
         {tab === "admin" && <AdminView config={config} tier={tier} orgId={account.orgId} role={account.role} />}

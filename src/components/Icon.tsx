@@ -40,6 +40,8 @@ export type IconName =
   | "trend"
   | "scale"
   | "moon"
+  | "guide"
+  | "more"
   | "drop1"
   | "drop2"
   | "drop3";
@@ -208,6 +210,21 @@ const PATHS: Record<IconName, JSX.Element> = {
   ),
   // A crescent: rest.
   moon: <path d="M20 14.2A8.2 8.2 0 0 1 9.6 3.9 8.2 8.2 0 1 0 20 14.2z" />,
+  // An open book: the guide.
+  guide: (
+    <>
+      <path d="M12 6.5C10.4 5.2 8.4 4.5 5.5 4.5H3v13h2.5c2.9 0 4.9.7 6.5 2 1.6-1.3 3.6-2 6.5-2H21v-13h-2.5c-2.9 0-4.9.7-6.5 2z" />
+      <path d="M12 6.5v13" />
+    </>
+  ),
+  // Three dots: the rest of the navigation.
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="19" cy="12" r="1.8" />
+    </>
+  ),
   // One, two, three drops — a ramp, so the sweat scale reads without the
   // labels. Three identical drops would have been decoration; a rising count
   // carries the same information the words do.

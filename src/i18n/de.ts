@@ -23,6 +23,7 @@ export const de: Dictionary = {
   "nav.connect": "Verbinden",
   "nav.team": "Team",
   "nav.catalog": "Produkte",
+  "nav.guide": "Ratgeber",
   "nav.admin": "Verwaltung",
   "nav.more": "Mehr",
 
@@ -611,6 +612,20 @@ export const de: Dictionary = {
   // ---- Catalog & shop -----------------------------------------------------
   "catalog.title": "Produktübersicht",
   "catalog.bestWhen": "Ideal wenn",
+  "catalog.searchPlaceholder": "Produkte suchen…",
+  "catalog.showing": "{count} Produkte",
+  "catalog.showing_one": "{count} Produkt",
+  "catalog.noMatches": "Nichts passt zu «{query}». Versuchen Sie ein kürzeres Wort oder heben Sie den Kategoriefilter auf.",
+  "catalog.sortBy": "Sortieren nach",
+  "catalog.sortName": "Name",
+  "catalog.sortPrice": "Preis",
+  "catalog.sortCarbs": "Meiste Kohlenhydrate",
+  "catalog.carbShort": "Kohlenhydrate",
+  "catalog.sodiumShort": "Natrium",
+  "catalog.proteinShort": "Protein",
+  "catalog.caffeineShort": "Koffein",
+  "catalog.whenToUse": "Wann einsetzen",
+  "catalog.noPrice": "Preis im Shop der Marke",
 
   // ---- Profile ------------------------------------------------------------
   "profile.bodyWeight": "Körpergewicht",
@@ -659,6 +674,11 @@ export const de: Dictionary = {
 
   // ---- Nutrition guide ----------------------------------------------------
   "guide.title": "Ernährungs- & Verpflegungsratgeber",
+  "guide.kicker": "Fuel Labs Journal",
+  "guide.searchPlaceholder": "Ratgeber durchsuchen…",
+  "guide.allTopics": "Alle Themen",
+  "guide.noMatches": "Nichts passt zu «{query}». Versuchen Sie ein kürzeres Wort oder heben Sie den Themenfilter auf.",
+  "guide.backToIndex": "Alle Artikel",
   "guide.inPractice": "In der Praxis",
   "guide.pitfalls": "Häufige Fehler",
   "guide.readMinutes": "{count} Min. Lesezeit",

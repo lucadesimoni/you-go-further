@@ -2012,19 +2012,19 @@ code {
 /* --- Nutrition guide (editorial cards) --- */
 .guide-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--space-5);
-  margin-top: var(--space-5);
+  margin-top: var(--space-6);
 }
 .guide-card {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-7);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--panel-2);
+  overflow: hidden;
+  transition: border-color var(--transition), transform var(--transition);
 }
+.guide-card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .guide-cat {
   font-size: var(--text-2xs);
   font-weight: 700;
@@ -2044,6 +2044,133 @@ code {
   color: var(--muted);
   line-height: 1.55;
 }
+
+/* ---- The product library, as a shop -------------------------------------
+   Sixty products as text rows is a spreadsheet. A grid of cards with a mark on
+   each is something you browse — and the mark is drawn, never a stock photo
+   standing in for a product we have no photograph of. */
+
+.shop-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-5) 0 var(--space-4);
+}
+.shop-search { flex: 1 1 260px; }
+.shop-count {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.shop-empty { margin: var(--space-8) 0 0; }
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+}
+
+.shop-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel-2);
+  transition: border-color var(--transition);
+}
+.shop-card:hover { border-color: var(--border-strong); }
+
+.shop-card-top { display: flex; align-items: flex-start; gap: var(--space-4); }
+.shop-card-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.shop-brand {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.shop-name {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+}
+.shop-cat { font-size: var(--text-2xs); color: var(--muted); }
+.shop-card-top .tag-house { margin-left: auto; flex: 0 0 auto; }
+
+/* The generated product mark. */
+.prod-thumb {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-inset);
+  color: var(--muted);
+  overflow: hidden;
+}
+.prod-thumb svg { width: 70%; height: 70%; }
+.prod-thumb-initials {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent-ink);
+}
+
+.shop-macros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.shop-macros dt {
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.shop-macros dd {
+  margin: 2px 0 0;
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.shop-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.shop-card-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-2);
+}
+.shop-price {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.shop-serving { font-size: var(--text-2xs); font-weight: 500; color: var(--muted); }
 
 /* --- Milestones (quiet progress markers, not badges) --- */
 .milestones {
@@ -2963,6 +3090,48 @@ code {
   /* The bar got taller once the icons went in. */
   .page { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
   .topnav-tab.active { background: transparent; color: var(--accent-ink); }
+
+  /* "More" — the rest of the navigation, as a sheet over the bar it came from.
+     Seven targets do not fit across a phone; four plus this one do. */
+  .nav-sheet-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 31;
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .nav-sheet {
+    position: fixed;
+    left: var(--space-3);
+    right: var(--space-3);
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    z-index: 32;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--panel);
+    box-shadow: var(--shadow-md);
+  }
+  .nav-sheet-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    min-height: 48px;
+    padding: 0 var(--space-4);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text);
+    font: inherit;
+    font-size: var(--text-md);
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+  }
+  .nav-sheet-item.active { color: var(--accent-ink); background: var(--accent-soft); }
+  .nav-sheet-item .icon { width: 20px; height: 20px; color: var(--muted); }
+  .nav-sheet-item.active .icon { color: var(--accent-ink); }
   /* An indicator rather than a fill: cleaner in a dense bar. */
   .topnav-tab.active::before {
     content: "";
@@ -4299,41 +4468,136 @@ code {
   gap: var(--space-3);
   margin: var(--space-5) 0 var(--space-6);
 }
-.guide-list {
+/* ---- The guide as a reading section ---------------------------------------
+   An index you browse and an article you read are different screens, so they
+   get different layouts: a card grid that fills the width, and a single column
+   at a measure you can actually read a thousand words in. */
+
+.guide { display: flex; flex-direction: column; }
+
+.guide-masthead {
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border);
+}
+.guide-masthead h1 {
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: var(--text-3xl);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.guide-count {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.guide-lead {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: var(--muted);
+}
+.guide-englishonly {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.guide-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-6) 0 0;
+}
+.guide-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1 1 260px;
+  max-width: 420px;
+  padding: 9px var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+.guide-search:focus-within { border-color: var(--accent); color: var(--text); }
+.guide-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-base);
+  outline: none;
+}
+.guide-empty { margin: var(--space-8) 0; }
+
+.guide-card-hit {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-.guide-article {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--panel-2);
-  overflow: hidden;
-}
-.guide-article.open { border-color: var(--border-strong); }
-.guide-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-5);
   width: 100%;
+  height: 100%;
+  padding: var(--space-6);
   text-align: left;
   background: none;
-  border: none;
-  color: var(--text);
-  padding: var(--space-6);
+  border: 0;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
 }
-.guide-head:hover { background: var(--surface-3); }
-.guide-head-text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
-.guide-meta { display: flex; align-items: center; gap: var(--space-3); flex: 0 0 auto; }
-.guide-read { font-size: var(--text-xs); color: var(--muted); font-variant-numeric: tabular-nums; }
-.guide-chevron { color: var(--accent-ink); font-size: var(--text-sm); }
-
-.guide-content {
-  padding: 0 var(--space-6) var(--space-6);
+.guide-card-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+}
+.guide-card-summary {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: 1.55;
+  color: var(--muted);
+}
+.guide-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-4);
   border-top: 1px solid var(--border);
 }
+.guide-card-figure { font-size: var(--text-2xs); color: var(--muted); }
+.guide-card-figure strong { color: var(--accent-ink); }
+.guide-read { font-size: var(--text-xs); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* The article. One column, generous measure, nothing beside it. */
+.guide-reading { align-items: flex-start; }
+.guide-back { align-self: flex-start; margin-bottom: var(--space-5); font-weight: 600; }
+.guide-article-full { width: 100%; max-width: 68ch; }
+.guide-article-head { margin-bottom: var(--space-7); }
+.guide-article-head h1 {
+  margin: var(--space-2) 0 var(--space-4);
+  font-size: var(--text-3xl);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.guide-body p {
+  margin: 0 0 var(--space-6);
+  font-size: var(--text-lg);
+  line-height: 1.7;
+  color: var(--text);
+}
+/* The opening paragraph carries the argument; give it the weight to match. */
+.guide-body p:first-child { font-size: var(--text-xl); line-height: 1.55; }
 .guide-numbers {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

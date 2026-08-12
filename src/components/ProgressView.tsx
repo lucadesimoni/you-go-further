@@ -1,6 +1,5 @@
 import type { ProgressProfile } from "../progress";
 import { Stat } from "./Stat";
-import { NutritionGuide } from "./NutritionGuide";
 import { LoadProfileCard } from "./LoadProfileCard";
 import { FuellingScoreCard } from "./FuellingScoreCard";
 import type { FuellingScore } from "../progress";
@@ -58,8 +57,6 @@ export function ProgressView({
       </section>
 
       <LoadProfileCard />
-
-      <NutritionGuide />
 
       {hasData && (
       <section className="panel">

@@ -18,6 +18,7 @@ export const en = {
   "nav.connect": "Connect",
   "nav.team": "Team",
   "nav.catalog": "Catalog",
+  "nav.guide": "Guide",
   "nav.admin": "Admin",
   "nav.more": "More",
 
@@ -584,6 +585,20 @@ export const en = {
   // ---- Catalog & shop -----------------------------------------------------
   "catalog.title": "Product library",
   "catalog.bestWhen": "Best when",
+  "catalog.searchPlaceholder": "Search products…",
+  "catalog.showing": "{count} products",
+  "catalog.showing_one": "{count} product",
+  "catalog.noMatches": "Nothing matches “{query}”. Try a shorter word, or clear the category filter.",
+  "catalog.sortBy": "Sort by",
+  "catalog.sortName": "Name",
+  "catalog.sortPrice": "Price",
+  "catalog.sortCarbs": "Most carbs",
+  "catalog.carbShort": "Carb",
+  "catalog.sodiumShort": "Sodium",
+  "catalog.proteinShort": "Protein",
+  "catalog.caffeineShort": "Caffeine",
+  "catalog.whenToUse": "When to use",
+  "catalog.noPrice": "Price on the brand\u2019s shop",
 
   // ---- Profile ------------------------------------------------------------
   "profile.bodyWeight": "Body weight",
@@ -632,6 +647,11 @@ export const en = {
 
   // ---- Nutrition guide ----------------------------------------------------
   "guide.title": "Fuel & nutrition guide",
+  "guide.kicker": "Fuel Labs journal",
+  "guide.searchPlaceholder": "Search the guide…",
+  "guide.allTopics": "All topics",
+  "guide.noMatches": "Nothing matches “{query}”. Try a shorter word, or clear the topic filter.",
+  "guide.backToIndex": "All articles",
   "guide.inPractice": "In practice",
   "guide.pitfalls": "Common mistakes",
   "guide.readMinutes": "{count} min read",

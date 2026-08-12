@@ -48,6 +48,7 @@ describe("dictionary parity", () => {
         "home.hours",
         "home.distance",
         "guide.articles", // "articles" is the same word in French
+        "nav.guide", // "Guide" is the same word in French
         "account.menu", // Italian uses the English "Account"
         "absorb.ceiling", // "max ~90 g/h" is the same abbreviation everywhere
         "load.fitness", // "Fitness" is the same word in German
@@ -59,6 +60,9 @@ describe("dictionary parity", () => {
         "team.title", // "Team" is the same word in German
         "admin.commissionPct", // "Commission %" is the same in French
         "catalog.phases", // as is "Phases"
+        "catalog.sortName", // "Name" is the same word in German
+        "catalog.proteinShort", // as is "Protein"
+        "catalog.sodiumShort", // "Sodium" is the same word in French
         "catalog.proteinG", // "Protein (g, optional)" is word-for-word the same in German
         "catalog.sodiumMg", // "Sodium (mg)" is the same in French
         "cat.gel", // "Gel" is the same word in all four

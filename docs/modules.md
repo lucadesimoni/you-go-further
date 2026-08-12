@@ -326,7 +326,7 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.7.0, stable
+### `src/components` — 1.8.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
@@ -352,11 +352,14 @@ Light, dark and system appearance, applied to the document root and persisted.
 
 Public API: `useTheme`, `applyTheme`.
 
-### `src/ui` — 1.0.0, stable
+### `src/ui` — 1.1.0, stable
 
-Cross-cutting interface primitives: toasts, confirmation dialogs, focus trap.
+Cross-cutting interface primitives: toasts, confirmation dialogs, focus trap,
+and `useMediaQuery` — used where the *markup* has to differ between a phone and
+a desktop, not merely its appearance (the navigation bar), so no target ends up
+in the document twice.
 
-Public API: `toast`, `confirm`, `useFocusTrap`.
+Public API: `toast`, `confirm`, `useFocusTrap`, `useMediaQuery`.
 
 ---
 

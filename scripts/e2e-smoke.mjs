@@ -947,6 +947,22 @@ await step("no screen is wider than the phone it is on, in German", async () => 
     await page.locator(".topnav-tab").nth(i).click();
     await page.waitForTimeout(1600);
     const name = (await page.locator(".topnav-tab").nth(i).innerText()).replace(/\n/g, " ");
+    // A phone bar holds four targets and a "More"; the screens behind it have
+    // to be walked too, or half the app goes unchecked at the width where it
+    // matters most.
+    if (await page.locator(".nav-sheet-item").count()) {
+      const items = await page.locator(".nav-sheet-item").count();
+      for (let m = 0; m < items; m++) {
+        // The sheet is already open on the first pass — choosing an item closes
+        // it, so only the later passes need it opened again.
+        if ((await page.locator(".nav-sheet-item").count()) === 0) await page.locator(".topnav-more").click();
+        await page.locator(".nav-sheet-item").nth(m).click();
+        await page.waitForTimeout(1600);
+        const sheetName = (await page.locator(".topnav-more").innerText()).replace(/\n/g, " ");
+        for (const el of await tooWide()) bad.push(`${sheetName} ${m}: ${el}`);
+      }
+      continue;
+    }
     for (const el of await tooWide()) bad.push(`${name}: ${el}`);
     // The Plan screen is three screens behind one switcher; check all of them.
     if (await page.locator(".plan-modes").count()) {

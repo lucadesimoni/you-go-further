@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.12.0";
+export const PLATFORM_VERSION = "0.13.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -320,7 +320,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "components",
     path: "src/components",
-    version: "1.7.0",
+    version: "1.8.0",
     layer: "interface",
     stability: "stable",
     summary: "Every screen and shared control, from the planner and the race forecast to the admin views.",
@@ -348,11 +348,12 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "ui",
     path: "src/ui",
-    version: "1.0.0",
+    version: "1.1.0",
     layer: "interface",
     stability: "stable",
-    summary: "Cross-cutting interface primitives: toasts, confirmation dialogs and a focus trap.",
-    publicApi: ["toast", "confirm", "useFocusTrap"],
+    summary:
+      "Cross-cutting interface primitives: toasts, confirmation dialogs, a focus trap, and the media-query hook the navigation uses to change shape rather than just appearance.",
+    publicApi: ["toast", "confirm", "useFocusTrap", "useMediaQuery"],
   },
 
   // ---- Surfaces: deployable entry points ----------------------------------

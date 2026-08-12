@@ -8,6 +8,8 @@ import { useFocusTrap } from "../ui/useFocusTrap";
 import { useT, type TranslationKey } from "../i18n";
 import { BuyLink } from "./BuyLink";
 import { ChoiceRow } from "./Choice";
+import { ProductThumb } from "./ProductThumb";
+import { PHASE_KEYS } from "../options";
 
 /** Category names, keyed so the library reads in the athlete's language. */
 const CATEGORY_KEY: Record<ProductCategory, TranslationKey> = {
@@ -19,6 +21,9 @@ const CATEGORY_KEY: Record<ProductCategory, TranslationKey> = {
 };
 const ALL_CATEGORIES = Object.keys(CATEGORY_KEY) as ProductCategory[];
 const ALL_PHASES: Phase[] = ["pre", "during", "post"];
+
+/** How the shelf is ordered. */
+type SortKey = "name" | "price" | "carbs";
 
 type Draft = Partial<Product>;
 const EMPTY: Draft = { category: "drink-mix", phases: ["during"], swiss: true, carbsG: 0, sodiumMg: 0 };
@@ -32,6 +37,8 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
   const t = useT();
   const [catalog, setCatalog] = useState<Product[]>(CATALOG);
   const [category, setCategory] = useState<ProductCategory | "all">("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("name");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -59,7 +66,35 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
   }, []);
 
   const categories = useMemo(() => [...new Set(catalog.map((p) => p.category))], [catalog]);
-  const items = catalog.filter((p) => category === "all" || p.category === category);
+
+  /**
+   * What the athlete is actually looking at.
+   *
+   * Search matches brand, name, category and the product's own notes: someone
+   * hunting for "koffein" or "isotonic" is describing the thing, not naming it,
+   * and sixty products is well past the number anyone scans.
+   */
+  const items = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = catalog
+      .filter((p) => category === "all" || p.category === category)
+      .filter((p) =>
+        !q
+          ? true
+          : [p.brand, p.name, t(CATEGORY_KEY[p.category]), p.notes ?? "", p.servingLabel]
+              .join(" ")
+              .toLowerCase()
+              .includes(q),
+      );
+    const by: Record<SortKey, (a: Product, b: Product) => number> = {
+      name: (a, b) => `${a.brand} ${a.name}`.localeCompare(`${b.brand} ${b.name}`),
+      // Missing prices sort last rather than first: an unpriced product is not
+      // the cheapest one.
+      price: (a, b) => (a.priceChf ?? Infinity) - (b.priceChf ?? Infinity),
+      carbs: (a, b) => b.carbsG - a.carbsG,
+    };
+    return [...filtered].sort(by[sort]);
+  }, [catalog, category, query, sort, t]);
   const customCount = catalog.filter((p) => p.custom).length;
   const brands = useMemo(() => [...new Set(catalog.map((p) => p.brand))].sort(), [catalog]);
 
@@ -137,6 +172,20 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
         )}
         {error && <p className="auth-error">{error}</p>}
 
+        <div className="shop-controls">
+          <label className="guide-search shop-search">
+            <SearchGlyph />
+            <input
+              type="search"
+              value={query}
+              placeholder={t("catalog.searchPlaceholder")}
+              aria-label={t("catalog.searchPlaceholder")}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+          <span className="shop-count">{t("catalog.showing", { count: items.length })}</span>
+        </div>
+
         {/* Six category names in equal columns fit in English and nowhere else;
             as chips they wrap onto a second line instead of off the screen. */}
         <ChoiceRow
@@ -150,37 +199,67 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
           ]}
         />
 
-        <div className="providers">
+        <ChoiceRow
+          label={t("catalog.sortBy")}
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: "name" as const, label: t("catalog.sortName") },
+            { value: "price" as const, label: t("catalog.sortPrice") },
+            { value: "carbs" as const, label: t("catalog.sortCarbs") },
+          ]}
+        />
+
+        <div className="shop-grid">
           {items.map((p) => (
-            <div key={p.id} className="provider-card">
-              <div className="provider-top">
-                <span className="provider-name">
-                  <strong>{p.brand}</strong> {p.name}
-                  {p.custom && <span className="tag tag-house">house</span>}
-                </span>
-                <span className="serving">{t(CATEGORY_KEY[p.category])}</span>
+            <article key={p.id} className="shop-card">
+              <div className="shop-card-top">
+                <ProductThumb product={p} />
+                <div className="shop-card-id">
+                  <span className="shop-brand">{p.brand}</span>
+                  <h3 className="shop-name">{p.name}</h3>
+                  <span className="shop-cat">{t(CATEGORY_KEY[p.category])}</span>
+                </div>
+                {p.custom && <span className="tag tag-house">{t("plan.house")}</span>}
               </div>
-              <div className="tags">
-                {p.carbsG > 1 && <span className="tag">{t("unit.carb", { n: p.carbsG })}</span>}
-                {p.sodiumMg > 0 && <span className="tag">{t("unit.sodium", { n: p.sodiumMg })}</span>}
-                {p.proteinG ? <span className="tag">{t("unit.protein", { n: p.proteinG })}</span> : null}
-                {p.caffeineMg ? <span className="tag caf">{t("unit.caffeine", { n: p.caffeineMg })}</span> : null}
-                {p.multiTransportable && <span className="tag">2:1 carbs</span>}
+
+              {/* The four numbers that decide whether a product fits a session,
+                  on one line each so two cards can be compared down a column. */}
+              <dl className="shop-macros">
+                <div>
+                  <dt>{t("catalog.carbShort")}</dt>
+                  <dd>{p.carbsG > 0 ? `${p.carbsG} g` : "—"}</dd>
+                </div>
+                <div>
+                  <dt>{t("catalog.sodiumShort")}</dt>
+                  <dd>{p.sodiumMg > 0 ? `${p.sodiumMg} mg` : "—"}</dd>
+                </div>
+                <div>
+                  <dt>{t("catalog.proteinShort")}</dt>
+                  <dd>{p.proteinG ? `${p.proteinG} g` : "—"}</dd>
+                </div>
+                <div>
+                  <dt>{t("catalog.caffeineShort")}</dt>
+                  <dd>{p.caffeineMg ? `${p.caffeineMg} mg` : "—"}</dd>
+                </div>
+              </dl>
+
+              <div className="shop-tags">
+                {p.multiTransportable && <span className="tag">{t("plan.multiTransportable")}</span>}
                 {p.phases.map((ph) => (
                   <span key={ph} className="tag">
-                    {ph}
+                    {t(PHASE_KEYS[ph])}
                   </span>
                 ))}
               </div>
-              <p className="provider-note">
-                {p.servingLabel}
-                {p.priceChf != null ? ` · CHF ${p.priceChf.toFixed(2)}` : ""}
-              </p>
+
               {(() => {
                 const use = productUsage(p);
                 return (
                   <details className="why usage">
-                    <summary>When to use · {use.summary}</summary>
+                    <summary>
+                      {t("catalog.whenToUse")} · {use.summary}
+                    </summary>
                     <div className="usage-body">
                       <p className="usage-line">
                         <span className="usage-label good">{t("catalog.bestWhen")}</span>
@@ -196,15 +275,18 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                   </details>
                 );
               })()}
-              <BuyLink product={p} />
+
+              <div className="shop-card-foot">
+                <span className="shop-price">
+                  {p.priceChf != null ? `CHF ${p.priceChf.toFixed(2)}` : t("catalog.noPrice")}
+                  <span className="shop-serving">{p.servingLabel}</span>
+                </span>
+                <BuyLink product={p} />
+              </div>
+
               {canEdit && (
                 <div className="catalog-row-actions">
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => setDraft({ ...p })}
-                    disabled={busy}
-                  >
+                  <button type="button" className="btn btn-ghost" onClick={() => setDraft({ ...p })} disabled={busy}>
                     {t("catalog.edit")}
                   </button>
                   <button
@@ -218,9 +300,11 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                   </button>
                 </div>
               )}
-            </div>
+            </article>
           ))}
         </div>
+
+        {items.length === 0 && <p className="detail shop-empty">{t("catalog.noMatches", { query: query.trim() })}</p>}
       </section>
 
       {draft && (
@@ -329,5 +413,15 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
         </div>
       )}
     </main>
+  );
+}
+
+/** A magnifier — the one symbol a search field never has to explain. */
+function SearchGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className="icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16l4.5 4.5" />
+    </svg>
   );
 }

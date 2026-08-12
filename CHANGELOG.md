@@ -8,6 +8,39 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.13.0
+
+**Changed**
+
+- **The guide is a section of its own, and reads like one.** Sixteen articles of
+  real editorial work were a collapsed accordion three panels down the Insights
+  screen. They now have their own tab: a masthead, a search box, topic filters
+  and a card grid — and an article you open gets the whole width, one column at
+  a readable measure, its key numbers first. An index and an article are
+  different screens, so they stopped being the same one.
+- **The product library is a shop.** Search across brand, name, category and
+  notes; sort by name, price or carbohydrate; and a card grid with a mark on
+  every product instead of a wall of text rows. The marks are **drawn, not
+  photographed** — a category silhouette and the brand's initials. We hold no
+  product photography, and a stock photo of "a gel" attached to a named product
+  would make every real number on the card less believable.
+- **Four tabs and a "More" on a phone.** Seven navigation targets do not fit
+  across 390 px, and the bar was already scrolling sideways. Home, Plan,
+  Insights and Catalog stay in the bar; the rest are one tap away in a sheet.
+  Tablets and desktops show the whole set, as before — the markup differs by
+  viewport rather than being rendered twice and hidden.
+
+**Added**
+
+- `useMediaQuery`, for the handful of places where the markup itself has to
+  change shape rather than just its appearance.
+
+**Verified**
+
+- Every screen at 1440, 1024, 834, 768 and 390 px: nothing reaches past the
+  viewport unclipped at any of them. The e2e journey now walks the phone-width
+  sweep *through* the More menu, so the screens behind it are checked too.
+
 ## 0.12.0
 
 **Changed**
