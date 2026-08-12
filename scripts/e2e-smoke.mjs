@@ -31,6 +31,26 @@ page.on("requestfailed", (r) => {
   if (!EXTERNAL_GEO.test(r.url())) errors.push(`requestfailed: ${r.url()}`);
 });
 
+/**
+ * Wait for a condition instead of for a number of milliseconds.
+ *
+ * A fixed sleep encodes one machine's timing. Two steps below read state the
+ * app has just written through the API, and on a CI runner they read it a beat
+ * too early — the assertion then reports "the profile was ignored" when the
+ * truth is "the answer had not arrived yet". Polling fails just as loudly when
+ * the state genuinely never arrives, which is the failure worth keeping.
+ */
+const waitFor = async (label, probe, timeoutMs = 15000) => {
+  const started = Date.now();
+  let last;
+  while (Date.now() - started < timeoutMs) {
+    last = await probe();
+    if (last === true) return;
+    await page.waitForTimeout(250);
+  }
+  throw new Error(`${label} (last saw: ${last})`);
+};
+
 const step = async (label, fn) => {
   try {
     await fn();
@@ -308,15 +328,22 @@ await step("a weight set in the profile reaches the plan and the analysis", asyn
   await page.click("text=Profile & health");
   await page.waitForSelector("#p-weight");
   await page.locator("#p-weight").fill("83");
-  await page.waitForTimeout(1000);
+  // The save is what the rest of this step depends on; wait for the server to
+  // acknowledge it rather than for a guessed number of milliseconds.
+  await page.waitForResponse(
+    (r) => r.url().includes("/api/profile") && r.request().method() === "POST" && r.ok(),
+    { timeout: 15000 },
+  );
   await page.click('button.topnav-tab:has-text("Connect")');
-  await page.waitForTimeout(2000);
-  const connect = await page.locator(".from-profile span").first().innerText();
-  if (!/83 kg/.test(connect)) throw new Error(`connect ignored the profile: ${connect}`);
+  await waitFor(
+    "connect ignored the profile",
+    async () => /83 kg/.test(await page.locator(".from-profile span").first().innerText()),
+  );
   await planMode("A session");
-  await page.waitForTimeout(1200);
-  const plan = await page.locator(".from-profile span").first().innerText();
-  if (!/83 kg/.test(plan)) throw new Error(`planner ignored the profile: ${plan}`);
+  await waitFor(
+    "planner ignored the profile",
+    async () => /83 kg/.test(await page.locator(".from-profile span").first().innerText()),
+  );
 });
 
 console.log("── commerce ──");
@@ -380,8 +407,11 @@ await step("the service connected during setup shows as connected", async () => 
   // with the session — not as an anonymous demo role.
   await page.click('button.topnav-tab:has-text("Connect")');
   await page.waitForSelector(".provider-card", { timeout: 15000 });
-  const strava = await page.locator('.provider-card:has-text("Strava")').innerText();
-  if (!/Disconnect/.test(strava)) throw new Error(`Strava was connected in setup but reads: ${strava}`);
+  // The card renders before the connections have been fetched, so its first
+  // paint says "not connected" whatever the truth is.
+  await waitFor("Strava was connected in setup but the card never said so", async () =>
+    /Disconnect/.test(await page.locator('.provider-card:has-text("Strava")').innerText()),
+  );
 });
 await step("'Plan for this race' actually reaches the session planner", async () => {
   // The planner used to read its prefill only on mount, so pressing this on the
