@@ -785,7 +785,10 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
         let link: string | undefined;
         if (eligible) {
           const secret = getEnv("AUTH_SECRET") ?? DEV_AUTH_SECRET;
-          const token = createMagicToken(email, secret);
+          // The sign-in form asks "Your name (optional)" and used to throw the
+          // answer away: the account was named after the email's local part, so
+          // an athlete who typed "Nina" was greeted "Good morning, n.brunner".
+          const token = createMagicToken(email, secret, 900, (b as { name?: string }).name);
           link = magicLinkUrl(b.returnTo || "/", token);
           await mailer.send({
             to: email,
@@ -812,7 +815,8 @@ export function createApiRouter(runtime: Runtime = createRuntime()) {
           const platform = await settings.get();
           user = await users.create({
             id,
-            name: claims.email.split("@")[0],
+            // What they asked to be called, and only otherwise a fallback.
+            name: claims.name || claims.email.split("@")[0],
             email: claims.email,
             role: "athlete",
             tier: platform.defaultTier,

@@ -4,6 +4,7 @@ import { LoadProfileCard } from "./LoadProfileCard";
 import { FuellingScoreCard } from "./FuellingScoreCard";
 import type { FuellingScore } from "../progress";
 import { useT } from "../i18n";
+import { FailedBlock, LoadingBlock, type LoadState } from "./LoadState";
 
 /**
  * Insights — how well the athlete is fuelling, what to change next, the guidance
@@ -14,6 +15,8 @@ export function ProgressView({
   profile,
   fuelling,
   hasData = true,
+  dataState = "ready",
+  onRetry,
   onConnect,
 }: {
   profile: ProgressProfile;
@@ -21,6 +24,9 @@ export function ProgressView({
   fuelling?: FuellingScore;
   /** False until the athlete has synced real sessions — we never show invented numbers. */
   hasData?: boolean;
+  /** Waiting, arrived, or failed — never conflated into "you have nothing". */
+  dataState?: LoadState;
+  onRetry?: () => void;
   onConnect?: () => void;
 }) {
   const t = useT();
@@ -37,7 +43,11 @@ export function ProgressView({
             <span className="pill">{t("insights.streak", { days: profile.streakDays, best: profile.longestStreakDays })}</span>
           )}
         </div>
-        {hasData ? (
+        {dataState === "loading" ? (
+          <LoadingBlock lines={4} />
+        ) : dataState === "failed" ? (
+          <FailedBlock onRetry={onRetry} />
+        ) : hasData ? (
           <div className="targets plain-grid">
             <Stat label={t("insights.activities")} value={String(profile.stats.activities)} />
             <Stat label={t("insights.hours")} value={`${profile.stats.hours}`} />

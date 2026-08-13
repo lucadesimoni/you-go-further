@@ -8,6 +8,37 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.16.0
+
+**Fixed**
+
+- **The app told athletes their training was gone.** Waiting, empty and broken
+  were one state: `activities` started as an empty array and a failed fetch was
+  caught into an empty array two layers down, so a slow connection and a dead
+  server both rendered *"No sessions yet. Connect a service and your training
+  appears here."* On a train through the Gotthard, or during any outage, the
+  first screen told an athlete their data was gone and asked them to redo the
+  setup they had already done. Each state now says its own true thing: a
+  skeleton while it comes, the empty state only once the platform has actually
+  answered with nothing, and — when it did not answer — "we could not reach the
+  platform, your training is safe", with a Try again that re-runs the load.
+- **The sign-in form asked for a name and threw it away.** "Your name
+  (optional)" was never sent, so accounts were named after the email's local
+  part and the athlete was greeted "Good morning, n.brunner". The name now
+  rides inside the signed magic-link token — the link is often opened in a
+  different browser than the form was filled in — and the greeting drops the
+  name entirely rather than reading out a machine string.
+- **Sign-in errors were hard-coded English** on the one screen that carries a
+  language picker, and were invisible to a screen reader. They are translated,
+  announced with `role="alert"`, and tied to the field with `aria-describedby`
+  and `aria-invalid`. The address is validated here rather than only at the
+  server, so the refusal comes back in the language the athlete chose.
+- **The overflow sheet had no way out but the scrim** — no escape at all on a
+  keyboard, and a thin margin to hit on a phone. Escape closes it.
+- **"By continuing you agree to our terms"** now links the terms when
+  `TERMS_URL` is configured, instead of referring to a document with no way to
+  read it.
+
 ## 0.15.0
 
 **Added**

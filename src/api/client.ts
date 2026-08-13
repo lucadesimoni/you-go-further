@@ -190,8 +190,8 @@ export const api = {
   affiliateSummary: (role: Role) =>
     call<{ summary: AffiliateSummary; partners: PartnerProgram[] }>("GET", "/api/affiliate/summary", { role }),
   connectionRemove: (provider: string) => call<{ connections: { provider: string }[] }>("DELETE", `/api/connections/${provider}`),
-  emailLinkRequest: (email: string, returnTo: string) =>
-    call<EmailRequestResponse>("POST", "/api/auth/email/request", { body: { email, returnTo } }),
+  emailLinkRequest: (email: string, returnTo: string, name?: string) =>
+    call<EmailRequestResponse>("POST", "/api/auth/email/request", { body: { email, returnTo, name } }),
   emailLinkVerify: (token: string) =>
     call<EmailVerifyResponse>("POST", "/api/auth/email/verify", { body: { token } }),
   /** Everything the platform holds about the signed-in athlete. Never gated. */

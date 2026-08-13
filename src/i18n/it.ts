@@ -15,6 +15,10 @@ export const it: Dictionary = {
   "app.brand": "You Go Further",
   "app.nav": "Navigazione principale",
   "app.offline": "Sei offline — il piano funziona comunque, ma nulla verrà sincronizzato finché non torni online.",
+  "app.loading": "Caricamento del tuo allenamento…",
+  "app.loadFailed": "La piattaforma non è raggiungibile.",
+  "app.loadFailedWhy": "Il tuo allenamento è al sicuro — è questo dispositivo che non è riuscito a recuperarlo. Controlla la connessione e riprova.",
+  "app.retry": "Riprova",
   "app.disclaimer":
     "Indicazioni generali per adulti sani — non è un parere medico. I collegamenti ai servizi usano le autorizzazioni OAuth ufficiali; finché non è collegato un account reale vengono mostrati dati di esempio.",
 
@@ -32,6 +36,9 @@ export const it: Dictionary = {
   "home.goodMorning": "Buongiorno {name}",
   "home.goodAfternoon": "Buon pomeriggio {name}",
   "home.goodEvening": "Buonasera {name}",
+  "home.goodMorningNoName": "Buongiorno",
+  "home.goodAfternoonNoName": "Buon pomeriggio",
+  "home.goodEveningNoName": "Buonasera",
   "home.doNext": "Il suo prossimo passo",
   "home.planSession": "Pianificare un allenamento",
   "home.logSession": "Registrare un allenamento",
@@ -704,6 +711,9 @@ export const it: Dictionary = {
   "auth.continueGoogle": "Continuare con Google",
   "auth.signingIn": "Accesso in corso…",
   "auth.sending": "Invio…",
+  "auth.invalidEmail": "Inserisci un indirizzo e-mail valido.",
+  "auth.sendFailed": "Non è stato possibile inviare il link di accesso. Controlla la connessione e riprova.",
+  "auth.providerFailed": "L'accesso con {provider} non ha funzionato. Si prosegue con un account dimostrativo.",
   "auth.createOrSignIn": "Creare un account / accedere",
   "auth.sentTo":
     "Controlli la sua casella — abbiamo inviato un link di accesso a {email}. Funziona una sola volta e scade tra 15 minuti.",

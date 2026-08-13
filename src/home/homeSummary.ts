@@ -25,6 +25,33 @@ export const GREETING_KEY: Record<DayPart, TranslationKey> = {
   evening: "home.goodEvening",
 };
 
+/** The same greeting for someone who never told us what to call them. */
+export const GREETING_KEY_NO_NAME: Record<DayPart, TranslationKey> = {
+  morning: "home.goodMorningNoName",
+  afternoon: "home.goodAfternoonNoName",
+  evening: "home.goodEveningNoName",
+};
+
+/**
+ * A name worth greeting someone by.
+ *
+ * Email sign-in falls back to the address's local part when the athlete left
+ * the optional name field empty, which produced "Good morning, n.brunner" and,
+ * for a generated test address, "Good morning, probe-1786606483115". A machine
+ * string is worse than no name at all: it tells the athlete the app does not
+ * know who they are, on the first line of the first screen.
+ *
+ * The test is deliberately conservative — it keeps anything that reads like a
+ * name a person would answer to, and drops only what plainly is not one.
+ */
+export function greetableName(name: string): string | null {
+  const first = name.trim().split(/[\s@]/)[0] ?? "";
+  if (first.length < 2) return null;
+  // Digits, dots and underscores belong to addresses, not to given names.
+  if (/[0-9._+-]/.test(first)) return null;
+  return first;
+}
+
 export interface WeekSummary {
   sessions: number;
   hours: number;

@@ -17,6 +17,10 @@ export const fr: Dictionary = {
   "app.brand": "You Go Further",
   "app.nav": "Navigation principale",
   "app.offline": "Vous êtes hors ligne — votre plan fonctionne toujours, mais rien ne sera synchronisé avant votre retour.",
+  "app.loading": "Chargement de votre entraînement…",
+  "app.loadFailed": "La plateforme est injoignable.",
+  "app.loadFailedWhy": "Votre entraînement est en sécurité — cet appareil n'a simplement pas pu le récupérer. Vérifiez votre connexion et réessayez.",
+  "app.retry": "Réessayer",
   "app.disclaimer":
     "Conseils généraux pour adultes en bonne santé — pas un avis médical. Les connexions aux services utilisent les autorisations OAuth officielles ; des données d'exemple sont affichées tant qu'aucun compte réel n'est lié.",
 
@@ -34,6 +38,9 @@ export const fr: Dictionary = {
   "home.goodMorning": "Bonjour {name}",
   "home.goodAfternoon": "Bon après-midi {name}",
   "home.goodEvening": "Bonsoir {name}",
+  "home.goodMorningNoName": "Bonjour",
+  "home.goodAfternoonNoName": "Bon après-midi",
+  "home.goodEveningNoName": "Bonsoir",
   "home.doNext": "Votre prochaine étape",
   "home.planSession": "Planifier une séance",
   "home.logSession": "Enregistrer une séance",
@@ -708,6 +715,9 @@ export const fr: Dictionary = {
   "auth.continueGoogle": "Continuer avec Google",
   "auth.signingIn": "Connexion…",
   "auth.sending": "Envoi…",
+  "auth.invalidEmail": "Veuillez saisir une adresse e-mail valide.",
+  "auth.sendFailed": "Impossible d'envoyer le lien de connexion. Vérifiez votre connexion et réessayez.",
+  "auth.providerFailed": "La connexion {provider} n'a pas fonctionné. On continue avec un compte de démonstration.",
   "auth.createOrSignIn": "Créer un compte / se connecter",
   "auth.sentTo":
     "Regardez votre boîte de réception — nous avons envoyé un lien de connexion à {email}. Il fonctionne une seule fois et expire dans 15 minutes.",

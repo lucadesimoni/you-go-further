@@ -2,10 +2,20 @@ import { useMemo } from "react";
 import type { Account } from "../auth";
 import type { Activity } from "../model";
 import type { FuellingScore, ProgressProfile } from "../progress";
-import { GREETING_KEY, dayPart, longestRecent, recentSessions, shortcutsFor, weekSummary } from "../home";
+import {
+  GREETING_KEY,
+  GREETING_KEY_NO_NAME,
+  dayPart,
+  greetableName,
+  longestRecent,
+  recentSessions,
+  shortcutsFor,
+  weekSummary,
+} from "../home";
 import { formatClock } from "../engine";
 import { logForActivity } from "../analysis";
 import type { SessionFeedback } from "../feedback";
+import { FailedBlock, LoadingBlock, type LoadState } from "./LoadState";
 import { loadProfile } from "../api/profileStore";
 import { useI18n, type TranslationKey } from "../i18n";
 import { actionText } from "../i18n/actions";
@@ -56,6 +66,8 @@ export function HomeView({
   activities,
   feedback = [],
   hasSyncedData,
+  dataState = "ready",
+  onRetry,
   onNavigate,
   onFuelSession,
   onReviewSession,
@@ -67,6 +79,9 @@ export function HomeView({
   /** Logs, so a session that's already been reviewed doesn't ask again. */
   feedback?: SessionFeedback[];
   hasSyncedData: boolean;
+  /** Whether the athlete's sessions have arrived, are coming, or failed. */
+  dataState?: LoadState;
+  onRetry?: () => void;
   onNavigate: (tab: string, planMode?: "race" | "route" | "session") => void;
   /** Plan for a specific past session — carries its shape into the planner. */
   onFuelSession?: (a: Activity) => void;
@@ -85,8 +100,11 @@ export function HomeView({
   );
   const bodyProfile = useMemo(() => loadProfile(), []);
 
-  const firstName = account.name.split(/[\s@]/)[0];
-  const greeting = t(GREETING_KEY[dayPart(new Date().getHours())], { name: firstName });
+  const part = dayPart(new Date().getHours());
+  const firstName = greetableName(account.name);
+  const greeting = firstName
+    ? t(GREETING_KEY[part], { name: firstName })
+    : t(GREETING_KEY_NO_NAME[part]);
   // The score already ranks what matters most; reusing it keeps the home screen
   // and the insights screen from ever giving contradictory advice.
   const next = fuelling.nextActions[0];
@@ -160,7 +178,11 @@ export function HomeView({
               </span>
             )}
           </div>
-          {hasSyncedData ? (
+          {dataState === "loading" ? (
+            <LoadingBlock lines={4} />
+          ) : dataState === "failed" ? (
+            <FailedBlock onRetry={onRetry} />
+          ) : hasSyncedData ? (
             <>
               <div className="targets plain-grid">
                 <Stat label={t("home.sessions")} value={String(week.sessions)} />

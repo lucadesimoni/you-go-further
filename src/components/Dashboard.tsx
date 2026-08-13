@@ -73,7 +73,11 @@ export function Dashboard({ tier, onEditProfile }: {
     if (connected.size <= maxProviders) return;
     void (async () => {
       for (const id of [...connected].slice(maxProviders)) await disconnectProvider(id);
-      setConnected(new Set(await loadConnections()));
+      // Keep what is on screen if the refresh fails: showing "nothing
+      // connected" because one request did not come back is the same lie the
+      // start screen used to tell.
+      const after = await loadConnections().catch(() => null);
+      if (after) setConnected(new Set(after));
       await sync();
     })();
   }, [maxProviders, connected, sync]);
@@ -82,7 +86,8 @@ export function Dashboard({ tier, onEditProfile }: {
   useEffect(() => {
     const justConnected = new URLSearchParams(window.location.search).get("connected");
     void (async () => {
-      setConnected(new Set(await loadConnections()));
+      const list = await loadConnections().catch(() => null);
+      if (list) setConnected(new Set(list));
       await sync();
       if (justConnected) {
         setBanner(`${justConnected} connected via OAuth — your activities were imported to your account.`);

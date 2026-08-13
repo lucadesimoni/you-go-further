@@ -1214,6 +1214,35 @@ describe("the athlete's own data", () => {
     expect(theirs.activities.length).toBeGreaterThan(0);
   });
 
+  it("names the account what the athlete asked to be called", async () => {
+    // The sign-in form has always asked "Your name (optional)" and always
+    // thrown the answer away: the account took the email's local part, so
+    // someone who typed "Nina" was greeted by "n.brunner" instead.
+    const requested = await route(
+      req("POST", "/api/auth/email/request", {
+        body: { email: "n.brunner@club.ch", returnTo: "/", name: "Nina" },
+      }),
+    );
+    expect(requested.status).toBe(200);
+    const link = (requested.data as { devLink?: string }).devLink ?? "";
+    const token = new URL(link, "http://x").searchParams.get("magic") ?? "";
+    expect(token).not.toBe("");
+
+    const verified = await route(req("POST", "/api/auth/email/verify", { body: { token } }));
+    expect(verified.status).toBe(200);
+    expect((verified.data as { account: { name: string } }).account.name).toBe("Nina");
+  });
+
+  it("falls back to the address when no name was given", async () => {
+    const requested = await route(
+      req("POST", "/api/auth/email/request", { body: { email: "quiet@club.ch", returnTo: "/" } }),
+    );
+    const link = (requested.data as { devLink?: string }).devLink ?? "";
+    const token = new URL(link, "http://x").searchParams.get("magic") ?? "";
+    const verified = await route(req("POST", "/api/auth/email/verify", { body: { token } }));
+    expect((verified.data as { account: { name: string } }).account.name).toBe("quiet");
+  });
+
   it("refuses a session token whose account has been deleted", async () => {
     // Sessions are stateless signed tokens, so deletion cannot revoke one: the
     // athlete's browser forgets it, but a copy kept anywhere else still

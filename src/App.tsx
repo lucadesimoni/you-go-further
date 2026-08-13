@@ -33,6 +33,7 @@ import type { SessionFeedback } from "./feedback";
 import { loadProfile } from "./api/profileStore";
 import { api, clearSessionToken, setSessionToken } from "./api/client";
 import { loadActivities, loadConnections } from "./api/trainingData";
+import type { LoadState } from "./components/LoadState";
 import { saveAccount } from "./auth";
 import { useI18n, type TranslationKey } from "./i18n";
 import { useTheme } from "./theme/useTheme";
@@ -125,6 +126,21 @@ export function App() {
   // sample data — so the numbers on screen are always really theirs.
   const [activities, setActivities] = useState<Activity[]>([]);
   const [connectionsCount, setConnectionsCount] = useState(0);
+  /**
+   * Whether the athlete's training has arrived, is still coming, or failed.
+   *
+   * Without this the three were one: `activities` started empty, and a failed
+   * fetch was caught into an empty array, so a slow connection and a dead
+   * server both rendered "No sessions yet — connect a service" to an athlete
+   * who had done exactly that. Telling someone their training is gone is the
+   * worst thing this screen can say, and it was saying it by default.
+   */
+  const [dataState, setDataState] = useState<LoadState>("loading");
+  const [reloadKey, setReloadKey] = useState(0);
+  const retryLoad = useCallback(() => {
+    setDataState("loading");
+    setReloadKey((n) => n + 1);
+  }, []);
   const progress = useMemo(
     () =>
       account
@@ -198,15 +214,20 @@ export function App() {
       // choose a provider and go through consent, which is right for them and
       // absurd for someone who clicked "show me the product".
       if (isDemo) await connectDemoSource().catch(() => false);
-      const [acts, conns, logs] = await Promise.all([
-        loadActivities().catch(() => [] as Activity[]),
-        loadConnections().catch(() => [] as string[]),
-        loadFeedback(account.role).catch(() => [] as SessionFeedback[]),
+      // `allSettled`, not `all`: one endpoint being down should not blank the
+      // two that answered. What it must not do is look like an empty account.
+      const [actsR, connsR, logsR] = await Promise.allSettled([
+        loadActivities(),
+        loadConnections(),
+        loadFeedback(account.role),
       ]);
       if (!alive) return;
-      setFeedback(logs);
+      const acts = actsR.status === "fulfilled" ? actsR.value : [];
+      const conns = connsR.status === "fulfilled" ? connsR.value : [];
+      setFeedback(logsR.status === "fulfilled" ? logsR.value : []);
       setConnectionsCount(conns.length);
       setActivities(acts);
+      setDataState(actsR.status === "fulfilled" ? "ready" : "failed");
       // A demo account also gets a few session logs the first time, so the
       // half of the product that *learns* from outcomes has something to
       // show. A real athlete is never seeded — their logs are their own.
@@ -214,6 +235,7 @@ export function App() {
       // The "first time" is judged from the stored logs, not a local flag:
       // the logs live on the server, so a flag in this browser let every
       // fresh window seed another three on top of the last.
+      const logs = logsR.status === "fulfilled" ? logsR.value : [];
       if (isDemo && acts.length > 0 && logs.length === 0) {
         await seedDemoFeedback(acts, account.role, addFeedback);
         const seeded = await loadFeedback(account.role).catch(() => null);
@@ -223,7 +245,21 @@ export function App() {
     return () => {
       alive = false;
     };
-  }, [account]);
+  }, [account, reloadKey]);
+  /**
+   * Escape closes the overflow sheet.
+   *
+   * It only closed by tapping the scrim — the strip of screen around it. On a
+   * keyboard there was no way out at all, and on a phone the target is a
+   * margin. Escape is what everyone tries first when a panel is in the way.
+   */
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMoreOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [moreOpen]);
+
   // Profile & Subscription are reached from the account menu, not the nav — allow
   // them even though they aren't in visibleTabs; otherwise fall back to the first
   // permitted tab (e.g. after a role switch removes access to the current one).
@@ -448,6 +484,8 @@ export function App() {
             activities={activities}
             feedback={feedback}
             hasSyncedData={hasSyncedData}
+            dataState={dataState}
+            onRetry={retryLoad}
             onNavigate={(next, mode) => {
               if (mode) setPlanMode(mode);
               setTab(next);
@@ -520,7 +558,14 @@ export function App() {
           </>
         )}
         {tab === "progress" && progress && (
-          <ProgressView profile={progress} fuelling={fuelling} hasData={hasSyncedData} onConnect={() => setTab("connect")} />
+          <ProgressView
+            profile={progress}
+            fuelling={fuelling}
+            hasData={hasSyncedData}
+            dataState={dataState}
+            onRetry={retryLoad}
+            onConnect={() => setTab("connect")}
+          />
         )}
         {tab === "profile" && <ProfileView account={account} />}
         {tab === "privacy" && <PrivacyView account={account} />}

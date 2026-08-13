@@ -94,7 +94,7 @@ module that lets the athlete's own history override population defaults.
 
 Public API: `deriveAdaptation`, `feedbackStore`.
 
-### `src/home` — 1.0.0, stable
+### `src/home` — 1.1.0, stable
 
 The start screen's summary: the last seven days, the next move, and what is
 still unreviewed. Pure, so the same summary can be computed on the server.
@@ -218,7 +218,7 @@ date here is still the curated one.
 Public API: `SWISS_EVENTS`, `eventCountdown`, `eventAdvice`, `carryLegs`,
 `planEvent`, `fetchRaceDayWeather`, `refreshEvent`, `applyConfirmed`.
 
-### `src/auth` — 1.1.0, stable
+### `src/auth` — 1.2.0, stable
 
 Sessions, signed JWTs, magic-link email sign-in, Google and Apple OIDC token
 verification, roles and permissions. See [`docs/auth.md`](./auth.md).
@@ -296,7 +296,7 @@ translated into all four languages.
 
 Public API: `nutritionGuide`.
 
-### `src/api` — 1.7.2, stable
+### `src/api` — 1.8.0, stable
 
 Two HTTP surfaces behind one pure router. `handlers.ts` is request in, response
 out, with no Node and no Vercel in it — which is what lets `server/index.ts` and
@@ -334,7 +334,7 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.10.0, stable
+### `src/components` — 1.11.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
@@ -350,7 +350,7 @@ configuration rather than inventing one.
 Public API: `App`, `Planner`, `RouteInsights`, `RaceForecast`, `SessionDebrief`,
 `LoadProfileCard`.
 
-### `src/i18n` — 1.3.0, stable
+### `src/i18n` — 1.4.0, stable
 
 Four typed dictionaries — German, French, Italian, English — with `{placeholder}`
 interpolation and `_one` plural siblings. `de`, `fr` and `it` are typed against

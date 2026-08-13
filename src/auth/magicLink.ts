@@ -9,6 +9,15 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
  */
 export interface MagicClaims {
   email: string;
+  /**
+   * What the athlete asked to be called, if they said.
+   *
+   * It rides inside the signed token rather than being posted at redemption,
+   * because the link is opened in whatever browser the mail app hands it to —
+   * which may not be the one the form was filled in. Signed, so it cannot be
+   * edited on the way; optional, because the field is optional.
+   */
+  name?: string;
   /** Token id, so a link can only be redeemed once. */
   jti: string;
   /** Unix seconds. */
@@ -41,9 +50,11 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 export const isEmail = (v: string): boolean => EMAIL_RE.test(v);
 
 /** Create a signed magic-link token for an email address. */
-export function createMagicToken(email: string, secret: string, ttlSec = 900): string {
+export function createMagicToken(email: string, secret: string, ttlSec = 900, name?: string): string {
+  const trimmed = name?.trim().slice(0, 80);
   const claims: MagicClaims = {
     email: email.trim().toLowerCase(),
+    ...(trimmed ? { name: trimmed } : {}),
     jti: randomUUID(),
     exp: Math.floor(Date.now() / 1000) + ttlSec,
   };

@@ -67,13 +67,9 @@ function writeLocal(list: ProviderId[]): ProviderId[] {
 let cache: { key: string; activities: Activity[] } | null = null;
 
 export async function loadConnections(): Promise<ProviderId[]> {
-  if (isApiConfigured()) {
-    try {
-      return (await api.connections()).connections.map((c) => c.provider as ProviderId);
-    } catch {
-      return [];
-    }
-  }
+  // Same reasoning as above: "no services connected" is a claim, not a way of
+  // saying "we could not ask".
+  if (isApiConfigured()) return (await api.connections()).connections.map((c) => c.provider as ProviderId);
   return readLocal();
 }
 
@@ -111,13 +107,12 @@ export async function disconnectProvider(id: ProviderId): Promise<ProviderId[]> 
  * takes: normalisation, de-duplication and ownership included.
  */
 export async function loadActivities(historyDays = 120): Promise<Activity[]> {
-  if (isApiConfigured()) {
-    try {
-      return (await api.activities()).activities;
-    } catch {
-      return [];
-    }
-  }
+  // A failure is not an empty list, and swallowing it here made it one two
+  // layers below the screen that had to explain itself. "No sessions yet —
+  // connect a service" was what an athlete saw when the platform was down or
+  // their train went into a tunnel: their training declared gone, and the
+  // setup they had already done demanded again. The caller decides now.
+  if (isApiConfigured()) return (await api.activities()).activities;
 
   const providers = readLocal();
   const days = Math.min(historyDays, 120);

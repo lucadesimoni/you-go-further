@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dayPart, longestRecent, recentSessions, shortcutsFor, weekSummary } from "./homeSummary";
+import { dayPart, greetableName, longestRecent, recentSessions, shortcutsFor, weekSummary } from "./homeSummary";
 import type { Activity } from "../model";
 
 const NOW = new Date("2026-07-20T12:00:00.000Z");
@@ -128,5 +128,35 @@ describe("shortcutsFor", () => {
   it("gives an owner the platform, not a squad they don't coach", () => {
     expect(shortcutsFor("owner").map((s) => s.id)).toEqual(["catalog", "admin"]);
     expect(shortcutsFor("admin").map((s) => s.id)).toEqual(["catalog", "admin"]);
+  });
+});
+
+describe("who the greeting is for", () => {
+  /**
+   * Email sign-in names the account after the address's local part when the
+   * athlete leaves the optional name field empty. "Good morning, n.brunner" is
+   * cold; "Good morning, probe-1786606483115" says the app has no idea who it
+   * is talking to, in the largest text on the first screen.
+   */
+  it("greets a person by name", () => {
+    expect(greetableName("Nina")).toBe("Nina");
+    expect(greetableName("Nina Brunner")).toBe("Nina");
+    expect(greetableName("  Léa  ")).toBe("Léa");
+  });
+
+  it("refuses to greet an email address or a machine string", () => {
+    expect(greetableName("n.brunner")).toBeNull();
+    expect(greetableName("probe-1786606483115")).toBeNull();
+    expect(greetableName("nina99")).toBeNull();
+    expect(greetableName("")).toBeNull();
+    expect(greetableName("N")).toBeNull();
+  });
+
+  it("keeps a name-like local part, because that is still a name", () => {
+    // "nina@club.ch" carries a real first name in front of the @; greeting her
+    // "Good morning, nina" is friendly and true. The rule above is meant to
+    // catch strings no one would answer to, not to be squeamish about where a
+    // name came from.
+    expect(greetableName("nina@club.ch")).toBe("nina");
   });
 });
