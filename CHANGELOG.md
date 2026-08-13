@@ -35,6 +35,11 @@ The platform version answers "which release is this?". A module version answers
   server, so the refusal comes back in the language the athlete chose.
 - **The overflow sheet had no way out but the scrim** — no escape at all on a
   keyboard, and a thin margin to hit on a phone. Escape closes it.
+- The journey carries a step that stalls the network and then breaks it, so
+  the three states cannot silently collapse back into one. Its own injected
+  500s are muted in the error collector for exactly as long as they are being
+  injected — an assertion is not a defect, and a suite that cannot tell the
+  difference is one that gets its filters widened until it stops noticing.
 - **"By continuing you agree to our terms"** now links the terms when
   `TERMS_URL` is configured, instead of referring to a document with no way to
   read it.

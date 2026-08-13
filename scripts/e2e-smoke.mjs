@@ -22,12 +22,20 @@ page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
 // and that fallback is asserted below. Filter by the failing URL, not by the
 // message text, so real errors are never swallowed.
 const EXTERNAL_GEO = /geo\.admin\.ch|cartocdn\.com|open-meteo\.com/;
+/**
+ * One step below breaks the network on purpose, to prove the app says so.
+ * Those failures are the assertion, not a defect, so the collector is muted
+ * for exactly as long as the fault is injected — and never longer.
+ */
+let injectingFailures = false;
 page.on("console", (m) => {
   if (m.type() !== "error") return;
+  if (injectingFailures) return;
   if (EXTERNAL_GEO.test(m.location()?.url ?? "")) return;
   errors.push(`console: ${m.text()}`);
 });
 page.on("requestfailed", (r) => {
+  if (injectingFailures) return;
   if (!EXTERNAL_GEO.test(r.url())) errors.push(`requestfailed: ${r.url()}`);
 });
 
@@ -385,6 +393,57 @@ await step("a slow read cannot overwrite the weight the athlete just typed", asy
   } finally {
     await page.unroute("**/api/profile");
   }
+});
+
+await step("a stalled network shows waiting, and a dead one says so", async () => {
+  // The defect: waiting, empty and broken were one screen. A slow connection
+  // and a 500 both rendered "No sessions yet — connect a service", telling an
+  // athlete with a connected provider and real sessions that their training
+  // was gone, and asking them to set it up again.
+  let stall = true;
+  await page.route("**/api/activities**", async (route) => {
+    if (stall) await new Promise((r) => setTimeout(r, 5000));
+    // The stalled request can outlive the unroute below; letting it go then is
+    // the test's own housekeeping, not a failure of the app.
+    await route.continue().catch(() => {});
+  });
+  try {
+    await page.click('button.topnav-tab:has-text("Home")');
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1500);
+    const waiting = await page.evaluate(() => ({
+      skeleton: document.querySelectorAll(".skeleton-line").length,
+      claimsEmpty: document.body.textContent?.includes("No sessions yet") ?? false,
+    }));
+    if (waiting.skeleton === 0) throw new Error("no waiting state while the sessions were still coming");
+    if (waiting.claimsEmpty) throw new Error('said "No sessions yet" while still loading');
+  } finally {
+    // Stop stalling, let the in-flight request finish, then remove the handler.
+    stall = false;
+    await page.waitForTimeout(5200);
+    await page.unroute("**/api/activities**");
+  }
+
+  // Now the platform is simply down.
+  injectingFailures = true;
+  await page.route("**/api/**", (route) => route.fulfill({ status: 500, body: '{"error":"down"}' }));
+  let recovered = 0;
+  try {
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForSelector(".failed-block", { timeout: 15000 });
+    if ((await page.locator("text=No sessions yet").count()) > 0) {
+      throw new Error('claimed "No sessions yet" when the platform was unreachable');
+    }
+    if ((await page.locator(".failed-block button").count()) === 0) throw new Error("no way to try again");
+  } finally {
+    await page.unroute("**/api/**");
+  }
+  // And the offered way back must actually work.
+  await page.locator(".failed-block button").click();
+  await page.waitForTimeout(3000);
+  injectingFailures = false;
+  recovered = await page.locator(".home-session").count();
+  if (recovered === 0) throw new Error("retry did not bring the sessions back");
 });
 
 console.log("── commerce ──");
