@@ -40,11 +40,21 @@ export function ConfirmHost() {
           <button type="button" className="btn btn-ghost" onClick={() => resolveConfirm(false)}>
             {cancelLabel ?? t("common.cancel")}
           </button>
+          {/*
+            No `autoFocus` here, for two reasons. React applies it during mount,
+            before the focus trap's effect runs — so the trap recorded *this*
+            button as "what was focused before the dialog opened", and on close
+            restored focus to an element that no longer existed, dropping the
+            keyboard user back at the top of the page. And on a dialog that
+            asks before deleting an account, the safe button is the one that
+            should be under a stray Enter; the trap focuses Cancel first, and
+            Enter still confirms through the key handler above for anyone who
+            means it.
+          */}
           <button
             type="button"
             className={`btn ${danger ? "btn-danger-solid" : "btn-primary"}`}
             onClick={() => resolveConfirm(true)}
-            autoFocus
           >
             {confirmLabel ?? t("common.confirm")}
           </button>

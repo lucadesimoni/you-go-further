@@ -13,7 +13,7 @@ import { AccountMenu } from "./components/AccountMenu";
 import { HomeView } from "./components/HomeView";
 import { RoutePanel } from "./components/RoutePanel";
 import { NutritionGuide } from "./components/NutritionGuide";
-import { useMediaQuery, PHONE } from "./ui/useMediaQuery";
+import { useMediaQuery, COMPACT_NAV } from "./ui/useMediaQuery";
 import { EventPlanner } from "./components/EventPlanner";
 import { ToastHost } from "./components/ToastHost";
 import { OfflineBanner } from "./components/OfflineBanner";
@@ -111,10 +111,12 @@ export function App() {
   const [reviewActivityId, setReviewActivityId] = useState<string>();
 
   const visibleTabs = useMemo(() => (account ? TABS.filter((t) => hasPermission(account, t.perm)) : []), [account]);
-  const isPhone = useMediaQuery(PHONE);
+  // Whether the strip has room for every label — a tablet in portrait does not,
+  // and used to clip the last destination rather than admit it.
+  const compactNav = useMediaQuery(COMPACT_NAV);
   const [moreOpen, setMoreOpen] = useState(false);
-  const barTabs = isPhone ? visibleTabs.filter((t2) => PHONE_TABS.includes(t2.id)) : visibleTabs;
-  const overflowTabs = isPhone ? visibleTabs.filter((t2) => !PHONE_TABS.includes(t2.id)) : [];
+  const barTabs = compactNav ? visibleTabs.filter((t2) => PHONE_TABS.includes(t2.id)) : visibleTabs;
+  const overflowTabs = compactNav ? visibleTabs.filter((t2) => !PHONE_TABS.includes(t2.id)) : [];
   // Billing only exists when there is something to bill for. The Phase-1 app is
   // free, so the screen and its menu entry are simply not there.
   const canBilling =

@@ -39,3 +39,14 @@ export function useMediaQuery(query: string): boolean {
  */
 export const PHONE = "(max-width: 640px)";
 export const TABLET = "(min-width: 641px) and (max-width: 1024px)";
+/**
+ * Where the full tab strip stops fitting beside the account chip.
+ *
+ * Measured, not guessed: with six labelled tabs the strip runs out of room at
+ * about 860 px and silently starts scrolling, so an iPad in portrait (768 px)
+ * showed a nav bar reading "…Catalo" with nothing to suggest it could be
+ * swiped. A navigation bar that hides destinations behind a horizontal scroll
+ * nobody can see is worse than one that names four and offers the rest under
+ * More — and the second layout already exists.
+ */
+export const COMPACT_NAV = "(max-width: 900px)";

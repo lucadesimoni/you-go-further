@@ -3338,7 +3338,16 @@ code {
    label out of line, so the columns size to their content. */
 .home .targets.plain-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  /*
+   * Two columns, always.
+   *
+   * `auto-fit` with an 88 px floor chose three at every width that matters —
+   * the card is ~315 px in a tablet's two-column layout and only ~470 px on a
+   * 1440 px screen — so four figures broke 3 + 1 and left "1939 m climbing"
+   * orphaned, while "129.7 km" was clipped inside its own track. Four across
+   * never actually fitted here; two rows of two do, at every size.
+   */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-5) var(--space-4);
 }
 .home .targets.plain-grid .stat-value { white-space: nowrap; }
@@ -3386,8 +3395,6 @@ code {
 }
 @media (max-width: 640px) {
   .home-greeting { font-size: var(--text-2xl); }
-  /* Two columns, so a value like "634.3 km" has room instead of overflowing. */
-  .home .targets.plain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-hero { align-items: flex-start; }
   .home-readiness-value { font-size: var(--text-3xl); }
   .home-next-title { font-size: var(--text-xl); }
@@ -5166,4 +5173,31 @@ code {
   .shop-card .usage summary { font-size: var(--text-base); }
   .shop-grid { gap: var(--space-4); }
 
+}
+
+/* ---------------------------------------------------------------------------
+ * The narrow band between a phone and a laptop, last so it wins.
+ *
+ * Even with four tabs and a More, the strip and the account chip fight for the
+ * row below ~750 px. The chip's *name* is the part that can go: the avatar
+ * beside it already says who is signed in, and the name is one tap away in the
+ * menu it opens. Measured at 700 px, where the collision was 68 px wide.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .account-btn-name { display: none; }
+  /* Five labelled tabs and a chip still collided at 700 px — by 29 px, which
+     is roughly the padding this takes back. */
+  .topnav-tab { padding-left: var(--space-3); padding-right: var(--space-3); }
+  .topnav { gap: var(--space-1); }
+}
+
+/*
+ * The last sliver, 641–700 px: a window narrower than a tablet but wider than
+ * the phone layout's cut-off. Rather than shave the tabs again or drop their
+ * labels — which is what carries their accessible name — the strip takes a row
+ * of its own under the brand. Nothing is hidden and nothing is guessed at.
+ */
+@media (min-width: 641px) and (max-width: 700px) {
+  .topbar { flex-wrap: wrap; row-gap: var(--space-2); }
+  .topnav { flex: 1 0 100%; order: 3; justify-content: space-between; }
 }

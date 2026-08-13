@@ -35,6 +35,27 @@ The platform version answers "which release is this?". A module version answers
   server, so the refusal comes back in the language the athlete chose.
 - **The overflow sheet had no way out but the scrim** — no escape at all on a
   keyboard, and a thin margin to hit on a phone. Escape closes it.
+- **A tablet in portrait clipped its own navigation.** The tab strip scrolls
+  horizontally when it runs out of room, and at 768 px it ran out — so an iPad
+  showed "…Catalo" with nothing to suggest the bar could be swiped, and two
+  destinations were effectively hidden. Measured across the range: the strip
+  stops fitting at about 860 px, while the compact four-tabs-and-More layout
+  only took over at 640 px, leaving a 220 px band of widths where navigation
+  was broken. The compact layout now starts at 900 px, the account chip drops
+  its name below that (the avatar already says who is signed in), and in the
+  last sliver above the phone breakpoint the strip takes a row of its own.
+  Verified at every width from 1440 down to 641: no collisions, nothing
+  clipped.
+- **Four figures broke 3 + 1 on a tablet**, orphaning "1939 m climbing" on a
+  line of its own, and "129.7 km" was clipped inside its column. The week's
+  card is never wide enough for four across — ~470 px even on a 1440 px screen
+  — so it is two rows of two at every size.
+- **A dialog dropped keyboard focus when it closed.** `autoFocus` on the
+  confirm button is applied during mount, before the focus trap's effect runs,
+  so the trap recorded the dialog's own button as "what was focused before"
+  and restored focus to an element that no longer existed. Focus now returns to
+  the control that opened the dialog — and the trap lands on Cancel first,
+  which is the right default on a question about deleting an account.
 - The journey carries a step that stalls the network and then breaks it, so
   the three states cannot silently collapse back into one. Its own injected
   500s are muted in the error collector for exactly as long as they are being
