@@ -64,6 +64,24 @@ export function RouteInsights({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Which route the numbers on screen belong to.
+   *
+   * Effects run *after* React paints, so switching session produced one frame
+   * in which the summary above had already changed while this panel still drew
+   * the previous route: an 11.6 km run captioned with 14 km of terrain. It is
+   * brief, and it is exactly the kind of contradiction that makes an athlete
+   * stop believing the numbers. Resetting during render instead of in the
+   * effect means the stale frame cannot be drawn at all.
+   */
+  const routeKey = `${activityId ?? ""}|${hintDistanceKm ?? ""}|${route.length}|${route[0]?.join(",") ?? ""}`;
+  const [shownFor, setShownFor] = useState(routeKey);
+  if (shownFor !== routeKey) {
+    setShownFor(routeKey);
+    setData(null);
+    setLoading(true);
+  }
+
   useEffect(() => {
     let live = true;
     setLoading(true);

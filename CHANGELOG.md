@@ -35,6 +35,13 @@ The platform version answers "which release is this?". A module version answers
   server, so the refusal comes back in the language the athlete chose.
 - **The overflow sheet had no way out but the scrim** — no escape at all on a
   keyboard, and a thin margin to hit on a phone. Escape closes it.
+- **A session's summary and its height profile could disagree for a frame.**
+  Effects run after React paints, so switching session drew one frame in which
+  the summary already said 11.6 km while the chart still showed the previous
+  route's 14 km. Brief, and exactly the kind of contradiction that makes an
+  athlete stop trusting the numbers. The panel now resets during render when
+  the route changes, so the stale frame cannot be drawn at all. Found by CI,
+  which reads faster than a person and caught what six attempts here did not.
 - **A tablet in portrait clipped its own navigation.** The tab strip scrolls
   horizontally when it runs out of room, and at 768 px it ran out — so an iPad
   showed "…Catalo" with nothing to suggest the bar could be swiped, and two

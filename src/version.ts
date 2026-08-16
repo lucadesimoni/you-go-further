@@ -320,7 +320,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "components",
     path: "src/components",
-    version: "1.11.1",
+    version: "1.11.2",
     layer: "interface",
     stability: "stable",
     summary: "Every screen and shared control, from the planner and the race forecast to the admin views.",
@@ -389,7 +389,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "scripts",
     path: "scripts",
-    version: "1.6.0",
+    version: "1.7.0",
     layer: "surface",
     stability: "stable",
     summary:

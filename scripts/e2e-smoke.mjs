@@ -591,13 +591,21 @@ await step("fuel stops are placed on the height profile, not just the clock", as
 
   // The chart's distance must agree with the session summary above it —
   // two different numbers for the same ride is worse than none.
-  const foot = await page.locator(".energy-foot").innerText();
-  const chart = await page.locator(".elev-foot").innerText();
-  const sessionKm = Number(/([\d.]+) km/.exec(foot)?.[1]);
-  const chartKm = Number(/([\d.]+) km/.exec(chart)?.[1]);
-  if (Math.abs(sessionKm - chartKm) > Math.max(1, sessionKm * 0.05)) {
-    throw new Error(`chart says ${chartKm} km but the session says ${sessionKm} km`);
-  }
+  // Both panels must settle on the *same* session. The chart reloads when the
+  // route changes, so a reading taken mid-switch compares one session's summary
+  // with another's terrain — which is what this used to do, and what made it
+  // fail on a CI runner and pass here.
+  await waitFor("the chart and the session summary never agreed on a distance", async () => {
+    const foot = await page.locator(".energy-foot").innerText();
+    const chartEl = page.locator(".elev-foot");
+    if ((await chartEl.count()) === 0) return "chart still loading";
+    const sessionKm = Number(/([\d.]+) km/.exec(foot)?.[1]);
+    const chartKm = Number(/([\d.]+) km/.exec(await chartEl.innerText())?.[1]);
+    if (!Number.isFinite(sessionKm) || !Number.isFinite(chartKm)) return `session=${sessionKm} chart=${chartKm}`;
+    return Math.abs(sessionKm - chartKm) <= Math.max(1, sessionKm * 0.05)
+      ? true
+      : `chart says ${chartKm} km but the session says ${sessionKm} km`;
+  });
 
   // An estimated profile must say so — a chart looks authoritative either way.
   const estimatedChart = (await page.locator(".elev-chart-estimated").count()) > 0;
@@ -1033,6 +1041,40 @@ await step("skip link is the first tab stop", async () => {
   await page.keyboard.press("Tab");
   const t = await page.evaluate(() => document.activeElement?.textContent ?? "");
   if (!/skip to content/i.test(t)) throw new Error(`first tab stop was "${t}"`);
+});
+
+console.log("── a tablet, where the nav used to hide itself ──");
+await step("every destination is reachable at every width, not just the wide ones", async () => {
+  // The defect: the tab strip scrolls sideways when it runs out of room, and
+  // at 768 px it ran out — an iPad in portrait showed "…Catalo" with no hint
+  // that the bar could be swiped, so two destinations were effectively gone.
+  const bad = [];
+  for (const width of [1440, 1024, 900, 860, 800, 768, 700, 660]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.waitForTimeout(500);
+    const state = await page.evaluate(() => {
+      const acct = document.querySelector(".account-btn")?.getBoundingClientRect();
+      const tabs = [...document.querySelectorAll(".topnav-tab")];
+      // Two boxes collide only if they overlap on both axes: comparing x alone
+      // calls a nav that has moved to its own row a collision.
+      const overlaps = (a, b) =>
+        Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 &&
+        Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
+      const clipped = tabs
+        .map((el) => el.querySelector(".topnav-label"))
+        .filter((l) => l && l.scrollWidth > l.clientWidth + 1)
+        .map((l) => l.textContent);
+      const collided = acct
+        ? tabs.filter((el) => overlaps(el.getBoundingClientRect(), acct)).map((el) => el.textContent?.trim())
+        : [];
+      return { clipped, collided, onScreen: tabs.length };
+    });
+    if (state.clipped.length) bad.push(`${width}px: clipped ${state.clipped.join(", ")}`);
+    if (state.collided.length) bad.push(`${width}px: the account chip sits on ${state.collided.join(", ")}`);
+    if (state.onScreen < 3) bad.push(`${width}px: only ${state.onScreen} destinations on screen`);
+  }
+  await page.setViewportSize({ width: 1180, height: 900 });
+  if (bad.length) throw new Error(bad.join("; "));
 });
 
 console.log("── a phone, in the longest language ──");
