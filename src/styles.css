@@ -76,6 +76,27 @@
   --sport-ink: var(--muted);
   --sport-soft: var(--panel-2);
 
+  /*
+   * "solid" variants: the colour as a *filled shape with text on it* — a
+   * status pill, a done mark, a map pin.
+   *
+   * This is the strictest of the three jobs a semantic colour does, and it is
+   * the opposite problem from `-ink`. Ink has to carry against the page; a
+   * solid has to carry the ink sitting on top of it. Measured, the vivid
+   * tokens do that in the dark theme, where the ink is near-black (8.71:1 on
+   * the green), and fail every time in the light theme, where the ink is
+   * white: 3.35:1 on the green, 3.59:1 on the blue, 2.83:1 on the amber —
+   * every status badge in the app, under the 4.5:1 small bold text needs.
+   *
+   * So a solid is the vivid colour where the ink is dark and the already
+   * darkened `-ink` colour where the ink is white. Because contrast is
+   * symmetric, "readable as a word on white" and "readable under white" are
+   * the same measurement, which is why the `-ink` values work here unchanged.
+   */
+  --info-solid: var(--info);
+  --warn-solid: var(--warn);
+  --success-solid: var(--success);
+
   /* Session-phase aliases (kept for readability at call sites) */
   --pre: var(--info);
   --during: var(--warn);
@@ -83,6 +104,9 @@
   --pre-ink: var(--info-ink);
   --during-ink: var(--warn-ink);
   --post-ink: var(--success-ink);
+  --pre-solid: var(--info-solid);
+  --during-solid: var(--warn-solid);
+  --post-solid: var(--success-solid);
 
   /*
    * ---- Colour · charts ----------------------------------------------------
@@ -230,6 +254,11 @@
   --success-ink: #0b7048;
   --accent-purple-ink: #6f3f94;
 
+  /* The ink on a solid is white here, so a solid takes the darkened colour. */
+  --info-solid: var(--info-ink);
+  --warn-solid: var(--warn-ink);
+  --success-solid: var(--success-ink);
+
   --focus-ring: rgba(15, 20, 23, 0.22);
   --scrim: rgba(15, 24, 28, 0.45);
 
@@ -267,6 +296,9 @@
     --warn-ink: #8a5c00;
     --success-ink: #0b7048;
     --accent-purple-ink: #6f3f94;
+    --info-solid: var(--info-ink);
+    --warn-solid: var(--warn-ink);
+    --success-solid: var(--success-ink);
     --focus-ring: rgba(15, 20, 23, 0.22);
     --scrim: rgba(15, 24, 28, 0.45);
     --shadow-sm: 0 1px 3px rgba(16, 30, 38, 0.08);
@@ -330,11 +362,80 @@
   box-sizing: border-box;
 }
 
+html {
+  /*
+   * iOS Safari silently inflates text when a phone is turned to landscape.
+   * The scale above already answers "is this readable in one hand"; the
+   * browser second-guessing it is what makes a careful 13 px label land at 17.
+   */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
+  /*
+   * Grayscale antialiasing, in both themes.
+   *
+   * Subpixel rendering assumes dark ink on a light page: it tints the vertical
+   * edge of every stem to buy horizontal resolution. Invert that — which is
+   * this app's default theme — and the same trick reads as weight, so light
+   * text on the dark panels comes out fatter and faintly colour-fringed while
+   * the identical string in the light theme comes out crisp. Grayscale gives
+   * both themes the same stem, which is the difference between two themes and
+   * one design.
+   */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* System stacks kern by default; say so, because `text-rendering` opinions
+     elsewhere in a page can turn it off. */
+  font-kerning: normal;
+}
+
+/*
+ * Headings: display leading, not body leading.
+ *
+ * Every heading in the app inherited `1.5` from the body, which is a value
+ * chosen for 13 px paragraphs. On a 26 px title it opens thirteen pixels
+ * between two lines of the *same phrase*, and a wrapped title stops reading as
+ * one thing. Large type also needs slightly tighter tracking than small type to
+ * look evenly set — the same reason the small uppercase labels get positive
+ * tracking a few rules down.
+ *
+ * Element selectors, deliberately: any component with its own opinion about a
+ * particular heading still wins on specificity.
+ */
+h1,
+h2,
+h3,
+h4,
+h5 {
+  line-height: 1.22;
+  letter-spacing: -0.011em;
+  /* Two even lines rather than a full one and a single orphaned word. */
+  text-wrap: balance;
+}
+
+p {
+  /* Same idea, applied to the last line of a paragraph. */
+  text-wrap: pretty;
+}
+
+/*
+ * A measure for running prose.
+ *
+ * A paragraph spanning the full 1080 px page runs to about 140 characters, and
+ * the eye starts losing its place on the return sweep somewhere past 90. This
+ * only ever bites on a wide screen: 68ch at the phone type size is wider than
+ * a 390 px viewport, so the layout that was measured and tuned is untouched.
+ */
+.page > p,
+.explain p,
+.detail,
+.lede {
+  max-width: 68ch;
 }
 
 .page {
@@ -791,6 +892,13 @@ input[type="range"] {
   font-size: var(--text-2xl);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  /*
+   * A figure is one line, and it was inheriting a 13 px paragraph's leading:
+   * a 22 px number in a 33 px box, eleven pixels of empty air under every
+   * metric in the app, multiplied by the three or four in each card.
+   */
+  line-height: 1.15;
+  letter-spacing: -0.015em;
 }
 
 .stat-label {
@@ -798,6 +906,10 @@ input[type="range"] {
   color: var(--muted);
   /* Above the figure now, so it carries a little more weight as a heading. */
   font-weight: 600;
+  line-height: 1.3;
+  /* Small text set in grey needs a touch of air between letters to stay
+     legible; large text needs the opposite. */
+  letter-spacing: 0.01em;
   order: -1;
 }
 
@@ -853,18 +965,29 @@ input[type="range"] {
   letter-spacing: 0.06em;
   padding: 4px 9px;
   border-radius: var(--radius-pill);
-  color: var(--bg);
+  /*
+   * `--on-accent`, not `--bg`.
+   *
+   * They are the same colour in the dark theme, which is why this went
+   * unnoticed: the page is near-black and so is the right ink for a bright
+   * fill. In the light theme the page is near-white, so the badge was painting
+   * near-white text on a mid-tone fill — 3.11:1, well under the 4.5 that small
+   * bold text needs. `--on-accent` is the token that means "text on a filled
+   * colour" and it flips with the theme; `--*-solid` is its counterpart on the
+   * fill side, and the pair is what makes the measurement come out.
+   */
+  color: var(--on-accent);
   white-space: nowrap;
 }
 
 .badge-pre {
-  background: var(--pre);
+  background: var(--pre-solid);
 }
 .badge-during {
-  background: var(--during);
+  background: var(--during-solid);
 }
 .badge-post {
-  background: var(--post);
+  background: var(--post-solid);
 }
 
 .detail {
@@ -1155,18 +1278,19 @@ input[type="range"] {
   letter-spacing: 0.05em;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
-  color: var(--bg);
+  /* Same reasoning as `.badge` above. */
+  color: var(--on-accent);
   white-space: nowrap;
 }
 
 .acwr-optimal {
-  background: var(--post);
+  background: var(--post-solid);
 }
 .acwr-detraining {
-  background: var(--pre);
+  background: var(--pre-solid);
 }
 .acwr-caution {
-  background: var(--during);
+  background: var(--during-solid);
 }
 .acwr-high-risk {
   background: var(--accent);
@@ -1710,9 +1834,9 @@ code {
 
 .cart-checkout.done,
 .btn.done {
-  background: var(--post);
-  border-color: var(--post);
-  color: var(--bg);
+  background: var(--post-solid);
+  border-color: var(--post-solid);
+  color: var(--on-accent);
 }
 
 /* ---- Feedback (learning loop) ---- */
@@ -2371,8 +2495,8 @@ code {
 }
 .milestone.done .milestone-mark {
   color: var(--on-accent);
-  background: var(--post);
-  border-color: var(--post);
+  background: var(--post-solid);
+  border-color: var(--post-solid);
 }
 .milestone-body { display: flex; flex-direction: column; gap: 1px; }
 .milestone-name { font-weight: 600; font-size: var(--text-md); }
@@ -2835,11 +2959,17 @@ code {
   border-radius: var(--radius-pill);
   border: 1px solid rgba(0, 0, 0, 0.4);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
-  color: #fff;
+  /*
+   * A pin is a filled shape with a word on it, so it takes the same pair as a
+   * badge. It used to be white on whatever colour it landed on: white on the
+   * dark theme's green is 2.13:1, and "Finish" was white on the near-white
+   * light-theme inset — 1.10:1, a label that simply was not there.
+   */
+  color: var(--on-accent);
 }
-.map-pin.start { background: var(--post); }
-.map-pin.finish { background: var(--surface-inset); border-color: var(--border); }
-.map-pin.fuel { background: var(--during); color: var(--surface-inset); }
+.map-pin.start { background: var(--post-solid); }
+.map-pin.finish { background: var(--surface-inset); border-color: var(--border); color: var(--text); }
+.map-pin.fuel { background: var(--during-solid); }
 
 /* --- Admin area: user management + platform settings --- */
 .admin-users {
@@ -3993,9 +4123,9 @@ code {
   font-weight: 800;
   color: var(--on-accent);
 }
-.toast-success .toast-mark { background: var(--post); }
+.toast-success .toast-mark { background: var(--post-solid); }
 .toast-error .toast-mark { background: var(--accent); color: #fff; }
-.toast-info .toast-mark { background: var(--info); }
+.toast-info .toast-mark { background: var(--info-solid); }
 .toast-success { border-color: var(--success-line); }
 .toast-error { border-color: var(--accent-line); }
 @media (max-width: 560px) {

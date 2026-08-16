@@ -1012,6 +1012,90 @@ await step("every chart colour and ink is legible in both themes", async () => {
   await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
   if (bad.length) throw new Error(bad.join("; "));
 });
+await step("every filled badge carries the text sitting on it, in both themes", async () => {
+  /*
+   * The step above asks "is this colour readable *on the page*". This one asks
+   * the opposite and stricter question: a status pill is a coloured fill with a
+   * word on top, and the fill has to carry the word.
+   *
+   * Walking the app cannot answer it, because most of these states never render
+   * in one session — a single athlete is one training-load verdict, not four —
+   * so the failing ones stayed invisible. Every phase badge in the app measured
+   * 2.83–3.59:1 in the light theme, and "Finish" was white on a near-white map
+   * pin at 1.10:1. So each state is built here, in the live document, where the
+   * chained tokens actually resolve.
+   */
+  const CASES = [
+    ["badge badge-pre"], ["badge badge-during"], ["badge badge-post"],
+    ["acwr-badge acwr-optimal"], ["acwr-badge acwr-detraining"],
+    ["acwr-badge acwr-caution"], ["acwr-badge acwr-high-risk"],
+    ["map-pin start"], ["map-pin finish"], ["map-pin fuel"],
+    ["btn done"], ["btn btn-primary"], ["btn-danger-solid"],
+    // These two take their fill from a parent state class.
+    ["toast-mark", "toast-success"], ["toast-mark", "toast-error"], ["toast-mark", "toast-info"],
+    ["milestone-mark", "milestone done"],
+  ];
+  const measured = await page.evaluate((cases) => {
+    const host = document.createElement("div");
+    host.style.cssText = "position:fixed;top:-9999px;left:0";
+    document.body.appendChild(host);
+    const out = {};
+    for (const theme of ["dark", "light"]) {
+      document.documentElement.setAttribute("data-theme", theme);
+      out[theme] = [];
+      for (const [cls, wrap] of cases) {
+        const outer = document.createElement("div");
+        if (wrap) outer.className = wrap;
+        const el = document.createElement("span");
+        el.className = cls;
+        el.textContent = "Optimal";
+        outer.appendChild(el);
+        host.appendChild(outer);
+        const cs = getComputedStyle(el);
+        out[theme].push({
+          name: wrap ? `.${cls} in .${wrap}` : `.${cls}`,
+          fg: cs.color,
+          bg: cs.backgroundColor,
+          size: parseFloat(cs.fontSize),
+          weight: Number(cs.fontWeight) || 400,
+        });
+      }
+      host.replaceChildren();
+    }
+    host.remove();
+    return out;
+  }, CASES);
+
+  /* `color(srgb …)` is 0–1 and `rgb()` is 0–255; reading one as the other turns
+     white into near-black, which is how a first pass at this "found" nine
+     failures that were not there. */
+  const rgb = (css) => {
+    const n = (css.match(/[\d.]+/g) ?? []).map(Number);
+    return css.startsWith("color(") ? n.slice(0, 3).map((c) => c * 255) : n.slice(0, 3);
+  };
+  const lin = (c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4);
+  const lum = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  const ratio = (f, b) => {
+    const [x, y] = [lum(f) + 0.05, lum(b) + 0.05];
+    return Math.round((Math.max(x, y) / Math.min(x, y)) * 100) / 100;
+  };
+  const bad = [];
+  for (const [theme, items] of Object.entries(measured)) {
+    for (const { name, fg, bg, size, weight } of items) {
+      // A badge with no fill of its own is not a filled shape; skip rather than
+      // measure it against a transparent background and invent a number.
+      if (/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) {
+        bad.push(`${theme}/${name} has no fill — the case is stale`);
+        continue;
+      }
+      const need = size >= 24 || (size >= 18.66 && weight >= 700) ? 3 : 4.5;
+      const got = ratio(rgb(fg), rgb(bg));
+      if (got < need) bad.push(`${theme}/${name} ${got}:1 (needs ${need})`);
+    }
+  }
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  if (bad.length) throw new Error(bad.join("; "));
+});
 await step("German switches the interface and the html lang", async () => {
   await page.selectOption("#lang-select", { label: "Deutsch" });
   await page.waitForTimeout(400);

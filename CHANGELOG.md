@@ -8,6 +8,48 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.22.1
+
+Type and contrast, measured rather than eyeballed.
+
+**Fixed**
+
+- **Every status badge failed contrast in the light theme.** A filled pill takes
+  its ink from `--on-accent`, but the *fill* was the vivid palette colour, which
+  only ever works under the dark theme's near-black ink. Under white it measured
+  3.35:1 on the green, 3.59:1 on the blue and 2.83:1 on the amber — all under the
+  4.5:1 small bold text needs. New `--info-solid` / `--warn-solid` /
+  `--success-solid` tokens (with the usual `--pre|during|post` aliases) take the
+  vivid colour where the ink is dark and the already-darkened `-ink` colour where
+  the ink is white, so one rule holds in both themes. All 17 filled shapes in the
+  app — phase badges, the four training-load verdicts, map pins, toast marks, the
+  done button and the completed milestone — now measure 4.85:1 or better in both
+  themes, against 34 measurements taken in a real browser.
+- **"Finish" was an invisible map pin.** It painted white on the light theme's
+  near-white inset surface: 1.10:1. It takes the body ink now. `Start` and the
+  fuel pins were white on their fill — 2.13:1 in dark — and take `--on-accent`.
+
+**Changed**
+
+- **Headings are set with display leading, not body leading.** They inherited
+  `1.5` from the body, a value chosen for 13 px paragraphs; on a 22 px title that
+  opens eleven pixels between two lines of the same phrase and a wrapped heading
+  stops reading as one thing. Now 1.22 with a hair of negative tracking and
+  `text-wrap: balance`, so a title breaks into two even lines rather than a full
+  one and an orphan.
+- **A figure is one line.** `.stat-value` was inheriting the same paragraph
+  leading — a 22 px number in a 33 px box, and every card in the app carries
+  three or four of them. Tightened to 1.15; the insights screen lost a tenth of a
+  screen of dead air without moving a single element.
+- **Grayscale antialiasing, in both themes.** Subpixel rendering assumes dark ink
+  on a light page, so the dark theme — the default here — rendered visibly
+  heavier and faintly colour-fringed while the same string in the light theme
+  came out crisp. Both stems match now.
+- **Running prose has a measure.** A paragraph across the full 1080 px page runs
+  to about 140 characters; capped at 68ch, which by construction cannot affect
+  the phone layout, where 68ch is wider than the screen.
+- iOS Safari no longer inflates the type on rotation (`-webkit-text-size-adjust`).
+
 ## 0.22.0
 
 **Changed**

@@ -25,6 +25,7 @@ surface stays harmonized and a theme change is a one-line edit.
 | `--accent` / `--accent-soft` | Swiss red — primary action & danger |
 | `--info` `--warn` `--success` | semantic status |
 | `--pre` `--during` `--post` | session-phase aliases of info/warn/success |
+| `--*-solid` | the fill under `--on-accent` text (see [Solid tokens](#solid-tokens)) |
 | `--accent-purple` | accent for gamification/achievements |
 
 ### Radius
@@ -39,6 +40,23 @@ padding, gaps and margins.
 ### Type
 `--text-2xs`…`--text-4xl` = 10, 11, 12, 13, 14, 15, 17, 22, 26, 30 px. Body text
 is `--text-md`/`--text-base`; labels `--text-sm`; stats & headings `--text-2xl`+.
+A phone block at `max-width: 720px` raises the small end of the scale, because
+10–13 px is fine at arm's length and hard to read in one hand.
+
+**Leading is a function of size, not a global.** `1.5` is a body value: set on a
+22 px title it opens eleven pixels between two lines of the same phrase, and a
+wrapped heading stops reading as one thing. So `h1`–`h5` and `.stat-value` take
+display leading (1.22 and 1.15) with a hair of *negative* tracking, while the
+small uppercase labels take *positive* tracking — large type needs less letter
+spacing than small type to look evenly set. Headings use `text-wrap: balance`,
+paragraphs `text-wrap: pretty`, and running prose is capped at `68ch`; at phone
+width 68ch is wider than the screen, so the measure only ever bites on desktop.
+
+The body sets **grayscale antialiasing** in both themes. Subpixel rendering
+assumes dark ink on a light page and tints each stem's edge to buy horizontal
+resolution; invert that — the default theme here — and the trick reads as
+weight, so the dark theme rendered heavier and faintly fringed while the same
+string in light came out crisp. Grayscale gives both themes the same stem.
 
 ### Elevation & motion
 `--shadow-sm` `--shadow-md` `--shadow-lg`; `--transition` (0.15s ease).
@@ -78,6 +96,30 @@ red wherever it is a shape rather than a word.
 
 Use the vivid token for fills, borders and pills; use ink whenever the colour is
 the text.
+
+### Solid tokens
+
+There is a third job, and it is the strictest: a **filled shape with text on
+it** — a status badge, a map pin, a completed milestone. Ink has to carry
+against the page; a solid has to carry the ink sitting on top of it.
+
+| Fill under text | Token |
+| --- | --- |
+| `--info` `--warn` `--success` | `--info-solid` `--warn-solid` `--success-solid` |
+| `--pre` `--during` `--post` | `--pre-solid` `--during-solid` `--post-solid` |
+
+The vivid tokens do this job in dark mode, where the ink is near-black — 8.71:1
+on the green. They fail it every time in light mode, where the ink is white:
+**3.35:1** on the green, **3.59:1** on the blue, **2.83:1** on the amber. So a
+solid is the vivid colour where the ink is dark and the `-ink` colour where the
+ink is white. Because contrast is symmetric, "readable as a word on white" and
+"readable under white" are the same measurement — which is why the darkened ink
+values work unchanged as fills.
+
+The rule at a call site: `background: var(--post-solid); color: var(--on-accent);`
+— always that pair, never one without the other. `--accent` is the exception and
+keeps its own ink (`#fff`), because white carries on the Swiss red in both themes
+while `--on-accent` does not (3.83:1 in dark).
 
 ### Tint tokens
 
