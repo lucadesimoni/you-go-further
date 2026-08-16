@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useMediaQuery, PHONE } from "../ui/useMediaQuery";
 import type { LatLng } from "../model";
 import type { Activity } from "../engine";
 import { enrichRoute, type RouteConditions } from "../geo";
@@ -60,6 +61,7 @@ export function RouteInsights({
   onHoverKm?: (km: number | null) => void;
 }) {
   const t = useT();
+  const isPhone = useMediaQuery(PHONE);
   const [data, setData] = useState<RouteConditions | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -275,9 +277,21 @@ export function RouteInsights({
         </div>
       )}
 
-      {/* Where the plan holds and where it doesn't — the question behind the
-          stop list, answered in kilometres. */}
-      {sim && <RaceForecast sim={sim} estimated={terrain.source === "estimated"} />}
+      {/*
+        Where the plan holds and where it doesn't — the question behind the stop
+        list, answered in kilometres. It is 729 px of it, though, and on a phone
+        it sat between the athlete and everything below: the stop list above is
+        the answer, this is the follow-up question. Folded there, open here.
+      */}
+      {sim &&
+        (isPhone ? (
+          <details className="panel fold">
+            <summary className="fold-summary">{t("sim.title")}</summary>
+            <RaceForecast sim={sim} estimated={terrain.source === "estimated"} />
+          </details>
+        ) : (
+          <RaceForecast sim={sim} estimated={terrain.source === "estimated"} />
+        ))}
 
       {implications.length > 0 && (
         <ul className="geo-implications">

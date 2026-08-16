@@ -6,6 +6,7 @@ import { toast } from "../ui/toast";
 import { confirm } from "../ui/confirm";
 import { useFocusTrap } from "../ui/useFocusTrap";
 import { useT, type TranslationKey } from "../i18n";
+import { useMediaQuery, PHONE } from "../ui/useMediaQuery";
 import { BuyLink } from "./BuyLink";
 import { ChoiceRow } from "./Choice";
 import { ProductThumb } from "./ProductThumb";
@@ -36,6 +37,7 @@ const EMPTY: Draft = { category: "drink-mix", phases: ["during"], swiss: true, c
  */
 export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; role?: Role }) {
   const t = useT();
+  const isPhone = useMediaQuery(PHONE);
   const [catalog, setCatalog] = useState<Product[]>(CATALOG);
   const [category, setCategory] = useState<ProductCategory | "all">("all");
   const [query, setQuery] = useState("");
@@ -145,6 +147,22 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
     }
   };
 
+  const intro = (
+    <ReadMore lines={2}>
+      <p className="detail">
+        {t("catalog.intro", { brands: brands.join(" · ") })}{" "}
+        {canEdit ? (
+          <>
+            {t("catalog.houseCount", { count: customCount })} ·{" "}
+            {catalogPersistence.mode() === "server" ? t("catalog.savedServer") : t("catalog.savedBrowser")}.
+          </>
+        ) : (
+          <>{t("catalog.readOnly")}</>
+        )}
+      </p>
+    </ReadMore>
+  );
+
   return (
     <main className="dash catalog">
       <section className="panel">
@@ -155,19 +173,13 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
         {/* Which brands, and who curates this — worth saying once, not worth a
             paragraph above the products on a phone where it costs half a
             screen before the first thing you came to look at. */}
-        <ReadMore lines={2}>
-          <p className="detail">
-            {t("catalog.intro", { brands: brands.join(" · ") })}{" "}
-            {canEdit ? (
-              <>
-                {t("catalog.houseCount", { count: customCount })} ·{" "}
-                {catalogPersistence.mode() === "server" ? t("catalog.savedServer") : t("catalog.savedBrowser")}.
-              </>
-            ) : (
-              <>{t("catalog.readOnly")}</>
-            )}
-          </p>
-        </ReadMore>
+        {/*
+          Who curates the library matters once and never again, and at the top
+          of a phone screen it is 90 px of preamble above the thing you came to
+          look at. It is rendered after the products there, and above them
+          where there is room.
+        */}
+        {!isPhone && intro}
 
         {canEdit && (
           <div className="catalog-actions">
@@ -224,12 +236,41 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
 
         <div className="shop-grid">
           {items.map((p) => (
-            <article key={p.id} className="shop-card">
-              <div className="shop-card-top">
+            /*
+             * On a phone the card *is* the summary.
+             *
+             * Twenty-four products, each a card carrying its four macros, its
+             * tags, its usage note and a buy button, came to 8 867 px — ten and
+             * a half phone screens of near-identical blocks to scroll past. A
+             * library is a list you scan and then look into, and the two levels
+             * had been collapsed into one. The row below carries what picks a
+             * product out of a list — what it is, what it costs, how much
+             * carbohydrate it delivers — and everything else opens on a tap.
+             *
+             * On a wide screen there is room for both, so the disclosure starts
+             * open and the summary is hidden: the same markup, no second
+             * component to keep in step.
+             */
+            <details key={p.id} className="shop-card" open={!isPhone}>
+              <summary className="shop-card-row">
                 <ProductThumb product={p} />
-                <div className="shop-card-id">
+                <span className="shop-row-id">
                   <span className="shop-brand">{p.brand}</span>
-                  <h3 className="shop-name">{p.name}</h3>
+                  <span className="shop-name">{p.name}</span>
+                </span>
+                <span className="shop-row-figs">
+                  {p.carbsG > 0 && (
+                    <span className="fig">
+                      {p.carbsG} <span className="fig-unit">g</span>
+                    </span>
+                  )}
+                  <span className="shop-row-price">
+                    {p.priceChf != null ? `CHF ${p.priceChf.toFixed(2)}` : t("catalog.noPrice")}
+                  </span>
+                </span>
+              </summary>
+              <div className="shop-card-top">
+                <div className="shop-card-id">
                   <span className="shop-cat">{t(CATEGORY_KEY[p.category])}</span>
                 </div>
                 {p.custom && <span className="tag tag-house">{t("plan.house")}</span>}
@@ -312,9 +353,12 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
                   </button>
                 </div>
               )}
-            </article>
+            </details>
           ))}
         </div>
+
+        {/* Said after the list on a phone, where it costs nothing to skip. */}
+        {isPhone && intro}
 
         {items.length === 0 && <p className="detail shop-empty">{t("catalog.noMatches", { query: query.trim() })}</p>}
       </section>

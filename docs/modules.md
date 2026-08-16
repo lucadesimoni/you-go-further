@@ -334,7 +334,7 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.13.0, stable
+### `src/components` — 1.14.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
@@ -350,7 +350,7 @@ configuration rather than inventing one.
 Public API: `App`, `Planner`, `RouteInsights`, `RaceForecast`, `SessionDebrief`,
 `LoadProfileCard`.
 
-### `src/i18n` — 1.5.0, stable
+### `src/i18n` — 1.6.0, stable
 
 Four typed dictionaries — German, French, Italian, English — with `{placeholder}`
 interpolation and `_one` plural siblings. `de`, `fr` and `it` are typed against
@@ -366,7 +366,7 @@ Light, dark and system appearance, applied to the document root and persisted.
 
 Public API: `useTheme`, `applyTheme`.
 
-### `src/ui` — 1.2.0, stable
+### `src/ui` — 1.2.1, stable
 
 Cross-cutting interface primitives: toasts, confirmation dialogs, focus trap,
 and `useMediaQuery` — used where the *markup* has to differ between a phone and

@@ -37,7 +37,7 @@
  */
 
 /** The release. See `CHANGELOG.md` for what changed between versions. */
-export const PLATFORM_VERSION = "0.17.0";
+export const PLATFORM_VERSION = "0.18.0";
 
 /** Which broad layer a module belongs to — and therefore what it may import. */
 export type ModuleLayer = "domain" | "platform" | "interface" | "surface";
@@ -320,7 +320,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "components",
     path: "src/components",
-    version: "1.13.0",
+    version: "1.14.0",
     layer: "interface",
     stability: "stable",
     summary: "Every screen and shared control, from the planner and the race forecast to the admin views.",
@@ -329,7 +329,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "i18n",
     path: "src/i18n",
-    version: "1.5.0",
+    version: "1.6.0",
     layer: "interface",
     stability: "stable",
     summary:
@@ -348,7 +348,7 @@ export const MODULES: readonly ModuleVersion[] = [
   {
     id: "ui",
     path: "src/ui",
-    version: "1.2.0",
+    version: "1.2.1",
     layer: "interface",
     stability: "stable",
     summary:

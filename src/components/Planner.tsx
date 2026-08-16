@@ -17,8 +17,9 @@ import { CartPanel } from "./CartPanel";
 import { FeedbackPanel } from "./FeedbackPanel";
 import { OfferingPanel } from "./OfferingPanel";
 import { EnergyProfile } from "./EnergyProfile";
-import { useT } from "../i18n";
+import { type TranslationKey, useT } from "../i18n";
 import { BuyLink } from "./BuyLink";
+import { ReadMore } from "./ReadMore";
 import { Explain } from "./Explain";
 
 /** Only session-specific fields live in the planner now; body data comes from the profile. */
@@ -37,6 +38,12 @@ const DEFAULT_SESSION: SessionInput = {
 
 
 /** Standalone session fuel planner. Body/health data is read from Profile settings. */
+const PLAN_VIEWS = [
+  { id: "plan", labelKey: "plan.view.plan" },
+  { id: "fuel", labelKey: "plan.view.fuel" },
+  { id: "learn", labelKey: "plan.view.learn" },
+] as const satisfies readonly { id: "plan" | "fuel" | "learn"; labelKey: TranslationKey }[];
+
 export function Planner({
   initial,
   role = "athlete",
@@ -81,6 +88,11 @@ export function Planner({
   }, [initial, onPrefillUsed]);
 
   const isPhone = useMediaQuery(PHONE);
+  /** Which third of the plan a phone is showing. A wide screen shows all three. */
+  const [view, setView] = useState<"plan" | "fuel" | "learn">("plan");
+  const showPlan = !isPhone || view === "plan";
+  const showFuel = !isPhone || view === "fuel";
+  const showLearn = !isPhone || view === "learn";
   /** Only meaningful on a phone; the wide layout always shows the form. */
   const [formOpen, setFormOpen] = useState(false);
 
@@ -258,6 +270,34 @@ export function Planner({
       </section>
 
       <section className="results" aria-live="polite">
+        {/*
+         * Seven full panels, one under the other, came to 4 395 px — five and a
+         * quarter phone screens for one session's plan. Every panel earns its
+         * place, but not all at once and not on a phone: the targets and the
+         * schedule are the answer, the products are how you get it, and the
+         * energy curve and the log are what you look at afterwards.
+         *
+         * So on a phone they are three sections rather than one scroll, opening
+         * on the answer. A wide screen has room for the lot and keeps it.
+         */}
+        {isPhone && (
+          <div className="plan-views" role="tablist" aria-label={t("plan.viewsLabel")}>
+            {PLAN_VIEWS.map(({ id, labelKey }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={view === id}
+                className={view === id ? "plan-view active" : "plan-view"}
+                onClick={() => setView(id)}
+              >
+                {t(labelKey)}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className={showPlan ? "plan-section" : "plan-section is-hidden"}>
         <div className="targets panel">
           <Stat
             label={t("plan.carbPerHour")}
@@ -309,9 +349,9 @@ export function Planner({
         )}
 
         <SessionTimeline schedule={schedule} />
+        </div>
 
-        <EnergyProfile input={effectiveInput} target={rec.target} schedule={schedule} />
-
+        <div className={showFuel ? "plan-section" : "plan-section is-hidden"}>
         {rec.phases.map((phase) => (
           <div className="panel phase" key={phase.phase}>
             <div className="phase-head">
@@ -345,10 +385,18 @@ export function Planner({
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
-                    {/* Kept: "fast carbs on the move, take with water" is usage
-                        guidance, not marketing — it is the chips that were the
-                        noise, not this. */}
-                    {p.notes && <p className="product-note">{p.notes}</p>}
+                    {/*
+                      Usage guidance, not marketing — but on a phone six of
+                      these turned the plan into a brochure: the products alone
+                      ran to roughly two screens between the athlete and the
+                      schedule they came for. The line folds there and stays
+                      open where there is room for it.
+                    */}
+                    {p.notes && (
+                      <ReadMore lines={isPhone ? 1 : 4}>
+                        <p className="product-note">{p.notes}</p>
+                      </ReadMore>
+                    )}
                     <div className="product-foot">
                       <BuyLink product={p} />
                     </div>
@@ -369,6 +417,12 @@ export function Planner({
           </div>
         ))}
 
+        <CartPanel rec={rec} />
+        </div>
+
+        <div className={showLearn ? "plan-section" : "plan-section is-hidden"}>
+        <EnergyProfile input={effectiveInput} target={rec.target} schedule={schedule} />
+
         <OfferingPanel input={effectiveInput} target={rec.target} catalog={catalog} />
 
         <details className="panel notes-details">
@@ -380,8 +434,6 @@ export function Planner({
           </ul>
         </details>
 
-        <CartPanel rec={rec} />
-
         <FeedbackPanel
           insight={insight}
           feedbacks={feedbacks}
@@ -389,6 +441,7 @@ export function Planner({
           onReset={resetFeedback}
           persistence={feedbackPersistence.mode()}
         />
+        </div>
       </section>
     </main>
   );

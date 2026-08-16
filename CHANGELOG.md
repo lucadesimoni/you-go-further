@@ -8,6 +8,33 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.18.0
+
+**Changed**
+
+- **The phone screens were too long, and polish was never going to fix that.**
+  Measured rather than argued about: the product library ran to 8 867 px — ten
+  and a half phone screens of near-identical cards — the session plan to 4 395,
+  the route to 4 357. The cause was the same everywhere: list and detail
+  collapsed into one level, so every screen printed everything it knew at full
+  depth.
+  - **Product library: 10.5 → 3.6 screens.** Each card is now a disclosure
+    whose summary is one row — thumbnail, brand, name, carbohydrate, price —
+    with the macros, tags, usage note and buy button one tap inside. A closed
+    card gets list spacing rather than card spacing, and the paragraph naming
+    the brands moved below the list, where it costs nothing to skip. On a wide
+    screen the disclosure starts open, so it is the same markup, not a second
+    component to keep in step.
+  - **Session plan: 5.2 → 1.7 screens.** Seven full panels stacked. Every one
+    earns its place, but not all at once and not on a phone: the targets and
+    the schedule are the answer, the products are how you get it, the energy
+    curve and the log are what you look at afterwards. They are three sections
+    on a phone now, opening on the answer, and a single page as before on a
+    wide screen.
+  - **Route plan: 5.2 → 4.4 screens.** The race forecast folds behind its own
+    title. The height profile and its stop list stay — that is the answer, and
+    trimming the answer is not a design improvement.
+
 ## 0.17.0
 
 **Fixed**

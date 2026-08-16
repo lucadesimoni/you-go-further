@@ -5230,6 +5230,101 @@ code {
 .month-key { display: inline-flex; align-items: center; gap: var(--space-2); }
 
 /* ---------------------------------------------------------------------------
+ * The product library as a list you can actually scan.
+ *
+ * Each card used to print everything it knew — four macros, its tags, a usage
+ * note and a buy button — so twenty-four products came to ten and a half phone
+ * screens. The card is now a disclosure whose summary is a single row; the
+ * detail is one tap away, where detail belongs.
+ * ------------------------------------------------------------------------- */
+.shop-card-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  cursor: pointer;
+  list-style: none;
+  padding: var(--space-3) 0;
+  /* The row is the touch target, so it has to clear 44 px on its own. */
+  min-height: 44px;
+}
+.shop-card-row::-webkit-details-marker { display: none; }
+.shop-row-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.shop-row-id .shop-name {
+  font-weight: 700;
+  font-size: var(--text-md);
+  /* A long product name truncates rather than pushing the price off-screen. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shop-row-figs {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.shop-row-figs .fig { font-weight: 700; }
+.shop-row-figs .fig-unit { font-size: 0.78em; font-weight: 600; color: var(--muted); }
+.shop-row-price { font-size: var(--text-sm); color: var(--muted); }
+/* Open on a wide screen: the summary would be a duplicate of the card head. */
+.shop-card[open] > .shop-card-row { display: none; }
+@media (max-width: 640px) {
+  .shop-card[open] > .shop-card-row {
+    display: grid;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: var(--space-3);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The plan, in three parts on a phone.
+ * ------------------------------------------------------------------------- */
+.plan-section { display: contents; }
+.plan-section.is-hidden { display: none; }
+.plan-views {
+  display: grid;
+  grid-auto-flow: column;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  margin-bottom: var(--space-2);
+}
+.plan-view {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  min-height: 44px;
+}
+.plan-view.active { background: var(--panel); color: var(--text); box-shadow: var(--shadow-sm); }
+
+/* A whole panel folded behind its own title, for the phone. */
+.panel.fold { padding: 0; border: none; background: none; }
+.fold-summary {
+  cursor: pointer;
+  list-style: none;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  font-weight: 700;
+  min-height: 44px;
+}
+.fold-summary::-webkit-details-marker { display: none; }
+.fold-summary::after { content: " ›"; color: var(--muted); }
+.panel.fold[open] > .fold-summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+
+/* ---------------------------------------------------------------------------
  * Phone refinements, last on purpose.
  *
  * These override rules defined further up the file. CSS resolves a tie in
@@ -5284,6 +5379,10 @@ code {
    * paged.
    */
   .shop-card { padding: var(--space-5); gap: var(--space-3); }
+  /* A closed card is a row: list spacing, not card spacing. */
+  .shop-card:not([open]) { padding: var(--space-2) var(--space-4); }
+  .shop-card:not([open]) .shop-card-row { padding: var(--space-1) 0; }
+  .shop-grid { gap: var(--space-2); }
   .shop-macros {
     display: flex;
     flex-wrap: wrap;
@@ -5303,7 +5402,6 @@ code {
     letter-spacing: 0.06em;
   }
   .shop-card .usage summary { font-size: var(--text-base); }
-  .shop-grid { gap: var(--space-4); }
 
 }
 
