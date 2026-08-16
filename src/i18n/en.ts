@@ -15,6 +15,14 @@ export const en = {
   "app.loadFailed": "We could not reach the platform.",
   "app.loadFailedWhy": "Your training is safe — this device just could not fetch it. Check your connection and try again.",
   "app.retry": "Try again",
+  "month.count": "{logged} of {trained} logged",
+  "month.aria": "Training month: {trained} days with a session, {logged} of them logged.",
+  "month.dayNone": "no session",
+  "month.dayTrained": "session, not logged",
+  "month.dayLogged": "session logged",
+  "month.keyTrained": "Session",
+  "month.keyLogged": "Logged",
+  "month.whyLog": "A logged session is what the planner learns from — the ring days are the ones it still cannot use.",
   "app.disclaimer":
     "General guidance for healthy adults — not medical advice. Provider connectors use official OAuth scopes; sample data is shown until a real account is linked.",
 
@@ -43,7 +51,7 @@ export const en = {
   "home.hours": "Hours",
   "home.distance": "Distance",
   "home.climb": "Climbing",
-  "home.vsPrevious": "{delta} h vs the week before",
+  "home.vsPrevious": "{delta} h on last week",
   "home.firstWeek": "Your first week of data — nothing to compare against yet.",
   "home.quietWeek": "A quiet week. Rest is training too, but if it wasn't planned, ease back in.",
   "home.fuelling": "Fuelling",

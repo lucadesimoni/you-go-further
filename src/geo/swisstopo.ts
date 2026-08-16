@@ -73,8 +73,23 @@ interface ProfilePoint {
   alts: Record<string, number>;
 }
 
-/** Turn a swisstopo profile response into ascent/descent/min/max + terrain. */
-export function parseProfile(points: ProfilePoint[]): TerrainProfile {
+/**
+ * Turn a swisstopo profile response into ascent/descent/min/max + terrain.
+ *
+ * `hintDistanceKm` is the distance the athlete's watch recorded, and it wins
+ * over the length of the line we sent. Those two disagree more than one would
+ * hope: a stored track is decimated, so measuring it can come out short, and a
+ * generated one can come out long — 51.6 km of polyline for a 29.2 km session
+ * in the case that caught this. The height profile is then captioned with a
+ * distance the session summary directly above it contradicts, permanently,
+ * which is worse than showing no distance at all.
+ *
+ * Swisstopo's contribution is the *shape* of the ground; the length is the
+ * athlete's. So the samples are scaled onto the recorded distance rather than
+ * thrown away — every climb stays where it was, proportionally, and the axis
+ * finally agrees with the summary.
+ */
+export function parseProfile(points: ProfilePoint[], hintDistanceKm?: number): TerrainProfile {
   let ascent = 0;
   let descent = 0;
   let min = Infinity;
@@ -94,7 +109,14 @@ export function parseProfile(points: ProfilePoint[]): TerrainProfile {
     }
     prev = alt;
   }
-  const distanceKm = points.length ? Math.round((points[points.length - 1].dist / 1000) * 10) / 10 : 0;
+  const measuredKm = samples.length ? samples[samples.length - 1].distanceM / 1000 : 0;
+  const distanceKm = hintDistanceKm ?? Math.round(measuredKm * 10) / 10;
+  // Only rescale when there is something to rescale onto, and when the two
+  // actually differ: a factor of 1 should leave the samples untouched.
+  if (hintDistanceKm && measuredKm > 0 && Math.abs(measuredKm - hintDistanceKm) > 0.05) {
+    const factor = hintDistanceKm / measuredKm;
+    for (const sample of samples) sample.distanceM *= factor;
+  }
   const ascentM = Math.round(ascent);
   return {
     distanceKm,
@@ -171,7 +193,7 @@ export async function fetchTerrain(
     if (!res.ok) throw new Error(`swisstopo ${res.status}`);
     const points = (await res.json()) as ProfilePoint[];
     if (!Array.isArray(points) || points.length === 0) throw new Error("empty profile");
-    return parseProfile(points);
+    return parseProfile(points, hintDistanceKm);
   } catch {
     return estimateTerrain(route, hintGainM, hintDistanceKm);
   }

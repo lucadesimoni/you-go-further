@@ -8,6 +8,48 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.17.0
+
+**Fixed**
+
+- **The height profile could caption itself with a different distance from the
+  session above it** — permanently, not for a frame. `parseProfile` measured
+  the polyline we send to swisstopo, and a stored track is decimated while a
+  generated one runs long: 51.6 km of line for a 29.2 km run in the case that
+  caught it. The estimate path had honoured the recorded distance all along and
+  said so in a comment; the swisstopo path did not, and this sandbox blocks
+  swisstopo, so only a machine that could reach it ever saw the bug. Swisstopo
+  supplies the shape of the ground, the athlete's watch supplies the length:
+  the samples are now scaled onto the recorded distance, so every climb keeps
+  its place and the axis agrees with the summary.
+
+**Changed**
+
+- **A figure and its unit are no longer the same size.** "129.7 km" set as one
+  token makes the unit compete with the number; the unit is now smaller and
+  muted, so the figure carries. Applied through the shared `Stat`, so it lands
+  everywhere at once.
+- **A change belongs to the figure it describes.** The week-on-week comparison
+  was a pill in the card header, describing "this week" in general and leaving
+  the reader to work out which of four numbers had moved — and on a tablet it
+  wrapped the heading onto two lines to say it. It now sits under Hours, as
+  "▼ 2.3 h on last week". The arrow is drawn, never coloured: in training more
+  is not a synonym for better, and this component has no way to know which.
+- **A sport is now a coloured disc**, not a grey mark that made every row in a
+  list look the same. One palette keyed to the six sports the model actually
+  has, with the shape still carrying the meaning so colour is reinforcement
+  rather than the only signal.
+
+**Added**
+
+- **The training month**: five weeks as a dot grid, borrowed in form from a
+  training calendar and carrying this platform's own question. Three states,
+  not two — no session, a session, and a session the athlete logged — because
+  the gap between the rings and the filled dots is exactly the gap between "we
+  have your training" and "we can improve your fuelling". Weekday initials come
+  from the locale, Monday first, and the grid says plainly what the ring days
+  mean while any remain.
+
 ## 0.16.0
 
 **Fixed**

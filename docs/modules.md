@@ -167,7 +167,7 @@ Public API: `ingest`, `activityStore`, `exportActivities`, `databricksSink`.
 
 ## Platform
 
-### `src/geo` — 1.2.0, stable
+### `src/geo` — 1.3.0, stable
 
 Swiss terrain and weather. swisstopo elevation profiles, the national basemaps
 and the federal overlays an athlete asks a Swiss map for — marked hiking trails,
@@ -334,7 +334,7 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.11.2, stable
+### `src/components` — 1.12.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
@@ -350,7 +350,7 @@ configuration rather than inventing one.
 Public API: `App`, `Planner`, `RouteInsights`, `RaceForecast`, `SessionDebrief`,
 `LoadProfileCard`.
 
-### `src/i18n` — 1.4.0, stable
+### `src/i18n` — 1.5.0, stable
 
 Four typed dictionaries — German, French, Italian, English — with `{placeholder}`
 interpolation and `_one` plural siblings. `de`, `fr` and `it` are typed against

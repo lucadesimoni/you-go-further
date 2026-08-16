@@ -564,6 +564,8 @@ export function App() {
             profile={progress}
             fuelling={fuelling}
             hasData={hasSyncedData}
+            activities={activities}
+            feedback={feedback}
             dataState={dataState}
             onRetry={retryLoad}
             onConnect={() => setTab("connect")}

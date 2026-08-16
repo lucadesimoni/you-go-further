@@ -20,6 +20,14 @@ export const de: Dictionary = {
   "app.loadFailed": "Die Plattform ist nicht erreichbar.",
   "app.loadFailedWhy": "Ihr Training ist sicher gespeichert — dieses Gerät konnte es nur nicht abrufen. Prüfen Sie die Verbindung und versuchen Sie es erneut.",
   "app.retry": "Erneut versuchen",
+  "month.count": "{logged} von {trained} erfasst",
+  "month.aria": "Trainingsmonat: {trained} Tage mit Einheit, davon {logged} erfasst.",
+  "month.dayNone": "keine Einheit",
+  "month.dayTrained": "Einheit, nicht erfasst",
+  "month.dayLogged": "Einheit erfasst",
+  "month.keyTrained": "Einheit",
+  "month.keyLogged": "Erfasst",
+  "month.whyLog": "Aus erfassten Einheiten lernt der Planer — die Ringtage kann er noch nicht nutzen.",
   "app.disclaimer":
     "Allgemeine Empfehlungen für gesunde Erwachsene — keine medizinische Beratung. Die Anbieter-Verbindungen nutzen offizielle OAuth-Berechtigungen; bis ein echtes Konto verknüpft ist, werden Beispieldaten angezeigt.",
 
@@ -48,7 +56,7 @@ export const de: Dictionary = {
   "home.hours": "Stunden",
   "home.distance": "Distanz",
   "home.climb": "Höhenmeter",
-  "home.vsPrevious": "{delta} h gegenüber der Vorwoche",
+  "home.vsPrevious": "{delta} h ggü. Vorwoche",
   "home.firstWeek": "Ihre erste Woche mit Daten — noch kein Vergleich möglich.",
   "home.quietWeek": "Eine ruhige Woche. Erholung gehört dazu — war sie ungeplant, steigen Sie behutsam wieder ein.",
   "home.fuelling": "Verpflegung",

@@ -50,6 +50,46 @@ describe("swisstopo projection & terrain", () => {
     expect(t.source).toBe("swisstopo");
   });
 
+  it("captions the profile with the distance the athlete recorded", () => {
+    // The defect this pins: swisstopo measures the line we send it, which is a
+    // decimated or generated track, and that measurement can be far from the
+    // session's own figure — 51.6 km of polyline for a 29.2 km run in the case
+    // that caught this. The chart then contradicts the summary directly above
+    // it, permanently, which is worse than showing nothing.
+    const t = parseProfile(
+      [
+        { dist: 0, alts: { COMB: 500 } },
+        { dist: 2000, alts: { COMB: 560 } },
+        { dist: 4000, alts: { COMB: 540 } },
+      ],
+      2,
+    );
+    expect(t.distanceKm).toBe(2);
+    // The shape is swisstopo's and survives intact: the climb is still halfway.
+    expect(t.samples.map((x) => Math.round(x.distanceM))).toEqual([0, 1000, 2000]);
+    expect(t.ascentM).toBe(60);
+    expect(t.maxAltM).toBe(560);
+  });
+
+  it("leaves the samples alone when the two distances already agree", () => {
+    const t = parseProfile(
+      [
+        { dist: 0, alts: { COMB: 500 } },
+        { dist: 1000, alts: { COMB: 520 } },
+      ],
+      1,
+    );
+    expect(t.samples.map((x) => x.distanceM)).toEqual([0, 1000]);
+  });
+
+  it("falls back to measuring the line when nothing was recorded", () => {
+    const t = parseProfile([
+      { dist: 0, alts: { COMB: 500 } },
+      { dist: 3000, alts: { COMB: 520 } },
+    ]);
+    expect(t.distanceKm).toBe(3);
+  });
+
   it("estimates terrain honouring a known gain when offline", () => {
     const t = estimateTerrain(ROUTE, 800);
     expect(t.ascentM).toBe(800);

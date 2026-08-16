@@ -71,6 +71,11 @@
   --success-ink: var(--success);
   --accent-purple-ink: var(--accent-purple);
 
+  /* The sport disc: a neutral default, overridden per sport below. Declared
+     here so the pair always resolves, whatever a caller forgets. */
+  --sport-ink: var(--muted);
+  --sport-soft: var(--panel-2);
+
   /* Session-phase aliases (kept for readability at call sites) */
   --pre: var(--info);
   --during: var(--warn);
@@ -770,6 +775,40 @@ input[type="range"] {
   font-size: var(--text-sm);
   color: var(--muted);
 }
+
+/*
+ * The unit, subordinate to the figure.
+ *
+ * Set at the same weight and size, "km" competes with "129.7" and the eye has
+ * to read the whole token before it finds the number. Smaller and muted, the
+ * figure carries and the unit stays legible beside it.
+ */
+.stat-unit {
+  font-size: 0.6em;
+  font-weight: 600;
+  color: var(--muted);
+  margin-left: 0.25em;
+  letter-spacing: 0.01em;
+}
+
+/*
+ * Change against the period before.
+ *
+ * The arrow is a shape, not a verdict: in training more is not better or worse
+ * without context this component does not have, so it is drawn in the muted
+ * ink rather than in the app's success and warning colours.
+ */
+.stat-delta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.stat-delta span { font-size: 0.85em; }
 
 .phase-head {
   display: flex;
@@ -3362,12 +3401,37 @@ code {
   border-bottom: 1px solid var(--border);
 }
 .home-session:last-child { border-bottom: none; padding-bottom: 0; }
+/*
+ * The sport, as a disc.
+ *
+ * The icon alone, in the same muted grey as the date beside it, was doing very
+ * little: at a glance a list of sessions was a list of identical rows with a
+ * faint mark at the left. A filled disc in the sport's own colour makes "which
+ * of these was the ride" answerable without reading, and it is the same disc
+ * on Home, in the route picker and in the debrief — one sport, one colour,
+ * everywhere. The shape inside still carries the meaning, so the colour is
+ * reinforcement rather than the only signal.
+ */
 .home-session-icon {
   align-self: center;
-  display: flex;
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--sport-soft);
+  color: var(--sport-ink);
 }
 .home-session-icon .icon { width: 18px; height: 18px; }
+
+/* One palette, keyed by the six sports the model actually has. */
+.sport-run { --sport-ink: var(--warn-ink); --sport-soft: var(--warn-soft); }
+.sport-trail-run { --sport-ink: var(--success-ink); --sport-soft: var(--success-soft); }
+.sport-ride { --sport-ink: var(--info-ink); --sport-soft: var(--info-soft); }
+.sport-swim { --sport-ink: var(--accent-purple-ink); --sport-soft: color-mix(in srgb, var(--accent-purple) 12%, transparent); }
+.sport-triathlon { --sport-ink: var(--accent-ink); --sport-soft: var(--accent-soft); }
+.sport-other { --sport-ink: var(--muted); --sport-soft: var(--panel-2); }
 .home-session-date { color: var(--muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
 .home-session-sport { font-weight: 700; }
 .home-session-figs { color: var(--muted); font-size: var(--text-base); white-space: nowrap; }
@@ -5096,6 +5160,58 @@ code {
 /* The terms link on the sign-in card: legible, and obviously a link. */
 .auth-terms-link { color: var(--muted); text-decoration: underline; }
 .auth-terms-link:hover, .auth-terms-link:focus-visible { color: var(--text); }
+
+/* ---------------------------------------------------------------------------
+ * The training month.
+ *
+ * Seven columns, five rows, and three states per day. The ring and the filled
+ * dot are the point: one says "we have your session", the other says "and we
+ * know how it went". Size and shape carry that difference, not colour alone —
+ * the same distinction has to survive a red-green colour deficiency and a
+ * phone screen in bright sun.
+ * ------------------------------------------------------------------------- */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-3);
+  justify-items: center;
+  align-items: center;
+  margin: var(--space-4) 0 var(--space-5);
+}
+.month-weekday {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.month-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.month-dot-trained {
+  background: none;
+  border: 2px solid var(--accent-ink);
+}
+.month-dot-logged {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* Days that have not happened yet are drawn faintly rather than left blank, so
+   the grid keeps the shape of a month instead of ending mid-row. */
+.month-dot-future { opacity: 0.35; }
+
+.month-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.month-key { display: inline-flex; align-items: center; gap: var(--space-2); }
 
 /* ---------------------------------------------------------------------------
  * Phone refinements, last on purpose.

@@ -19,6 +19,14 @@ export const it: Dictionary = {
   "app.loadFailed": "La piattaforma non è raggiungibile.",
   "app.loadFailedWhy": "Il tuo allenamento è al sicuro — è questo dispositivo che non è riuscito a recuperarlo. Controlla la connessione e riprova.",
   "app.retry": "Riprova",
+  "month.count": "{logged} su {trained} registrate",
+  "month.aria": "Mese di allenamento: {trained} giorni con sessione, di cui {logged} registrate.",
+  "month.dayNone": "nessuna sessione",
+  "month.dayTrained": "sessione, non registrata",
+  "month.dayLogged": "sessione registrata",
+  "month.keyTrained": "Sessione",
+  "month.keyLogged": "Registrata",
+  "month.whyLog": "Il pianificatore impara dalle sessioni registrate — i giorni ad anello non può ancora usarli.",
   "app.disclaimer":
     "Indicazioni generali per adulti sani — non è un parere medico. I collegamenti ai servizi usano le autorizzazioni OAuth ufficiali; finché non è collegato un account reale vengono mostrati dati di esempio.",
 
@@ -47,7 +55,7 @@ export const it: Dictionary = {
   "home.hours": "Ore",
   "home.distance": "Distanza",
   "home.climb": "Dislivello",
-  "home.vsPrevious": "{delta} h rispetto alla settimana precedente",
+  "home.vsPrevious": "{delta} h sulla scorsa settimana",
   "home.firstWeek": "La sua prima settimana di dati — per ora non c'è nulla da confrontare.",
   "home.quietWeek":
     "Una settimana tranquilla. Anche il riposo è allenamento; se non era previsto, riprenda con gradualità.",

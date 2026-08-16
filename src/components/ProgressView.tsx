@@ -5,6 +5,9 @@ import { FuellingScoreCard } from "./FuellingScoreCard";
 import type { FuellingScore } from "../progress";
 import { useT } from "../i18n";
 import { FailedBlock, LoadingBlock, type LoadState } from "./LoadState";
+import { TrainingMonth } from "./TrainingMonth";
+import type { Activity } from "../model";
+import type { SessionFeedback } from "../feedback";
 
 /**
  * Insights — how well the athlete is fuelling, what to change next, the guidance
@@ -15,6 +18,8 @@ export function ProgressView({
   profile,
   fuelling,
   hasData = true,
+  activities = [],
+  feedback = [],
   dataState = "ready",
   onRetry,
   onConnect,
@@ -24,6 +29,9 @@ export function ProgressView({
   fuelling?: FuellingScore;
   /** False until the athlete has synced real sessions — we never show invented numbers. */
   hasData?: boolean;
+  /** The athlete's own sessions and logs, for the month grid. */
+  activities?: Activity[];
+  feedback?: SessionFeedback[];
   /** Waiting, arrived, or failed — never conflated into "you have nothing". */
   dataState?: LoadState;
   onRetry?: () => void;
@@ -65,6 +73,10 @@ export function ProgressView({
           </div>
         )}
       </section>
+
+      {/* Consistency, in the terms this app cares about: not just which days
+          were trained, but which of them the planner can actually learn from. */}
+      {hasData && dataState === "ready" && <TrainingMonth activities={activities} feedback={feedback} />}
 
       <LoadProfileCard />
 

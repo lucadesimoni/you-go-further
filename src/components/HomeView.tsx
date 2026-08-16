@@ -172,11 +172,6 @@ export function HomeView({
         <section className="panel">
           <div className="section-head">
             <h2>{t("home.thisWeek")}</h2>
-            {week.hasComparison && (
-              <span className={`pill${week.deltaHours >= 0 ? " pill-live" : ""}`}>
-                {t("home.vsPrevious", { delta: week.deltaHours > 0 ? `+${week.deltaHours}` : String(week.deltaHours) })}
-              </span>
-            )}
           </div>
           {dataState === "loading" ? (
             <LoadingBlock lines={4} />
@@ -186,9 +181,27 @@ export function HomeView({
             <>
               <div className="targets plain-grid">
                 <Stat label={t("home.sessions")} value={String(week.sessions)} />
-                <Stat label={t("home.hours")} value={String(week.hours)} />
-                <Stat label={t("home.distance")} value={`${week.distanceKm} km`} />
-                <Stat label={t("home.climb")} value={`${week.elevationM} m`} />
+                {/*
+                  The change sits on the figure it is about. As a pill in the
+                  header it described "this week" in general, so a reader had to
+                  work out which of four numbers had moved — and on a tablet it
+                  wrapped the heading onto two lines to say it.
+                */}
+                <Stat
+                  label={t("home.hours")}
+                  value={String(week.hours)}
+                  unit="h"
+                  delta={
+                    week.hasComparison
+                      ? {
+                          text: t("home.vsPrevious", { delta: String(Math.abs(week.deltaHours)) }),
+                          direction: week.deltaHours > 0 ? "up" : week.deltaHours < 0 ? "down" : "flat",
+                        }
+                      : undefined
+                  }
+                />
+                <Stat label={t("home.distance")} value={String(week.distanceKm)} unit="km" />
+                <Stat label={t("home.climb")} value={String(week.elevationM)} unit="m" />
               </div>
               {week.sessions === 0 && <p className="detail">{t("home.quietWeek")}</p>}
               {!week.hasComparison && week.sessions > 0 && <p className="detail">{t("home.firstWeek")}</p>}
@@ -242,7 +255,7 @@ export function HomeView({
           <ul className="home-sessions">
             {recent.map((a) => (
               <li key={a.id} className="home-session">
-                <span className="home-session-icon" aria-hidden>
+                <span className={`home-session-icon sport-${a.sport}`} aria-hidden>
                   <Icon name={SPORT_ICON[a.sport] ?? "session"} />
                 </span>
                 <span className="home-session-date">{dateFmt.format(new Date(a.startTime))}</span>
