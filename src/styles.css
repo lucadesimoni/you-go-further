@@ -144,8 +144,8 @@
   /* ---- Radius scale ---- */
   --radius-xs: 6px; /* tags, small inputs */
   --radius-sm: 8px; /* buttons, segmented, fields */
-  --radius-md: 11px; /* cards, product tiles */
-  --radius-lg: 14px; /* panels */
+  --radius-md: 14px; /* cards, product tiles */
+  --radius-lg: 18px; /* panels */
   --radius-pill: 999px;
   --radius: var(--radius-lg); /* back-compat alias */
 
@@ -370,11 +370,22 @@ body {
   }
 }
 
+/*
+ * A card is a filled shape, not a drawn box.
+ *
+ * A 1 px border around every panel put a hairline grid over the whole app: on
+ * a phone, eight stacked outlines read as a form. The surface itself carries
+ * the separation now — the panel is lighter than the ground it sits on, with a
+ * softer corner and a little more air — which is how the apps this is measured
+ * against separate one card from the next.
+ */
 .panel {
   background: var(--panel);
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: var(--radius);
-  padding: 20px;
+  /* 20 px, as before — `--space-6` is 14 and would have quietly tightened
+     every panel in the app while claiming to give them more air. */
+  padding: var(--space-8);
 }
 
 /*
@@ -771,7 +782,9 @@ input[type="range"] {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  text-align: center;
+  /* Left, not centred: a column of figures is read down its left edge, and
+     centring starts every row in a different place. */
+  text-align: left;
 }
 
 .stat-value {
@@ -783,6 +796,9 @@ input[type="range"] {
 .stat-label {
   font-size: var(--text-sm);
   color: var(--muted);
+  /* Above the figure now, so it carries a little more weight as a heading. */
+  font-weight: 600;
+  order: -1;
 }
 
 /*
@@ -3869,11 +3885,23 @@ code {
 .geo-src-estimated { color: var(--muted); background: var(--surface-inset); }
 .geo-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /*
+   * `minmax(0, 1fr)`, not `1fr`.
+   *
+   * A grid track's automatic minimum is its content's min-content width, so
+   * `1fr` refuses to shrink below the longest unbreakable thing inside it.
+   * With the label sitting above the figure, that longest thing became the
+   * label — and in German ("Gefühlte Temperatur") three of them pushed this
+   * block past the edge of a 390 px screen. Zero as the floor lets the track
+   * shrink and the label wrap instead.
+   */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
 }
 .geo-stats .stat-value { font-size: var(--text-lg); }
 .geo-stats .stat-label { text-transform: capitalize; }
+/* Labels wrap rather than widen their column; long German compounds break. */
+.stat-label { overflow-wrap: anywhere; }
 /* Names the exact source of a reading — a station, a model, or a guess. */
 .geo-source-note {
   margin: var(--space-3) 0 0;
@@ -5389,6 +5417,36 @@ code {
 /* Without a ring there is nothing to sit beside, so the text takes the width. */
 .score-top-empty { display: block; }
 .score-top-empty .score-body { max-width: 60ch; }
+
+/* ---------------------------------------------------------------------------
+ * The newest session, as a card.
+ *
+ * One rich block, then a list: the session just finished is what the athlete
+ * opened the app for, and the two before it are context. Rendering all three
+ * the same made the newest findable only by reading its date.
+ * ------------------------------------------------------------------------- */
+.session-feature {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+.session-feature-head { display: flex; align-items: center; gap: var(--space-4); }
+.session-feature-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.session-feature-name { margin: 0; font-size: var(--text-xl); font-weight: 700; }
+.session-feature-when { font-size: var(--text-sm); color: var(--muted); }
+/* Three figures across, each labelled — the shape a session is recognised by. */
+.session-feature-figs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: var(--space-4);
+}
+.session-feature-figs .stat-value { font-size: var(--text-2xl); }
+.session-feature-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.session-feature-actions .btn { flex: 1 1 auto; }
 
 /* ---------------------------------------------------------------------------
  * Room for a finger.

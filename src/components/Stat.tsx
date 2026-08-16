@@ -51,6 +51,15 @@ export function Stat({
 }) {
   return (
     <div className="stat">
+      {/*
+        Label first, then the figure.
+        
+        "33'53.6" is a duration only once you have read "Duration". Reading
+        order and visual weight now agree — the small grey word, then the big
+        figure it names — which is how the training apps this is measured
+        against arrange a metric, and it is the right way round.
+      */}
+      <span className="stat-label">{label}</span>
       <span className="stat-value">
         {value}
         {/*
@@ -60,7 +69,6 @@ export function Stat({
         */}
         {unit && <> <span className="stat-unit">{unit}</span></>}
       </span>
-      <span className="stat-label">{label}</span>
       {delta && (
         <span className={`stat-delta stat-delta-${delta.direction}`}>
           <span aria-hidden>{delta.direction === "up" ? "▲" : delta.direction === "down" ? "▼" : "–"}</span>

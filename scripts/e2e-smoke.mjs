@@ -281,7 +281,9 @@ await step("the week's figures are real, and the session list is the athlete's o
   if (!/Sessions/.test(week)) throw new Error(`week card missing: ${week}`);
   // Sessions belong to one athlete. A shared store would show this account
   // everyone else's training as its own — and 7 days can't hold 20 sessions.
-  const sessions = Number(/(\d+)\s*Sessions/.exec(week.replace(/\n/g, " "))?.[1]);
+  // Label then figure now, so match the label and take what follows it —
+  // the assertion is about the count being plausible, not about the order.
+  const sessions = Number(/Sessions\s*(\d+)/.exec(week.replace(/\n/g, " "))?.[1]);
   if (!(sessions >= 1 && sessions <= 14)) {
     throw new Error(`implausible weekly session count (other athletes' data?): ${sessions}`);
   }

@@ -252,8 +252,62 @@ export function HomeView({
               )
             )}
           </div>
+          {/*
+            The newest session gets a card; the ones behind it get rows.
+            
+            One rich block and then a list is how a training feed reads: the
+            session you just finished is the one you came to look at, and the
+            two before it are context. Rendering all three identically made the
+            most recent one findable only by its date.
+          */}
+          {recent[0] && (
+            <article className="session-feature">
+              <div className="session-feature-head">
+                <span className={`row-disc sport-${recent[0].sport}`} aria-hidden>
+                  <Icon name={SPORT_ICON[recent[0].sport] ?? "session"} />
+                </span>
+                <div className="session-feature-id">
+                  <h3 className="session-feature-name">
+                    {recent[0].name?.trim() ||
+                      (SPORT_KEY[recent[0].sport] ? t(SPORT_KEY[recent[0].sport]) : recent[0].sport)}
+                  </h3>
+                  <span className="session-feature-when">{dateFmt.format(new Date(recent[0].startTime))}</span>
+                </div>
+                {logForActivity(feedback, recent[0].id) ? (
+                  <span className="pill pill-done">{t("home.logged")}</span>
+                ) : (
+                  <span className="pill pill-todo">{t("debrief.notLogged")}</span>
+                )}
+              </div>
+
+              {/* The three figures a session is recognised by, labelled. */}
+              <div className="session-feature-figs">
+                <Stat label={t("plan.duration")} value={formatClock(Math.round(recent[0].durationSec / 60))} />
+                {recent[0].distanceM != null && (
+                  <Stat label={t("home.distance")} value={(recent[0].distanceM / 1000).toFixed(1)} unit="km" />
+                )}
+                {recent[0].elevationGainM != null && (
+                  <Stat label={t("home.climb")} value={String(recent[0].elevationGainM)} unit="m" />
+                )}
+              </div>
+
+              <div className="session-feature-actions">
+                {onReviewSession && recent[0].route && recent[0].route.length > 1 && !logForActivity(feedback, recent[0].id) && (
+                  <button type="button" className="btn btn-primary" onClick={() => onReviewSession(recent[0])}>
+                    {t("home.reviewIt")}
+                  </button>
+                )}
+                {onFuelSession && (
+                  <button type="button" className="btn btn-ghost" onClick={() => onFuelSession(recent[0])}>
+                    {t("home.fuelIt")}
+                  </button>
+                )}
+              </div>
+            </article>
+          )}
+
           <ul className="home-sessions">
-            {recent.map((a) => (
+            {recent.slice(1).map((a) => (
               <li key={a.id} className="home-session">
                 <span className={`home-session-icon sport-${a.sport}`} aria-hidden>
                   <Icon name={SPORT_ICON[a.sport] ?? "session"} />

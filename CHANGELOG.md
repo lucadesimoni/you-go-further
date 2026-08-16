@@ -8,6 +8,33 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.22.0
+
+**Changed**
+
+- **A metric reads label first, then figure.** "3:09" is a duration only once
+  you have read "Duration"; reading order and visual weight now agree. Through
+  the shared `Stat`, so every screen moved at once, and left-aligned — a column
+  of figures is read down its left edge, and centring starts every row in a
+  different place.
+- **Cards are filled shapes, not drawn boxes.** The 1 px outline on every panel
+  put a hairline grid over the whole app; on a phone, eight stacked outlines
+  read as a form. The surface carries the separation now, with a softer corner
+  (14 → 18 px on panels).
+- **The newest session is a card; the ones behind it are rows.** Sport disc,
+  name, date, a logged/not-logged pill, then duration, distance and climbing
+  as three labelled figures, then the two actions. Rendering all three
+  identically made the session you just finished findable only by its date.
+
+**Fixed**
+
+- **Moving the label above the figure widened three grids past a 390 px
+  screen in German.** A grid track's automatic minimum is its content's
+  min-content width, so `1fr` will not shrink below the longest unbreakable
+  thing in it — which had just become "Gefühlte Temperatur" rather than a
+  number. `minmax(0, 1fr)` and a wrapping label. The journey's German phone
+  check caught it on the first run after the change.
+
 ## 0.21.0
 
 **Changed**
