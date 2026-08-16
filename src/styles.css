@@ -5386,6 +5386,10 @@ code {
 .row-disc-todo { --sport-soft: var(--panel-2); --sport-ink: var(--muted); }
 .row-disc-on { --sport-soft: var(--success-soft); --sport-ink: var(--success-ink); }
 
+/* Without a ring there is nothing to sit beside, so the text takes the width. */
+.score-top-empty { display: block; }
+.score-top-empty .score-body { max-width: 60ch; }
+
 /* ---------------------------------------------------------------------------
  * Room for a finger.
  *

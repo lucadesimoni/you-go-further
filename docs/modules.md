@@ -334,7 +334,7 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.15.1, stable
+### `src/components` — 1.16.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
@@ -354,7 +354,7 @@ configuration rather than inventing one.
 Public API: `App`, `Planner`, `RouteInsights`, `RaceForecast`, `SessionDebrief`,
 `LoadProfileCard`.
 
-### `src/i18n` — 1.7.0, stable
+### `src/i18n` — 1.8.0, stable
 
 Four typed dictionaries — German, French, Italian, English — with `{placeholder}`
 interpolation and `_one` plural siblings. `de`, `fr` and `it` are typed against

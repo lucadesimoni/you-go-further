@@ -494,6 +494,9 @@ export const it: Dictionary = {
   "insights.streak": "{days} giorni consecutivi · record {best}",
   "insights.notScored":
     "Registri un allenamento e questo punteggio misurerà quanto funziona la sua alimentazione.",
+  "insights.trendUp": "In miglioramento — {delta} punti in più nelle ultime sessioni.",
+  "insights.trendDown": "In calo — {delta} punti in meno di recente.",
+  "insights.trendFlat": "Stabile nelle ultime sessioni.",
   "insights.bandGettingStarted": "Primi passi",
   "insights.bandBuilding": "In crescita",
   "insights.bandSolid": "Solido",

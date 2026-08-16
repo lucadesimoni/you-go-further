@@ -8,6 +8,25 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.21.0
+
+**Changed**
+
+- **No gauge until there is something to put in it.** The fuelling score drew a
+  120 px dial with a dash at its centre and "GETTING STARTED" beneath it for
+  every athlete who had not yet logged a session — which is every athlete on
+  their first day, and it was the largest thing on Insights. A dial reading
+  nothing is not a dial; it is a picture of absence, and it was spending a
+  third of the screen to say what one sentence says better. Insights opens on
+  the sentence and the two things to do next: 2.7 → 2.5 screens empty, and the
+  ring is untouched the moment there is a score to draw.
+
+**Fixed**
+
+- **The score's trend was three hard-coded English sentences** — "Improving —
+  up 4 points over your recent sessions" — on a screen the app otherwise
+  speaks four languages on. Translated.
+
 ## 0.20.0
 
 **Fixed**

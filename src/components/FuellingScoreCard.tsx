@@ -28,27 +28,37 @@ export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore
         <span className="pill">{t("insights.sessionsLogged", { count: score.sessionsLogged })}</span>
       </div>
 
-      <div className="score-top">
+      <div className={score.score === null ? "score-top score-top-empty" : "score-top"}>
+        {/*
+         * No ring until there is something to draw in it.
+         *
+         * An empty 120 px dial with a dash at its centre and "GETTING STARTED"
+         * beneath it was the largest thing on Insights for every athlete who
+         * had not yet logged a session — which is every athlete on their first
+         * day. A gauge reading nothing is not a gauge; it is a picture of
+         * absence, and it was taking a third of the screen to say what one
+         * sentence says better.
+         */}
+        {score.score !== null && (
         <div className="score-ring-wrap">
-          <svg className="score-ring" viewBox="0 0 120 120" role="img" aria-label={`Fuelling score ${score.score ?? "not yet scored"}`}>
+          <svg className="score-ring" viewBox="0 0 120 120" role="img" aria-label={`Fuelling score ${score.score}`}>
             <circle className="score-track" cx="60" cy="60" r="52" />
-            {score.score !== null && (
-              <circle
-                className={`score-arc score-${score.band}`}
-                cx="60"
-                cy="60"
-                r="52"
-                strokeDasharray={`${(pct / 100) * C} ${C}`}
-              />
-            )}
+            <circle
+              className={`score-arc score-${score.band}`}
+              cx="60"
+              cy="60"
+              r="52"
+              strokeDasharray={`${(pct / 100) * C} ${C}`}
+            />
             <text className="score-value" x="60" y="58" textAnchor="middle">
-              {score.score ?? "—"}
+              {score.score}
             </text>
             <text className="score-band" x="60" y="76" textAnchor="middle">
               {t(BAND_KEY[score.band])}
             </text>
           </svg>
         </div>
+        )}
 
         <div className="score-body">
           {score.score === null ? (
@@ -59,11 +69,13 @@ export function FuellingScoreCard({ score, onLearnMore }: { score: FuellingScore
             <>
               {score.trend && (
                 <p className={`score-trend score-trend-${score.trend.direction}`}>
+                  {/* Was three hard-coded English sentences on a screen the app
+                      otherwise speaks four languages on. */}
                   {score.trend.direction === "up"
-                    ? `Improving — up ${score.trend.delta} points over your recent sessions.`
+                    ? t("insights.trendUp", { delta: score.trend.delta })
                     : score.trend.direction === "down"
-                      ? `Slipping — down ${Math.abs(score.trend.delta)} points recently.`
-                      : "Holding steady over your recent sessions."}
+                      ? t("insights.trendDown", { delta: Math.abs(score.trend.delta) })
+                      : t("insights.trendFlat")}
                 </p>
               )}
               <ul className="score-components">

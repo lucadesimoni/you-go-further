@@ -493,6 +493,9 @@ export const de: Dictionary = {
   "insights.streak": "{days} Tage in Folge · Bestwert {best}",
   "insights.notScored":
     "Erfassen Sie eine Einheit — dann misst dieser Wert, wie gut Ihre Verpflegung wirkt.",
+  "insights.trendUp": "Besser — {delta} Punkte mehr über Ihre letzten Einheiten.",
+  "insights.trendDown": "Schwächer — {delta} Punkte weniger in letzter Zeit.",
+  "insights.trendFlat": "Bleibt stabil über Ihre letzten Einheiten.",
   "insights.bandGettingStarted": "Am Anfang",
   "insights.bandBuilding": "Im Aufbau",
   "insights.bandSolid": "Solide",
