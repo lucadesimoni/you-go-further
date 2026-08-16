@@ -35,6 +35,13 @@ The platform version answers "which release is this?". A module version answers
   wrapped the heading onto two lines to say it. It now sits under Hours, as
   "▼ 2.3 h on last week". The arrow is drawn, never coloured: in training more
   is not a synonym for better, and this component has no way to know which.
+- The metric language reaches every screen that shows a figure, not only the
+  ones rewritten first: the planner's targets, the race forecast, the coach
+  dashboard, and the session rows on Home — where "11.6 km · 0:54 · ↑ 63 m"
+  gave the middots the same weight as the numbers. The gap between a figure and
+  its unit is a real space, because `innerText` is what a screen reader
+  announces and what lands on the clipboard, and "129.7km" is not how anyone
+  says it.
 - **A sport is now a coloured disc**, not a grey mark that made every row in a
   list look the same. One palette keyed to the six sports the model actually
   has, with the shape still carrying the meaning so colour is reinforcement

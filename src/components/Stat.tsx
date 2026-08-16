@@ -53,7 +53,12 @@ export function Stat({
     <div className="stat">
       <span className="stat-value">
         {value}
-        {unit && <span className="stat-unit">{unit}</span>}
+        {/*
+          A real space, not just a margin: `innerText` is what a screen reader
+          announces and what lands on the clipboard, and "129.7km" is not how
+          anyone says it.
+        */}
+        {unit && <> <span className="stat-unit">{unit}</span></>}
       </span>
       <span className="stat-label">{label}</span>
       {delta && (

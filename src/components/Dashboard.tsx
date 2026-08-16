@@ -253,7 +253,11 @@ export function Dashboard({ tier, onEditProfile }: {
               // not news, so it stays neutral rather than congratulating anyone.
               tone={hrvStatus === "below baseline" ? "watch" : "muted"}
             />
-            <Stat label={t("signals.restingHr")} value={physiology.restingHr ? `${physiology.restingHr} bpm` : "—"} />
+            <Stat
+              label={t("signals.restingHr")}
+              value={physiology.restingHr ? String(physiology.restingHr) : "—"}
+              unit={physiology.restingHr ? "bpm" : undefined}
+            />
             <Stat label={t("signals.sleep")} value={physiology.sleepScore ? `${physiology.sleepScore}/100` : "—"} />
           </div>
           <Explain>
@@ -285,8 +289,8 @@ export function Dashboard({ tier, onEditProfile }: {
                   "Activity" stays a model term, not something a screen says. */}
               <Stat label={t("insights.activities")} value={String(report.totalActivities)} />
               <Stat label={t("insights.hours")} value={`${report.totalHours}`} />
-              <Stat label={t("home.distance")} value={`${report.totalDistanceKm} km`} />
-              <Stat label={t("connect.weeklyCarbs")} value={`${report.nutrition.weeklyDuringCarbG} g`} />
+              <Stat label={t("home.distance")} value={String(report.totalDistanceKm)} unit="km" />
+              <Stat label={t("connect.weeklyCarbs")} value={String(report.nutrition.weeklyDuringCarbG)} unit="g" />
             </div>
 
             {loadAnalytics ? (

@@ -266,10 +266,24 @@ export function HomeView({
                 <span className="home-session-sport">
                   {a.name?.trim() || (SPORT_KEY[a.sport] ? t(SPORT_KEY[a.sport]) : a.sport)}
                 </span>
+                {/*
+                  The same metric language as the cards above: the figure
+                  carries, the unit is subordinate. As one run-on string —
+                  "11.6 km · 0:54 · ↑ 63 m" — every part had equal weight and
+                  the numbers had to be picked out of the punctuation.
+                */}
                 <span className="home-session-figs">
-                  {a.distanceM ? `${(a.distanceM / 1000).toFixed(1)} km` : "—"} ·{" "}
-                  {formatClock(Math.round(a.durationSec / 60))}
-                  {a.elevationGainM ? ` · ↑ ${a.elevationGainM} m` : ""}
+                  {a.distanceM != null && (
+                    <span className="fig">
+                      {(a.distanceM / 1000).toFixed(1)} <span className="fig-unit">km</span>
+                    </span>
+                  )}
+                  <span className="fig">{formatClock(Math.round(a.durationSec / 60))}</span>
+                  {a.elevationGainM ? (
+                    <span className="fig">
+                      ↑ {a.elevationGainM} <span className="fig-unit">m</span>
+                    </span>
+                  ) : null}
                 </span>
                 <span className="home-session-actions">
                   {/* An unreviewed run gets the question first — the debrief is

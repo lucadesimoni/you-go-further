@@ -259,8 +259,16 @@ export function Planner({
 
       <section className="results" aria-live="polite">
         <div className="targets panel">
-          <Stat label={t("plan.carbPerHour")} value={rec.target.carbPerHourG ? `${rec.target.carbPerHourG} g` : "—"} />
-          <Stat label={t("plan.carbTotal")} value={rec.target.carbTotalG ? `${rec.target.carbTotalG} g` : "—"} />
+          <Stat
+            label={t("plan.carbPerHour")}
+            value={rec.target.carbPerHourG ? String(rec.target.carbPerHourG) : "—"}
+            unit={rec.target.carbPerHourG ? "g" : undefined}
+          />
+          <Stat
+            label={t("plan.carbTotal")}
+            value={rec.target.carbTotalG ? String(rec.target.carbTotalG) : "—"}
+            unit={rec.target.carbTotalG ? "g" : undefined}
+          />
           <Stat
             label={t("plan.fluidPerHour")}
             value={`${rec.target.fluidPerHourMl} ml`}

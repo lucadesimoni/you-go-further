@@ -113,8 +113,8 @@ export function RaceForecast({ sim, estimated = false }: { sim: RaceSimulation; 
       </div>
 
       <div className="targets plain-grid">
-        <Stat label={t("sim.burn")} value={`${sim.burnTotalG} g`} note={t("sim.burnNote")} />
-        <Stat label={t("sim.intake")} value={`${sim.intakeTotalG} g`} note={t("sim.intakeNote")} />
+        <Stat label={t("sim.burn")} value={String(sim.burnTotalG)} unit="g" note={t("sim.burnNote")} />
+        <Stat label={t("sim.intake")} value={String(sim.intakeTotalG)} unit="g" note={t("sim.intakeNote")} />
         <Stat label={t("sim.sweat")} value={`${(sim.sweatTotalMl / 1000).toFixed(1)} L`} note={t("sim.sweatNote")} />
         <Stat label={t("sim.finish")} value={`${Math.round(sim.finishFuelledPct)}%`} note={t("sim.finishNote")} />
       </div>
