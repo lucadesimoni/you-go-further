@@ -6,6 +6,7 @@ import type { FuellingScore } from "../progress";
 import { useT } from "../i18n";
 import { FailedBlock, LoadingBlock, type LoadState } from "./LoadState";
 import { TrainingMonth } from "./TrainingMonth";
+import { Row } from "./Row";
 import type { Activity } from "../model";
 import type { SessionFeedback } from "../feedback";
 
@@ -38,7 +39,8 @@ export function ProgressView({
   onConnect?: () => void;
 }) {
   const t = useT();
-  const ordered = [...profile.milestones].sort((a, b) => Number(b.done) - Number(a.done));
+  const done = profile.milestones.filter((m) => m.done);
+  const todo = profile.milestones.filter((m) => !m.done);
 
   return (
     <main className="dash">
@@ -88,21 +90,59 @@ export function ProgressView({
             {profile.doneCount} {t("common.of")} {profile.milestones.length}
           </span>
         </div>
+        {/*
+          Eleven milestones, each a title and a full sentence, made most of this
+          screen a list of things the athlete has *not* done — nine hundred
+          pixels of "not yet" under three ticks. What is earned stays in view;
+          what is ahead is one line away, which is the right weight for a goal
+          you have not reached.
+        */}
         <ul className="milestones">
-          {ordered.map((a) => (
-            <li key={a.id} className={`milestone${a.done ? " done" : ""}`}>
-              <span className="milestone-mark" aria-hidden>
-                {a.done ? "✓" : "○"}
-              </span>
-              <span className="milestone-body">
-                <span className="milestone-name">
-                  {a.name} <span className="milestone-cat">{a.category}</span>
+          {done.map((a) => (
+            <Row
+              key={a.id}
+              as="li"
+              className="milestone done"
+              lead={
+                <span className="row-disc row-disc-done" aria-hidden>
+                  ✓
                 </span>
-                <span className="milestone-desc">{a.description}</span>
-              </span>
-            </li>
+              }
+              title={
+                <>
+                  {a.name} <span className="milestone-cat">{a.category}</span>
+                </>
+              }
+              meta={a.description}
+            />
           ))}
         </ul>
+        {todo.length > 0 && (
+          <details className="panel fold milestones-todo">
+            <summary className="fold-summary">{t("insights.milestonesAhead", { count: todo.length })}</summary>
+            <ul className="milestones">
+              {todo.map((a) => (
+                <Row
+                  key={a.id}
+                  as="li"
+                  className="milestone"
+                  tone="muted"
+                  lead={
+                    <span className="row-disc row-disc-todo" aria-hidden>
+                      ○
+                    </span>
+                  }
+                  title={
+                    <>
+                      {a.name} <span className="milestone-cat">{a.category}</span>
+                    </>
+                  }
+                  meta={a.description}
+                />
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
       )}
     </main>

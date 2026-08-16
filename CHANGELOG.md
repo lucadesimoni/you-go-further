@@ -8,6 +8,28 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.19.0
+
+**Changed**
+
+- **One row shape, everywhere.** A session on Home, a product in the library, a
+  service on Connect and a milestone on Insights are the same object — a
+  leading mark, a name with a line under it, and something on the right — and
+  each screen had invented its own. `Row` is that shape now; the screens supply
+  what goes in it.
+- **Insights: 3.5 → 2.7 screens.** Eleven milestones, each a title and a full
+  sentence, made most of the screen a list of things the athlete had *not*
+  done: nine hundred pixels of "not yet" under three ticks. What is earned
+  stays in view; what is ahead is one line away, which is the right weight for
+  a goal not yet reached.
+- **Connect: 3.0 → 2.6 screens, and it stopped talking like a backend.** Each
+  service was a card printing our own capability keys — `heartRate`,
+  `trainingLoad` — and a note reading "Webhook + polling; ~600 reqs/15 min
+  app-wide rate limit". That is our engineering, in our vocabulary, on the
+  screen where an athlete links their watch. A service is now a row saying what
+  it brings — "sessions · heart rate · power" — in the athlete's own language,
+  in all four of them.
+
 ## 0.18.0
 
 **Changed**

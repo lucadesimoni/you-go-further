@@ -252,13 +252,17 @@ export function CatalogView({ canEdit, role = "athlete" }: { canEdit: boolean; r
              * component to keep in step.
              */
             <details key={p.id} className="shop-card" open={!isPhone}>
-              <summary className="shop-card-row">
-                <ProductThumb product={p} />
-                <span className="shop-row-id">
-                  <span className="shop-brand">{p.brand}</span>
-                  <span className="shop-name">{p.name}</span>
+              {/* The same row as a session, a provider and a milestone — the
+                  shape comes from `.row`, this only fills the slots. */}
+              <summary className="row shop-card-row">
+                <span className="row-lead">
+                  <ProductThumb product={p} />
                 </span>
-                <span className="shop-row-figs">
+                <span className="row-body">
+                  <span className="row-meta shop-brand">{p.brand}</span>
+                  <span className="row-title shop-name">{p.name}</span>
+                </span>
+                <span className="row-trail shop-row-figs">
                   {p.carbsG > 0 && (
                     <span className="fig">
                       {p.carbsG} <span className="fig-unit">g</span>

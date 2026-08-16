@@ -13,6 +13,8 @@ import { loadProfile } from "../api/profileStore";
 import { ChoiceRow } from "./Choice";
 import { GOAL_ICONS } from "./optionIcons";
 import { Stat } from "./Stat";
+import { Row } from "./Row";
+import type { TranslationKey } from "../i18n";
 import { useI18n } from "../i18n";
 import { Explain } from "./Explain";
 
@@ -24,6 +26,27 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 /** Connections + analysis workspace. Feature access is gated by the active tier. */
+/**
+ * A provider's capabilities, in words an athlete uses.
+ *
+ * The screen used to print the keys themselves — "activities", "heartRate",
+ * "trainingLoad" — which are our field names, not anybody's language, and were
+ * never translated because they were never text.
+ */
+const CAPABILITY_KEY: Record<string, TranslationKey> = {
+  activities: "cap.activities",
+  heartRate: "cap.heartRate",
+  power: "cap.power",
+  trainingLoad: "cap.trainingLoad",
+  sleep: "cap.sleep",
+};
+
+function capabilityWords(caps: string[], t: (k: TranslationKey) => string): string {
+  return caps
+    .map((c) => (CAPABILITY_KEY[c] ? t(CAPABILITY_KEY[c]) : c))
+    .join(" · ");
+}
+
 export function Dashboard({ tier, onEditProfile }: {
   tier: Tier;
   /** Opens the one place body data is edited. */
@@ -169,9 +192,27 @@ export function Dashboard({ tier, onEditProfile }: {
               .filter(([, v]) => v)
               .map(([k]) => k);
             return (
-              <div key={id} className={`provider-card${isOn ? " on" : ""}`}>
-                <div className="provider-top">
-                  <span className="provider-name">{d.displayName}</span>
+              /*
+               * One row per service, the same shape as every other list.
+               *
+               * It used to be a card carrying the provider's raw capability
+               * keys — "heartRate", "trainingLoad" — and a note reading
+               * "Webhook + polling; ~600 reqs/15 min app-wide rate limit". That
+               * is our engineering, in our vocabulary, on a screen an athlete
+               * opens to link their watch. What they need is the name, whether
+               * it is connected, what it brings, and the button.
+               */
+              <Row
+                key={id}
+                className={`provider-card${isOn ? " on" : ""}`}
+                lead={
+                  <span className={`row-disc${isOn ? " row-disc-on" : ""}`} aria-hidden>
+                    {d.displayName.slice(0, 2)}
+                  </span>
+                }
+                title={d.displayName}
+                meta={t("connect.brings", { what: capabilityWords(caps, t) })}
+                trail={
                   <button
                     type="button"
                     className={isOn ? "btn btn-ghost" : "btn btn-primary"}
@@ -181,16 +222,8 @@ export function Dashboard({ tier, onEditProfile }: {
                   >
                     {busy === id ? "…" : isOn ? t("connect.disconnect") : atCap ? t("connect.locked") : t("connect.connect")}
                   </button>
-                </div>
-                <div className="tags">
-                  {caps.map((c) => (
-                    <span key={c} className="tag">
-                      {c}
-                    </span>
-                  ))}
-                </div>
-                <p className="provider-note">{d.syncNote}</p>
-              </div>
+                }
+              />
             );
           })}
         </div>

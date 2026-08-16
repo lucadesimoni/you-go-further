@@ -334,12 +334,16 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.14.0, stable
+### `src/components` — 1.15.0, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
 onboarding, and the shared primitives (`Stat`, `Switch`, `Explain`, `BuyLink`,
 `Icon`, `ChoiceRow`/`ChoiceCards`, `ReadMore`/`MoreList`).
+
+`Row` is the one list shape: a leading mark, a name with a line under it, and
+something on the right. A session, a product, a provider and a milestone had
+each invented their own, which is how an app stops feeling like one app.
 
 `ErrorBoundary` is the exception to every convention here: no hooks, no i18n, no
 design system. It renders because something else in this module failed, so it
@@ -350,7 +354,7 @@ configuration rather than inventing one.
 Public API: `App`, `Planner`, `RouteInsights`, `RaceForecast`, `SessionDebrief`,
 `LoadProfileCard`.
 
-### `src/i18n` — 1.6.0, stable
+### `src/i18n` — 1.7.0, stable
 
 Four typed dictionaries — German, French, Italian, English — with `{placeholder}`
 interpolation and `_one` plural siblings. `de`, `fr` and `it` are typed against

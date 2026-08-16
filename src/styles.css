@@ -5238,32 +5238,23 @@ code {
  * detail is one tap away, where detail belongs.
  * ------------------------------------------------------------------------- */
 .shop-card-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: var(--space-4);
   cursor: pointer;
   list-style: none;
-  padding: var(--space-3) 0;
+  border-bottom: none;
   /* The row is the touch target, so it has to clear 44 px on its own. */
   min-height: 44px;
 }
 .shop-card-row::-webkit-details-marker { display: none; }
-.shop-row-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.shop-row-id .shop-name {
-  font-weight: 700;
-  font-size: var(--text-md);
+.shop-card-row .shop-name {
   /* A long product name truncates rather than pushing the price off-screen. */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .shop-row-figs {
-  display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
-  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 .shop-row-figs .fig { font-weight: 700; }
@@ -5323,6 +5314,64 @@ code {
 .fold-summary::-webkit-details-marker { display: none; }
 .fold-summary::after { content: " ›"; color: var(--muted); }
 .panel.fold[open] > .fold-summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+
+/* ---------------------------------------------------------------------------
+ * One row, everywhere.
+ *
+ * A session, a product, a provider, a milestone: a leading mark, a name with a
+ * line under it, and something on the right. Four screens had four versions of
+ * this; the shape lives here now, and the screens supply what goes in it.
+ * ------------------------------------------------------------------------- */
+.row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+.row:last-child { border-bottom: none; }
+.row-lead { display: inline-flex; align-items: center; justify-content: center; }
+.row-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.row-title { font-weight: 700; color: var(--text); }
+.row-meta { font-size: var(--text-sm); color: var(--muted); line-height: 1.45; }
+.row-trail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  justify-self: end;
+  white-space: nowrap;
+}
+/* Not yet earned, not yet connected: present but plainly inactive. */
+.row-muted .row-title { color: var(--muted); font-weight: 600; }
+/* A row that acts is a button filling the row, so the whole strip is the target. */
+.row-hit {
+  display: contents;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* The same disc the sports use, for anything that leads a row. */
+.row-disc {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sport-soft);
+  color: var(--sport-ink);
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+.row-disc-done { --sport-soft: var(--success-soft); --sport-ink: var(--success-ink); }
+.row-disc-todo { --sport-soft: var(--panel-2); --sport-ink: var(--muted); }
+.row-disc-on { --sport-soft: var(--success-soft); --sport-ink: var(--success-ink); }
 
 /* ---------------------------------------------------------------------------
  * Phone refinements, last on purpose.
