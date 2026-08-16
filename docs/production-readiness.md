@@ -1,7 +1,7 @@
 # How ready is this to go live?
 
 An honest answer, written against what has actually been run rather than what
-is intended. Dated 12 August 2026, platform 0.15.0.
+is intended. Dated 16 August 2026, platform 0.21.0.
 
 Short version: **the software is ready; the deployment and the content are
 not.** Nothing in the code is known to be broken. What stands between this and
@@ -13,8 +13,8 @@ blocker rather than a nice-to-have.
 
 | Suite | What it covers | Where it runs |
 | --- | --- | --- |
-| 858 unit tests, 57 files | the engine, the stores, auth, i18n, the router, the style tokens, the version manifest | CI, every push |
-| e2e journey (~50 steps) | sign-in → onboarding → plan → route → debrief → checkout, four languages, a phone in German, the athlete's own data | CI, against a real Node server |
+| 870 unit tests, 59 files | the engine, the stores, auth, i18n, the router, the style tokens, the version manifest | CI, every push |
+| e2e journey (~55 steps) | sign-in → onboarding → plan → route → debrief → checkout, four languages, a phone in German, a tablet's navigation, every control's touch-target size, and the athlete's own data | CI, against a real Node server |
 | demo suite | the client-side build a static host serves, with no API at all | CI |
 | mobile suite | the Expo screens through react-native-web, against the same API a phone talks to | locally; not yet in CI |
 | container check | the production image starts, serves, and answers `verify:deploy` from outside | CI, every push |
@@ -36,6 +36,16 @@ Beyond the tests:
   for a deleted account is refused.
 - **The bundle is not the problem**: 196 kB gzipped for the app, 15 kB of CSS,
   with the map split into a further 45 kB that loads only when a map does.
+- **swisstopo is exercised for real, on every push.** This sandbox blocks
+  `*.geo.admin.ch`; CI is not blocked, so the live path runs there — which is
+  how the height profile was caught captioning a 29.2 km session with 51.6 km
+  of measured polyline.
+- **The phone is no longer an afterthought.** Measured at 390 px: sign-in and
+  onboarding 1.0 screen, session plan 1.7 (was 5.2), home 2.0, insights 2.5
+  (3.5), connect 2.6 (3.0), catalogue 3.6 (10.5), route 4.4 (5.2). Every
+  control clears the 44 px touch target, checked in CI in a context that
+  reports a coarse pointer — a desktop browser reports a fine one, so a rule
+  keyed to touch would otherwise never run.
 
 The journey moving into CI earned its keep on the first run: it exposed a race
 in which an athlete's saved weight reverted to the old value with no error
@@ -75,10 +85,10 @@ the path `docker compose up` takes.
   commission), so this blocks nothing today. The webhook has never been
   delivered to a public URL; `npm run verify:payments` exists for the day it
   matters.
-- **swisstopo and MeteoSwiss.** This repository's sandbox blocks
-  `*.geo.admin.ch`, so the live responses have never been seen. The app is
-  built to fall back and to say when it has, and that fallback *is* tested —
-  but "MeteoSwiss station" instead of "estimated" is a first-network claim.
+- **MeteoSwiss.** The fallback is tested and the app says when it is
+  estimating, but a real station reading has never been seen here. swisstopo
+  used to be in this list; CI reaches it now, and finding a real bug there is
+  the argument for getting MeteoSwiss the same treatment.
 - **Apple Health and Health Connect.** The mobile suite drives the real sync,
   validation, readiness and profile paths, but the device read itself is a
   stand-in — HealthKit cannot run in a browser. Nobody has installed this on a
