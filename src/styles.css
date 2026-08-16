@@ -163,6 +163,15 @@
 
   /* ---- Type scale ---- */
   --text-2xs: 10px;
+  /*
+   * A unit beside a figure — "129.7 km", "50 g". Relative, because it must
+   * shrink with whatever figure it belongs to, and a token because it was
+   * three different guesses (0.6em, 0.78em, 0.85em) in three files.
+   */
+  --text-unit: 0.66em;
+  /* One icon size for navigation and list marks; inline icons stay 1.15em so
+     they ride with their text. Was 18, 20 and 22 px, chosen ad hoc. */
+  --icon-md: 20px;
   --text-xs: 11px;
   --text-sm: 12px;
   --text-base: 13px;
@@ -784,7 +793,7 @@ input[type="range"] {
  * figure carries and the unit stays legible beside it.
  */
 .stat-unit {
-  font-size: 0.6em;
+  font-size: var(--text-unit);
   font-weight: 600;
   color: var(--muted);
   letter-spacing: 0.01em;
@@ -807,7 +816,7 @@ input[type="range"] {
   font-variant-numeric: tabular-nums;
   margin-top: 2px;
 }
-.stat-delta span { font-size: 0.85em; }
+/* The arrow rides with the delta text; it needs no size of its own. */
 
 .phase-head {
   display: flex;
@@ -2266,7 +2275,7 @@ code {
   position: absolute;
   right: 3px;
   bottom: 2px;
-  font-size: 9px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--accent-ink);
@@ -3228,7 +3237,7 @@ code {
     border-radius: var(--radius-sm);
     position: relative;
   }
-  .topnav-tab .icon { width: 22px; height: 22px; }
+  .topnav-tab .icon { width: var(--icon-md); height: var(--icon-md); }
   .topnav-label { line-height: 1; }
   /* The bar got taller once the icons went in. */
   .page { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
@@ -3273,7 +3282,7 @@ code {
     cursor: pointer;
   }
   .nav-sheet-item.active { color: var(--accent-ink); background: var(--accent-soft); }
-  .nav-sheet-item .icon { width: 20px; height: 20px; color: var(--muted); }
+  .nav-sheet-item .icon { width: var(--icon-md); height: var(--icon-md); color: var(--muted); }
   .nav-sheet-item.active .icon { color: var(--accent-ink); }
   /* An indicator rather than a fill: cleaner in a dense bar. */
   .topnav-tab.active::before {
@@ -3422,7 +3431,7 @@ code {
   background: var(--sport-soft);
   color: var(--sport-ink);
 }
-.home-session-icon .icon { width: 18px; height: 18px; }
+.home-session-icon .icon { width: var(--icon-md); height: var(--icon-md); }
 
 /* One palette, keyed by the six sports the model actually has. */
 .sport-run { --sport-ink: var(--warn-ink); --sport-soft: var(--warn-soft); }
@@ -3450,7 +3459,7 @@ code {
   font-variant-numeric: tabular-nums;
 }
 .home-session-figs .fig { white-space: nowrap; font-weight: 600; }
-.home-session-figs .fig-unit { font-size: 0.78em; font-weight: 600; color: var(--muted); }
+.home-session-figs .fig-unit { font-size: var(--text-unit); font-weight: 600; color: var(--muted); }
 .home-session-plan { justify-self: end; white-space: nowrap; }
 
 .home-shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4); }
@@ -3607,6 +3616,9 @@ code {
 .elev-axis-label,
 .elev-axis-unit {
   fill: var(--muted);
+  /* SVG user units, not CSS pixels: this text scales with the chart's viewBox,
+     so it is deliberately off the type scale — a token that grows on a phone
+     would grow the chart's own coordinate system with it. */
   font-size: 9px;
   font-variant-numeric: tabular-nums;
 }
@@ -4303,7 +4315,7 @@ code {
 }
 .plan-mode:hover { border-color: var(--border-strong); }
 .plan-mode.active { border-color: var(--accent); background: var(--accent-soft); }
-.plan-mode > .icon { width: 20px; height: 20px; color: var(--muted); margin-bottom: 2px; }
+.plan-mode > .icon { width: var(--icon-md); height: var(--icon-md); color: var(--muted); margin-bottom: 2px; }
 .plan-mode.active > .icon { color: var(--accent-ink); }
 .plan-mode-name { font-weight: 700; color: var(--text); }
 .plan-mode-why { font-size: var(--text-2xs); }
@@ -4979,6 +4991,7 @@ code {
   transform: rotate(90deg);
   transform-origin: 60px 60px;
   fill: var(--text);
+  /* SVG user units — see the note on the elevation axis. */
   font-size: 30px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -5121,7 +5134,7 @@ code {
   color: var(--muted);
   line-height: 1.55;
 }
-.privacy-operator strong { color: var(--text); font-size: 1.02rem; }
+.privacy-operator strong { color: var(--text); font-size: var(--text-lg); }
 /* An address is written over several lines; the config carries it as one
    string with newlines, so keep them. */
 .privacy-address { white-space: pre-line; }
@@ -5258,7 +5271,7 @@ code {
   font-variant-numeric: tabular-nums;
 }
 .shop-row-figs .fig { font-weight: 700; }
-.shop-row-figs .fig-unit { font-size: 0.78em; font-weight: 600; color: var(--muted); }
+.shop-row-figs .fig-unit { font-size: var(--text-unit); font-weight: 600; color: var(--muted); }
 .shop-row-price { font-size: var(--text-sm); color: var(--muted); }
 /* Open on a wide screen: the summary would be a duplicate of the card head. */
 .shop-card[open] > .shop-card-row { display: none; }
@@ -5372,6 +5385,61 @@ code {
 .row-disc-done { --sport-soft: var(--success-soft); --sport-ink: var(--success-ink); }
 .row-disc-todo { --sport-soft: var(--panel-2); --sport-ink: var(--muted); }
 .row-disc-on { --sport-soft: var(--success-soft); --sport-ink: var(--success-ink); }
+
+/* ---------------------------------------------------------------------------
+ * Room for a finger.
+ *
+ * Measured on a phone: six kinds of control were under the 44 px that both
+ * Apple's guidance and WCAG 2.2 settle on — and the smallest of them, at 24 px,
+ * was `.product-shop`, the "Buy at <brand>" link whose own comment calls it
+ * "the single highest-intent click in the app". A disclosure summary was 24 px,
+ * a text input 25, the links that open a debrief 29.
+ *
+ * Keyed to the pointer, not the width: a tablet at 900 px is still touched, and
+ * a small desktop window is still moused. Nothing here changes what a control
+ * looks like — only how much of it will accept a thumb.
+ * ------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  .btn,
+  .link-btn,
+  .product-shop,
+  .auth-link,
+  .brand,
+  .skip-link,
+  .chip,
+  input,
+  select,
+  textarea,
+  summary,
+  /* Named explicitly: it sets its own 24 px, and a class beats a bare element
+     selector whatever media query the latter sits in. */
+  .explain > summary {
+    min-height: 44px;
+  }
+  /* Inline-flex so a link that was a line of text becomes a hit area with its
+     text still centred in it, rather than a tall box with the text at the top. */
+  .link-btn,
+  .product-shop,
+  .auth-link,
+  .brand {
+    display: inline-flex;
+    align-items: center;
+  }
+  summary { display: flex; align-items: center; }
+  /* A summary is a list marker by default; flex removes the marker, so the
+     disclosure triangle these rely on has to come back explicitly. */
+  .why > summary::before,
+  .usage > summary::before,
+  .notes-details > summary::before {
+    content: "▸";
+    margin-right: var(--space-2);
+    color: var(--muted);
+  }
+  .why[open] > summary::before,
+  .usage[open] > summary::before,
+  .notes-details[open] > summary::before { content: "▾"; }
+  input, select, textarea { padding-top: var(--space-3); padding-bottom: var(--space-3); }
+}
 
 /* ---------------------------------------------------------------------------
  * Phone refinements, last on purpose.

@@ -1043,6 +1043,53 @@ await step("skip link is the first tab stop", async () => {
   if (!/skip to content/i.test(t)) throw new Error(`first tab stop was "${t}"`);
 });
 
+console.log("── a finger, not a mouse ──");
+await step("every control is big enough to hit with a thumb", async () => {
+  // Measured once and found six kinds under 44 px, the smallest of them the
+  // "Buy at <brand>" link at 24 px — the highest-intent click in the app. The
+  // rules are keyed to `pointer: coarse`, so this needs a context that reports
+  // one; a desktop Chromium says "fine" and the rules never apply.
+  const touch = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const tp = await touch.newPage();
+  try {
+    const mail = `touch-${Date.now()}@club.ch`;
+    await tp.goto(B, { waitUntil: "networkidle" });
+    await tp.click("text=Continue with email");
+    await tp.fill('input[type="email"]', mail);
+    await tp.click("text=Email me a sign-in link");
+    await tp.waitForSelector("text=Check your inbox");
+    await tp.click("text=Open the link (dev mailer)");
+    await tp.waitForSelector("text=Fuel your body to go further", { timeout: 20000 });
+    await tp.click("text=Get started");
+    await tp.waitForSelector("text=Connect your training");
+    await tp.locator('.onboard-connect:has-text("Strava")').click();
+    await tp.waitForSelector("text=Tune it to you", { timeout: 20000 });
+    await tp.click('button:has-text("Continue →")');
+    await tp.click("text=Build my first plan");
+    await tp.waitForSelector(".home-greeting", { timeout: 20000 });
+
+    const small = new Set();
+    for (const tab of ["Home", "Plan", "Insights", "Catalog"]) {
+      await tp.click(`button.topnav-tab:has-text("${tab}")`);
+      await tp.waitForTimeout(1500);
+      for (const found of await tp.evaluate(() => {
+        const out = [];
+        for (const el of document.querySelectorAll("button, a[href], [role=radio], [role=tab], summary, input")) {
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0 || r.height >= 44) continue;
+          out.push(`${(el.getAttribute("class") ?? el.tagName).split(" ")[0]} (${Math.round(r.height)}px)`);
+        }
+        return out;
+      })) {
+        small.add(found);
+      }
+    }
+    if (small.size) throw new Error(`under 44 px: ${[...small].join(", ")}`);
+  } finally {
+    await touch.close();
+  }
+});
+
 console.log("── a tablet, where the nav used to hide itself ──");
 await step("every destination is reachable at every width, not just the wide ones", async () => {
   // The defect: the tab strip scrolls sideways when it runs out of room, and

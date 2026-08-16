@@ -8,6 +8,34 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.20.0
+
+**Fixed**
+
+- **Six kinds of control were too small to hit with a thumb**, and the smallest
+  was the one that matters most: `.product-shop` — the "Buy at <brand>" link
+  whose own comment calls it "the single highest-intent click in the app" — was
+  24 px tall. A disclosure summary was also 24, a text input 25, the links that
+  open a debrief 29. Everything clears 44 px now, the figure both Apple's
+  guidance and WCAG 2.2 settle on. The rules are keyed to `pointer: coarse`
+  rather than to a width, because a tablet at 900 px is still touched and a
+  small desktop window is still moused, and nothing changes how a control looks
+  — only how much of it accepts a thumb. The journey checks it in a context
+  that reports a coarse pointer, since a desktop Chromium reports a fine one
+  and the rules would silently never apply.
+
+**Changed**
+
+- **The type scale had nine exceptions, four of them mine.** A unit beside a
+  figure was 0.6em in one file, 0.78em in two others and 0.85em in a fourth;
+  they are one `--text-unit` token now. A thumbnail's initials and the operator
+  name on the privacy screen are back on the scale. The text inside the SVG
+  charts stays numeric and now says why: it is in user units, so a token that
+  grows on a phone would grow the chart's coordinate system with it.
+- **Icons were 18, 20 and 22 px, picked ad hoc.** One `--icon-md` for
+  navigation and list marks; inline icons stay at 1.15em so they ride with
+  their text.
+
 ## 0.19.0
 
 **Changed**

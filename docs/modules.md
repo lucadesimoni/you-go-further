@@ -334,7 +334,7 @@ Public API: `createApiRouter`, `api`, `isApiConfigured`, `getSessionToken`,
 
 ## Interface
 
-### `src/components` — 1.15.0, stable
+### `src/components` — 1.15.1, stable
 
 Every screen and shared control: the planner, route insights, the race forecast,
 the session debrief, the load profile card, catalog, cart, admin and team views,
@@ -401,7 +401,7 @@ parity is proven in CI rather than asserted.
 *Preview because:* native HealthKit and Health Connect reads need a physical
 device.
 
-### `scripts` — 1.7.0, stable
+### `scripts` — 1.8.0, stable
 
 Build, deployment and verification tooling: `preflight.ts` (the production
 configuration gate, also run by the server at start-up), `verify-deploy.mjs`
