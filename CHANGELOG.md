@@ -8,6 +8,34 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.22.2
+
+**Added**
+
+- **A deployment target for Elestio, on a European VM.** `deploy/elestio/` is
+  the production Compose stack minus one thing: Caddy. Elestio terminates TLS at
+  its own reverse proxy, so a second ACME client would mean two processes
+  competing for port 443 and two certificates for one hostname. The app binds to
+  the Docker bridge (`172.17.0.1`) where only that proxy can reach it, and the
+  database is not published at all. `env.example` beside it passes
+  `npm run preflight` in production mode with 0 blockers and 0 warnings.
+  Hetzner Falkenstein is the recommended region, with an explicit note that it
+  is Germany rather than Switzerland and what that costs in positioning.
+- **CI resolves every shipped Compose file and asserts the Elestio stack stays
+  private.** `docker compose config` needs no daemon and catches what a diff
+  hides: a renamed Dockerfile, a broken interpolation, or a port binding "fixed"
+  from the bridge to `0.0.0.0` — which on that host would publish the whole API
+  over plain HTTP beside the HTTPS one, with nothing in the app to show it. The
+  guard was checked by making it fail.
+
+**Fixed**
+
+- **Filled-in environment files were not gitignored.** Two documents tell an
+  operator to `cp env.example prod.env` *inside the working tree* and put
+  `AUTH_SECRET`, the database password and SMTP credentials in it, and nothing
+  stopped the next `git add -A` from committing the result. `.env` and `*.env`
+  are ignored now; the `env.example` templates still are not.
+
 ## 0.22.1
 
 Type and contrast, measured rather than eyeballed.

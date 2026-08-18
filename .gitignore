@@ -4,3 +4,10 @@ dist/
 .DS_Store
 tsconfig.tsbuildinfo
 .data/
+
+# Filled-in environment files. These hold AUTH_SECRET, the database password
+# and SMTP credentials; the `env.example` templates beside them are the part
+# that belongs in git. `deploy/compose/prod.env` and `deploy/elestio/.env` are
+# both created by copying a template, in-tree, by whoever runs the deploy.
+.env
+*.env

@@ -1,0 +1,87 @@
+# You Go Further on Elestio — app + Postgres, no TLS layer of our own.
+#
+# This is `deploy/compose/docker-compose.prod.yml` with one structural change:
+# **Caddy is gone.** Elestio terminates TLS at its own reverse proxy and renews
+# the certificate itself, so shipping a second ACME client would mean two
+# processes competing for port 443 and two certificates for one hostname. The
+# app is bound to the Docker bridge address instead, where only that proxy can
+# reach it.
+#
+# Point the Elestio service's CI/CD at this file:
+#
+#   Repository      github.com/<you>/you-go-further
+#   Branch          main
+#   Compose path    deploy/elestio/docker-compose.yml     ← not the repo root
+#
+# ⚠ The compose file at the **repository root is the development stack** —
+# `APP_ENV=development`, the file store, and `ALLOW_ROLE_SWITCHING=true`, which
+# serves any request carrying `x-role: owner` as an owner. If Elestio is left
+# pointing at the default root path, that is what goes live. Set the path.
+#
+# Configuration comes from the service's Environment tab, which Elestio writes
+# to `.env` beside this file. Check it before it runs, from a clone:
+#
+#   cp deploy/elestio/env.example deploy/elestio/.env && $EDITOR deploy/elestio/.env
+#   npm run preflight -- deploy/elestio/.env
+#
+# The container runs that same preflight at start-up and refuses to boot on a
+# blocker, so a bad configuration fails in the deploy log rather than quietly
+# handing out forgeable sessions.
+name: you-go-further
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: you-go-further:latest
+    # Every setting comes from the one file preflight reads. Nothing is
+    # overridden here: a value set in two places is a value that will disagree
+    # with itself, and the operator who repoints DATABASE_URL at Elestio's
+    # managed Postgres must not silently keep talking to the container below.
+    env_file: [.env]
+    ports:
+      # 172.17.0.1 is the Docker bridge gateway — the address Elestio's reverse
+      # proxy reaches services on. Publishing to 0.0.0.0 instead would put the
+      # app on the VM's public IP on a plain HTTP port, beside the HTTPS one,
+      # which is a way to serve the whole API unencrypted without noticing.
+      #
+      # ⚠ Confirm this against the port Elestio shows for the service; it is the
+      #   one value here that belongs to their platform rather than to this app.
+      - "172.17.0.1:${APP_PORT:-8787}:8787"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      # Hits the real API route, which reads the store — a container that cannot
+      # reach its database is not healthy, however well its socket is listening.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ygf
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in the Elestio Environment tab}
+      POSTGRES_DB: ygf
+      # A checksummed cluster, because silent corruption is worse than a loud
+      # failure — and this data is not regenerable from anywhere.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # Never published, not even on the bridge: the app reaches it over the
+    # compose network and nothing else has any business talking to it.
+    expose: ["5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ygf"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  db-data:

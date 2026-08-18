@@ -135,6 +135,29 @@ What the image does deliberately:
 `Dockerfile.static` is the SPA-only nginx image, for hosting the front end
 separately from the API.
 
+### Elestio (managed VM in Europe — Hetzner, Scaleway, …) ⭐
+`deploy/elestio/` runs the same image on a VM Elestio provisions and patches for
+you, in a region you choose. It is `deploy/compose` minus the TLS layer: Elestio
+terminates TLS at its own proxy, so the stack drops Caddy and binds the app to
+the Docker bridge, where only that proxy can reach it.
+
+```
+Compose file path   deploy/elestio/docker-compose.yml   ← not the repo root
+```
+
+That path is the thing to get right: the root `docker-compose.yml` is the
+*development* stack, and `ALLOW_ROLE_SWITCHING=true` in it serves any request
+carrying `x-role: owner` as an owner.
+
+Hetzner Falkenstein is the recommended target — cheapest of the European
+options and ~10 ms from Zürich — but note it is Germany, not Switzerland, so
+this deployment cannot make the claim
+[`hosting-switzerland.md`](./hosting-switzerland.md) is written around. EEA and
+FADP-adequate, so legally straightforward; a positioning call, not a technical
+one. The README beside the compose file has the walkthrough, the region table,
+and an explicit note on which two details could not be checked against Elestio's
+own docs.
+
 ### Kubernetes
 `deploy/kubernetes/` — plain manifests, `kubectl apply -k`. Two replicas, a
 disruption budget, a startup/readiness/liveness split that tells "stuck" apart
