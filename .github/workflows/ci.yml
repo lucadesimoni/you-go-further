@@ -54,6 +54,44 @@ jobs:
       # The client-side build, which is what a static host serves and what
       # "explore a demo account" opens. The e2e journey runs against the Node
       # server, so nothing else exercises this path — and it was broken.
+      # Here rather than in the `docker` job because `preflight` needs this
+      # job's node_modules, and `docker compose config` needs no daemon — it
+      # resolves the file and stops, which is the whole point of the check.
+      - name: Compose files resolve, and the Elestio stack stays private
+        run: |
+          set -e
+          cat > deploy/elestio/.env <<'ENV'
+          APP_ENV=production
+          AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          ALLOW_ROLE_SWITCHING=false
+          STORE_BACKEND=postgres
+          POSTGRES_PASSWORD=ci-only-not-a-real-password
+          DATABASE_URL=postgres://ygf:ci-only-not-a-real-password@db:5432/ygf
+          MAIL_SMTP_URL=smtps://u:p@mail.example.ch:465
+          ALLOWED_ORIGINS=https://yougofurther.ch
+          TRUST_PROXY=true
+          OPERATOR_NAME=Fuel Labs GmbH
+          OPERATOR_ADDRESS=Musterstrasse 1, 8000 Zurich
+          PRIVACY_CONTACT=privacy@yougofurther.ch
+          TERMS_URL=https://yougofurther.ch/terms
+          ENV
+          # The template that ships beside it must pass the same rules the
+          # container enforces on itself at start-up.
+          npm run preflight -- deploy/elestio/.env
+          docker compose -f deploy/elestio/docker-compose.yml config --format json > /tmp/elestio.json
+          node -e '
+            const c = require("/tmp/elestio.json");
+            const fail = (m) => { console.error("::error::" + m); process.exitCode = 1; };
+            const app = c.services.app.ports ?? [];
+            if (!app.length) fail("the app publishes no port, so the reverse proxy cannot reach it");
+            for (const p of app) if (p.host_ip !== "172.17.0.1") fail(`app port published on ${p.host_ip ?? "0.0.0.0"}, not the Docker bridge`);
+            if ((c.services.db.ports ?? []).length) fail("the database is published to the host");
+            if (c.services.app.environment.ALLOW_ROLE_SWITCHING !== "false") fail("role switching is not off");
+            if (!process.exitCode) console.log("ok — app on the bridge only, db unpublished, role switching off");
+          '
+          docker compose -f docker-compose.yml config > /dev/null
+          rm -f deploy/elestio/.env
+
       - name: The demo works without a server
         run: |
           set -e
@@ -127,41 +165,6 @@ jobs:
       # matters — a port binding "fixed" from the Docker bridge to 0.0.0.0.
       # On Elestio that would publish the whole API over plain HTTP on the VM's
       # public IP, beside the HTTPS one, with nothing in the app to show it.
-      - name: Compose files resolve, and the Elestio stack stays private
-        run: |
-          set -e
-          cat > deploy/elestio/.env <<'ENV'
-          APP_ENV=production
-          AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-          ALLOW_ROLE_SWITCHING=false
-          STORE_BACKEND=postgres
-          POSTGRES_PASSWORD=ci-only-not-a-real-password
-          DATABASE_URL=postgres://ygf:ci-only-not-a-real-password@db:5432/ygf
-          MAIL_SMTP_URL=smtps://u:p@mail.example.ch:465
-          ALLOWED_ORIGINS=https://yougofurther.ch
-          TRUST_PROXY=true
-          OPERATOR_NAME=Fuel Labs GmbH
-          OPERATOR_ADDRESS=Musterstrasse 1, 8000 Zurich
-          PRIVACY_CONTACT=privacy@yougofurther.ch
-          TERMS_URL=https://yougofurther.ch/terms
-          ENV
-          # The template that ships beside it must pass the same rules the
-          # container enforces on itself at start-up.
-          npm run preflight -- deploy/elestio/.env
-          docker compose -f deploy/elestio/docker-compose.yml config --format json > /tmp/elestio.json
-          node -e '
-            const c = require("/tmp/elestio.json");
-            const fail = (m) => { console.error("::error::" + m); process.exitCode = 1; };
-            const app = c.services.app.ports ?? [];
-            if (!app.length) fail("the app publishes no port, so the reverse proxy cannot reach it");
-            for (const p of app) if (p.host_ip !== "172.17.0.1") fail(`app port published on ${p.host_ip ?? "0.0.0.0"}, not the Docker bridge`);
-            if ((c.services.db.ports ?? []).length) fail("the database is published to the host");
-            if (c.services.app.environment.ALLOW_ROLE_SWITCHING !== "false") fail("role switching is not off");
-            if (!process.exitCode) console.log("ok — app on the bridge only, db unpublished, role switching off");
-          '
-          docker compose -f docker-compose.yml config > /dev/null
-          rm -f deploy/elestio/.env
-
       - name: Container log
         if: always()
         run: docker logs ygf || true
