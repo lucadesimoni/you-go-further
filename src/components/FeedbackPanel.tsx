@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { AdaptationInsight, EnergyRating, GiRating, SessionFeedback } from "../feedback";
-import { useT } from "../i18n";
+import { useT, type TranslationKey } from "../i18n";
 import { ChoiceRow } from "./Choice";
 
 /* The same ratings the debrief uses, so one vocabulary describes a session
@@ -88,13 +88,13 @@ export function FeedbackPanel({
         <div className="fb-insight-head">
           <strong>{t("log.learned")}</strong>
           <span className="pill">
-            {insight.samples} logged · {t(CONF_KEY[insight.confidence])}
+            {t("log.samplesLogged", { count: insight.samples })} · {t(CONF_KEY[insight.confidence])}
           </span>
         </div>
         <div className="fb-badges">
-          {insight.carbCeilingG !== undefined && <span className="fb-badge cap">carb ceiling {insight.carbCeilingG} g/h</span>}
+          {insight.carbCeilingG !== undefined && <span className="fb-badge cap">{t("log.carbCeiling", { n: insight.carbCeilingG })}</span>}
           {(insight.carbBiasG ?? 0) > 0 && <span className="fb-badge up">+{insight.carbBiasG} g/h</span>}
-          {insight.carbCeilingG === undefined && !(insight.carbBiasG ?? 0) && <span className="fb-badge">targets unchanged</span>}
+          {insight.carbCeilingG === undefined && !(insight.carbBiasG ?? 0) && <span className="fb-badge">{t("log.targetsUnchanged")}</span>}
         </div>
         <ul className="fb-rationale">
           {insight.rationale.map((r, i) => (
@@ -108,8 +108,8 @@ export function FeedbackPanel({
           {feedbacks.slice(0, 5).map((f) => (
             <li key={f.id}>
               <span className="fb-when">{new Date(f.date).toLocaleDateString()}</span>
-              <span className={`fb-tag gi-${f.gi}`}>GI {f.gi}</span>
-              <span className={`fb-tag en-${f.energy}`}>{f.energy}</span>
+              <span className={`fb-tag gi-${f.gi}`}>GI {t(`debrief.gi.${f.gi}` as TranslationKey)}</span>
+              <span className={`fb-tag en-${f.energy}`}>{t(`debrief.energy.${f.energy}` as TranslationKey)}</span>
               <span className="fb-planned">@ {f.plannedCarbPerHourG} g/h</span>
             </li>
           ))}

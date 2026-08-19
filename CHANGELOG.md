@@ -8,6 +8,29 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.23.2
+
+Groundwork from a flow audit. The audit's findings, measured rather than assumed:
+
+**Fixed**
+
+- **Five English strings on a four-language screen.** The "log & learn" panel
+  printed `carb ceiling 75 g/h`, `targets unchanged` and `12 logged` in English
+  whatever the interface language, and its history printed the raw enum —
+  `GI none`, `steady` — beside dates in German. The ratings already had
+  translated labels; the history was simply not using them. The dictionary guard
+  finds keys nobody renders, but it cannot see a literal nobody translated.
+
+**Changed**
+
+- **A debrief no longer requires a GPS track.** `SessionDebrief` demanded a
+  `RouteFuelPlan` and lived inside the route view, so Home only offered "how did
+  it go?" for sessions carrying a track — and an athlete who runs without one
+  had no way to rate a session at all, which is why an anonymous rating form sat
+  on the *planner*, a screen for sessions that have not happened yet. The plan is
+  read in exactly one place, to point at a chart when there is one, so it is
+  optional now. This is the enabling step; the surfaces move next.
+
 ## 0.23.1
 
 The landing page, on a phone.

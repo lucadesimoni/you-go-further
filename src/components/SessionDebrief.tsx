@@ -31,7 +31,17 @@ export function SessionDebrief({
   saving,
 }: {
   debrief: Debrief;
-  plan: RouteFuelPlan;
+  /*
+   * Optional, because a debrief is a *session* thing and a route is not.
+   *
+   * This panel used to demand a `RouteFuelPlan` and lived inside the route
+   * view, which is why Home only offered "how did it go?" for sessions
+   * carrying a GPS track — and why an athlete who runs without one had no way
+   * to rate a session at all, and fell back to an anonymous form on the
+   * planner. The plan is read in exactly one place below: to point at the
+   * chart when there is one to point at.
+   */
+  plan?: RouteFuelPlan;
   /** Save a log for this session; the parent re-derives the debrief. */
   onLog?: (entry: Pick<SessionFeedback, "gi" | "energy" | "actualCarbPerHourG">) => void;
   saving?: boolean;
@@ -131,7 +141,7 @@ export function SessionDebrief({
       {/* The actionable half — where and what — is the chart directly below,
           which carries the same stops. Printing them twice would be two lists
           the athlete has to reconcile. */}
-      {debrief.hasLog && plan.stops.length > 0 && <p className="debrief-lead">{t("debrief.leadToPlan")}</p>}
+      {debrief.hasLog && (plan?.stops.length ?? 0) > 0 && <p className="debrief-lead">{t("debrief.leadToPlan")}</p>}
     </section>
   );
 }
