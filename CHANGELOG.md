@@ -8,6 +8,44 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.23.1
+
+The landing page, on a phone.
+
+**Changed**
+
+- **Fewer things, not shorter sentences.** Measured at 390 px in German the page
+  ran to **7.8 screens**, and one section was most of it: six article previews at
+  2.45 screens, with two figures and four offering cards behind them. The phone
+  now gets three articles instead of six, one figure instead of two, and drops
+  the provider line that repeated the proof bullet above it — **5.7 screens**.
+  Cutting the count rather than truncating the copy is deliberate: a summary
+  clipped mid-clause reads as broken, three articles read as a selection.
+- **Eleven bordered boxes became filled shapes.** Between the hero and the
+  footer a 390 px screen stacked four offering cards, three articles, a figure
+  and three chain steps, every one of them outlined — which reads as a form to
+  fill in. This is the rule the rest of the app already follows (0.22.0); the
+  landing page was breaking it hardest. The middle chain step keeps its border,
+  because there it marks the product rather than decorating a box.
+- **One gradient in the hero instead of two.** Two overlapping radial washes put
+  a visible seam across a phone-width hero and made the busiest part of the page
+  the part with no content in it.
+
+**Added**
+
+- **Snap, at proximity — never mandatory.** Sections settle when a flick leaves
+  one nearly under the thumb, and a long read scrolls normally. Mandatory snap on
+  a page with sections taller than the viewport takes the scroll away from the
+  reader, which on a phone feels like the page fighting the finger.
+- **Anchors that land properly.** `scroll-margin-top` so a section arrives with
+  air above its heading rather than jammed against the top edge, and smooth
+  scrolling for the closing call to action. Verified: from the foot of the page
+  the CTA lands 20 px above the sign-in card — exactly the margin — and a scroll
+  to a section start settles there rather than being dragged.
+- Both are scoped with `html:has(.landing)`. They have to be declared on the
+  scrolling element, which is `html`, but the app behind the sign-in has its own
+  scrolling screens and neither behaviour was asked for there.
+
 ## 0.23.0
 
 **Added**

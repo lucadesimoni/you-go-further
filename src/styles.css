@@ -6282,3 +6282,138 @@ code {
     .landing-card:hover { transform: none; }
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Landing page · the phone
+ *
+ * Measured at 390 px in German, the page ran to **7.8 screens** and most of it
+ * was one section: six article previews at 2.45 screens, with the two figures
+ * and four offering cards behind them. That is not a landing page, it is a
+ * brochure — and on a phone the reader decides in the first two screens.
+ *
+ * So the phone gets fewer *things*, not shorter sentences: truncating a summary
+ * mid-clause looks broken, whereas three articles instead of six reads as a
+ * deliberate selection. Nothing here changes the desktop layout.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 700px) {
+  .landing {
+    /* Tighter rhythm: at phone width the big gaps read as the page having
+       ended rather than as breathing room. */
+    --landing-rhythm: clamp(36px, 9vw, 56px);
+  }
+
+  /*
+   * One gradient, not two.
+   *
+   * Two overlapping radial washes on a 390 px screen put a visible seam across
+   * the hero and made the busiest part of the page the part with no content in
+   * it.
+   */
+  .landing-hero {
+    background: radial-gradient(140% 60% at 50% 0%, var(--accent-soft), transparent 70%);
+  }
+
+  /* The provider line repeats what the third proof bullet already says. */
+  .landing-neutral { display: none; }
+
+  /* Three articles, chosen across categories, instead of six. */
+  .landing-article:nth-child(n + 4) { display: none; }
+  /* And the key figures inside them: detail for someone already reading, noise
+     for someone deciding whether to. */
+  .landing-article-nums { display: none; }
+
+  /*
+   * One figure, not two. The carbohydrate curve is the idea; the ladder is the
+   * table behind it, and a table is a poor use of the fourth screen of a phone.
+   */
+  .landing-figure:nth-of-type(2) { display: none; }
+
+  .landing-card,
+  .landing-article,
+  .landing-figure { padding: var(--space-7); }
+  .landing-cards,
+  .landing-articles { gap: var(--space-6); }
+
+  /*
+   * A card is a filled shape, not a drawn box — the rule the rest of the app
+   * already follows, and this page was breaking it hardest. Eleven bordered
+   * boxes stack up on a 390 px screen between the hero and the footer: four
+   * offering cards, three articles, a figure and three chain steps. Outlined,
+   * they read as a form to fill in. The surface carries the separation.
+   *
+   * The middle chain step keeps its border, because there it is not decoration:
+   * it is what marks that link as the product.
+   */
+  .landing-card,
+  .landing-article,
+  .landing-figure,
+  .landing-chain-step:not(.landing-chain-us) {
+    border-color: transparent;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Scrolling, anchors and snap
+ * ------------------------------------------------------------------------- */
+
+/*
+ * Anchors land where the section starts, not with its heading jammed against
+ * the top edge of the screen.
+ */
+.landing-hero,
+.landing-section,
+.landing-close,
+.landing-signin {
+  scroll-margin-top: var(--space-8);
+}
+
+/*
+ * Snap at **proximity**, never `mandatory`.
+ *
+ * Mandatory snap on a page whose sections are taller than the viewport takes
+ * the scroll away from the reader: a flick in the middle of a paragraph is
+ * dragged to a section edge, and on a phone that feels like the page fighting
+ * the thumb. Proximity only engages when a section start is already nearly
+ * under the finger, so a long read scrolls normally and a flick between
+ * sections settles cleanly.
+ */
+@media (pointer: coarse) {
+  /*
+   * Scoped with `:has()` rather than set on `html` outright.
+   *
+   * Snap and smooth scrolling have to be declared on the scrolling element,
+   * which is `html` — but the app behind the sign-in has its own scrolling
+   * screens, and neither behaviour was asked for there. `:has(.landing)` is
+   * true only while the logged-out page is the one on screen.
+   */
+  html:has(.landing) {
+    scroll-snap-type: y proximity;
+  }
+  .landing-hero,
+  .landing-section,
+  .landing-close {
+    scroll-snap-align: start;
+    /* Without this a section taller than the viewport can never leave the snap
+       area, which is the other way mandatory-style snap traps a reader. */
+    scroll-snap-stop: normal;
+  }
+}
+
+/*
+ * Smooth scrolling for the in-page link, and only for that.
+ *
+ * Set on `html` it applies to anchor jumps and to programmatic scrolls, which
+ * is what the close-CTA needs. Anyone who has asked their system to stop moving
+ * things gets the instant jump instead — and loses the snap with it, because a
+ * snap animation is motion too.
+ */
+html:has(.landing) {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing) {
+    scroll-behavior: auto;
+    scroll-snap-type: none;
+  }
+}
