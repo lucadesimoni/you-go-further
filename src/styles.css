@@ -2153,8 +2153,15 @@ code {
 }
 
 .auth-google {
+  /*
+   * Google's white button is brand-fixed, so its ink has to be fixed too.
+   * `--surface-3` is a *surface* token: near-black in the dark theme, which is
+   * why this looked right, and near-white in the light one — white on white,
+   * measured at 1.05:1, a button whose label simply was not there. `.auth-apple`
+   * above had it right all along with a literal black.
+   */
   background: #fff;
-  color: var(--surface-3);
+  color: #000;
   border-color: #fff;
 }
 
@@ -5739,4 +5746,539 @@ code {
 @media (min-width: 641px) and (max-width: 700px) {
   .topbar { flex-wrap: wrap; row-gap: var(--space-2); }
   .topnav { flex: 1 0 100%; order: 3; justify-content: space-between; }
+}
+
+/* ===========================================================================
+ * Landing page — the logged-out surface
+ * ---------------------------------------------------------------------------
+ * Built to hold together at every width without a ladder of breakpoints. Three
+ * techniques do almost all of the work:
+ *
+ *   1. `clamp()` for type and rhythm, so the hero headline and the space
+ *      between sections scale continuously with the viewport instead of
+ *      jumping at four fixed sizes.
+ *   2. `repeat(auto-fit, minmax(N, 1fr))` for the card grids, so the number of
+ *      columns is decided by the room available rather than by a guess about
+ *      which device is asking. One rule covers a 320 px phone and a 1440 px
+ *      desktop.
+ *   3. `minmax(0, …)` on every track that holds text. A grid track's automatic
+ *      minimum is its content's min-content width, so a single long German
+ *      compound silently widens the whole page past the viewport — which is
+ *      exactly how three grids came to clip on a phone once already.
+ * ========================================================================= */
+
+.landing {
+  /* The one measure the whole page aligns to. */
+  --landing-max: 1120px;
+  /* Side padding that grows with the screen: thumb-friendly at 320, generous
+     at 1440, and never a hard step in between. */
+  --landing-gutter: clamp(16px, 5vw, 40px);
+  --landing-rhythm: clamp(48px, 8vw, 96px);
+  background: var(--bg);
+  color: var(--text);
+  /*
+   * Deliberately NOT `overflow-x: hidden`.
+   *
+   * It was here, and it was the wrong tool: it does not stop a layout from
+   * being too wide, it stops anyone from seeing that it is. A heading that
+   * overruns gets silently sliced off mid-word instead, and the journey step
+   * that checks this page at 320 px went green against a build with
+   * `white-space: nowrap` on the hero title — the clip had swallowed the very
+   * symptom it was watching for. The grids below are built with `minmax(0, …)`
+   * so nothing overflows in the first place; if something ever does, it should
+   * show.
+   */
+}
+
+.landing-section,
+.landing-close,
+.landing-foot,
+.landing-hero-inner {
+  width: 100%;
+  max-width: var(--landing-max);
+  margin-inline: auto;
+  padding-inline: var(--landing-gutter);
+}
+
+/*
+ * Half the rhythm on each side, so two adjacent sections add up to one gap
+ * rather than two. At full value the page measured ~190 px of nothing between
+ * every heading and the section above it, which reads as unrelated pages
+ * stacked rather than one argument.
+ */
+.landing-section { padding-block: calc(var(--landing-rhythm) / 2); }
+
+/* ---- Hero ---------------------------------------------------------------- */
+
+.landing-hero {
+  position: relative;
+  padding-block: clamp(28px, 6vw, 72px) var(--landing-rhythm);
+  /* A wash rather than a block of colour: the accent identifies the brand at
+     the top of the page without turning the first screenful into a poster. */
+  background:
+    radial-gradient(120% 80% at 15% 0%, var(--accent-soft), transparent 60%),
+    radial-gradient(90% 70% at 90% 10%, var(--info-soft), transparent 55%);
+}
+
+.landing-hero-inner {
+  display: grid;
+  /* Copy takes the room it needs; the card is a fixed object beside it. Both
+     tracks are `minmax(0, …)` so neither can push the page wider than the
+     screen. */
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 420px);
+  gap: clamp(28px, 5vw, 56px);
+  align-items: center;
+}
+
+@media (max-width: 940px) {
+  /* One column, and the card first: on a phone the reason someone opened the
+     page is usually to get in, and the argument is there for the ones who
+     scroll. */
+  .landing-hero-inner { grid-template-columns: minmax(0, 1fr); }
+  .landing-hero-copy { order: 2; }
+  .landing-signin { order: 1; }
+  /*
+   * A sign-in card is an object, not a section: stretched to a 720 px tablet
+   * width its three buttons become three long bars and the whole thing reads
+   * as a form rather than a way in. It keeps its own width and centres.
+   */
+  .landing-signin .auth-card {
+    max-width: 460px;
+    margin-inline: auto;
+  }
+}
+
+.landing-title {
+  /* 28 px on the narrowest phone, 52 on a desktop, continuous in between. */
+  font-size: clamp(28px, 5.2vw, 52px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 4px 0 var(--space-6);
+  text-wrap: balance;
+  /*
+   * German compounds are longer than the column they sit in.
+   *
+   * The headline scales with the *viewport*, but at 1024 px the hero is two
+   * columns and the copy only gets 473 px of it — where "Verpflegungsplan" at
+   * 52 px measured 501 px and ran 28 px over, straight across the sign-in card.
+   * `hyphens` is the right answer rather than a smaller type size: the app
+   * already sets `<html lang>`, so the browser breaks it where German breaks.
+   * `break-word` is the backstop for a word too long to hyphenate at all.
+   */
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+.landing-lede {
+  font-size: clamp(15px, 1.6vw, 19px);
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0 0 var(--space-9);
+  max-width: 58ch;
+}
+
+.landing-proof {
+  list-style: none;
+  margin: 0 0 var(--space-8);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.landing-proof li {
+  display: grid;
+  /* The icon column is fixed, the text column may shrink — the other way round
+     and a long line pushes the icon off the screen. */
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+  font-size: var(--text-md);
+  line-height: 1.5;
+}
+
+.landing-proof .icon {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  color: var(--accent-ink);
+  margin-top: 1px;
+}
+
+.landing-neutral {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--muted);
+}
+
+/*
+ * The sign-in card, borrowed into the hero.
+ *
+ * `LoginScreen` renders its own full-viewport centring wrapper, which is right
+ * when it *is* the page and wrong when it is one cell of a grid — it would add
+ * a screen of empty height above the fold.
+ */
+.landing-signin .auth {
+  min-height: 0;
+  padding: 0;
+  display: block;
+}
+.landing-signin .auth-card {
+  max-width: none;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ---- Shared section furniture -------------------------------------------- */
+
+.landing-h2 {
+  font-size: clamp(21px, 2.6vw, 30px);
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--space-4);
+  text-wrap: balance;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+.landing-sub {
+  color: var(--muted);
+  font-size: var(--text-lg);
+  line-height: 1.55;
+  margin: 0 0 var(--space-10);
+  max-width: 62ch;
+}
+
+/* ---- The value chain ------------------------------------------------------ */
+
+.landing-chain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-5);
+}
+
+.landing-chain-step {
+  flex: 1 1 0;
+  /* Without this a long label sets the flex base and the three boxes stop
+     being equal. */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-7);
+}
+
+/* The middle link is the product. It is drawn as the answer, not as one of
+   three equal options. */
+.landing-chain-us {
+  border-color: var(--accent-line);
+  background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--panel);
+  box-shadow: var(--shadow-md);
+}
+
+.landing-chain-role {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.landing-chain-us .landing-chain-role { color: var(--accent-ink); }
+
+.landing-chain-what {
+  font-size: var(--text-md);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.landing-chain-arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 22px;
+  height: 22px;
+  /* Drawn in CSS rather than as a glyph: an arrow character renders at a
+     different weight in every font fallback, and this one has to rotate. */
+  border-top: 2px solid var(--border-strong);
+  border-right: 2px solid var(--border-strong);
+  transform: rotate(45deg);
+}
+
+@media (max-width: 760px) {
+  .landing-chain { flex-direction: column; }
+  .landing-chain-arrow { transform: rotate(135deg); }
+}
+
+/* ---- Offering cards ------------------------------------------------------- */
+
+.landing-cards {
+  display: grid;
+  /* Columns follow the room, not the device: four across on a desktop, two on
+     a tablet, one on a phone, with nothing to keep in step by hand. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 232px), 1fr));
+  gap: var(--space-7);
+}
+
+.landing-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+
+/* Hover only where there is a pointer to hover with — on a touch screen a
+   :hover rule sticks after the tap and leaves the card looking selected. */
+@media (hover: hover) {
+  .landing-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.landing-card-icon {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.landing-card-icon .icon { width: 20px; height: 20px; }
+
+.landing-card h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: 1.25;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+.landing-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-md);
+  line-height: 1.55;
+}
+
+/* ---- The two figures ------------------------------------------------------ */
+
+.landing-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--space-8);
+}
+
+.landing-figure {
+  margin: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.landing-figure-cap {
+  font-size: var(--text-md);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.landing-curve {
+  display: block;
+  width: 100%;
+  /* The viewBox carries the proportions; a height in `auto` lets the SVG scale
+     without ever deciding the layout. */
+  height: auto;
+}
+
+.landing-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-7);
+  font-size: var(--text-base);
+  color: var(--muted);
+}
+.landing-legend li { display: inline-flex; align-items: center; gap: var(--space-3); }
+
+.landing-swatch {
+  width: 16px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  flex: 0 0 auto;
+}
+.landing-swatch-plan { background: var(--chart-primary); }
+.landing-swatch-water { background: var(--chart-baseline); }
+.landing-swatch-limit { background: var(--chart-limit); }
+
+.landing-ladder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.landing-ladder-row {
+  display: grid;
+  /* Label, bar, figure. The label wraps; the bar absorbs what is left; the
+     figure is as wide as it needs to be and no wider. */
+  grid-template-columns: minmax(0, 1fr) minmax(60px, 1.1fr) auto;
+  gap: var(--space-5);
+  align-items: center;
+  font-size: var(--text-base);
+}
+
+@media (max-width: 480px) {
+  /* Below this the three columns leave the bar too narrow to read as a
+     quantity, so the label takes its own line. */
+  .landing-ladder-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .landing-ladder-label { grid-column: 1 / -1; }
+}
+
+.landing-ladder-label { color: var(--muted); line-height: 1.35; }
+
+.landing-ladder-track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-inset);
+  overflow: hidden;
+}
+
+.landing-ladder-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--chart-primary), var(--accent));
+}
+
+.landing-ladder-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.landing-figure-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+/* ---- Articles ------------------------------------------------------------- */
+
+.landing-articles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 268px), 1fr));
+  gap: var(--space-7);
+}
+
+.landing-article {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.landing-article-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: 1.28;
+}
+
+.landing-article-sum {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  /* Pushes the numbers and the read time to the bottom, so a row of cards with
+     different summary lengths still lines up along its base. */
+  flex: 1 1 auto;
+}
+
+.landing-article-nums {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+}
+.landing-article-nums > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.landing-article-nums dt {
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.landing-article-nums dd {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+
+.landing-article-read {
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* ---- Close and footer ------------------------------------------------------ */
+
+.landing-close {
+  text-align: center;
+  padding-block: calc(var(--landing-rhythm) / 2) var(--landing-rhythm);
+  border-top: 1px solid var(--border);
+}
+.landing-close .landing-sub { margin-inline: auto; }
+
+.landing-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* A link styled as a button still has to be a comfortable tap target. */
+  min-height: 44px;
+  padding: 0 var(--space-9);
+  text-decoration: none;
+}
+
+.landing-foot {
+  padding-block: var(--space-9) var(--space-10);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.landing-foot-op { margin: 0; font-size: var(--text-base); font-weight: 600; }
+.landing-foot-note { margin: 0; font-size: var(--text-base); color: var(--muted); max-width: 70ch; }
+
+/* Someone who has asked their system to stop moving things gets a page that
+   does not move. The hover lift is the only motion here, and it goes. */
+@media (prefers-reduced-motion: reduce) {
+  .landing-card { transition: none; }
+  @media (hover: hover) {
+    .landing-card:hover { transform: none; }
+  }
 }

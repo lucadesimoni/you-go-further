@@ -4,7 +4,7 @@ import { Dashboard } from "./components/Dashboard";
 import { TeamView } from "./components/TeamView";
 import { CatalogView } from "./components/CatalogView";
 import { AdminView } from "./components/AdminView";
-import { LoginScreen } from "./components/LoginScreen";
+import { LandingView } from "./components/LandingView";
 import { ProgressView } from "./components/ProgressView";
 import { ProfileView } from "./components/ProfileView";
 import { PrivacyView } from "./components/PrivacyView";
@@ -367,9 +367,11 @@ export function App() {
     if (account && !isOnboarded()) setOnboarding(true);
   }, [account]);
 
-  // Gate: no session → login / register.
+  // Gate: no session → the landing page, which carries the sign-in card in its
+  // hero. The card used to be the *whole* logged-out surface: it asked for an
+  // email address without ever saying what the thing does.
   if (!account) {
-    return <LoginScreen onSignedIn={setAccount} allowDemo={config.allowRoleSwitching} />;
+    return <LandingView onSignedIn={setAccount} allowDemo={config.allowRoleSwitching} />;
   }
 
   if (onboarding) {

@@ -58,6 +58,37 @@ resolution; invert that — the default theme here — and the trick reads as
 weight, so the dark theme rendered heavier and faintly fringed while the same
 string in light came out crisp. Grayscale gives both themes the same stem.
 
+### Responsive without a ladder of breakpoints
+
+The landing page is the reference for this, and three techniques do nearly all
+of the work:
+
+1. **`clamp()` for type and rhythm**, so the hero headline and the space between
+   sections scale continuously instead of stepping at four fixed sizes.
+2. **`repeat(auto-fit, minmax(min(100%, N), 1fr))`** for card grids: the column
+   count follows the room available rather than a guess about the device. One
+   rule covers a 320 px phone and a 1920 px desktop. The `min(100%, N)` matters —
+   a bare `minmax(N, 1fr)` overflows once the viewport is narrower than `N`.
+3. **`minmax(0, …)` on every track holding text.** A grid track's automatic
+   minimum is its content's min-content width, so one long German compound
+   silently widens the page past the viewport.
+
+Two lessons that cost real bugs:
+
+* **Never reach for `overflow-x: hidden` to "fix" a wide page.** It does not stop
+  the layout being too wide, it stops anyone seeing that it is — including the
+  test. The landing page's German headline overran its column by 28 px at
+  1024 px, and the clip swallowed the symptom so completely that a journey step
+  written to catch exactly that went green against a deliberately broken build.
+* **A box measurement cannot see text overflow.** `getBoundingClientRect()`
+  returns the box; a `nowrap` heading inside a well-behaved grid track reports an
+  innocent width while its text runs off the side. Check
+  `scrollWidth > clientWidth` as well.
+
+German is the test case, at the narrowest width. `hyphens: auto` on display
+headings is the fix for compounds, not a smaller type size — the app already
+sets `<html lang>`, so the browser breaks them where German breaks.
+
 ### Elevation & motion
 `--shadow-sm` `--shadow-md` `--shadow-lg`; `--transition` (0.15s ease).
 

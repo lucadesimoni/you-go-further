@@ -108,13 +108,13 @@ export function LoginScreen({ onSignedIn, allowDemo }: { onSignedIn: (a: Account
         {mode === "choose" ? (
           <div className="auth-actions">
             <button type="button" className="auth-btn auth-apple" onClick={signInApple} disabled={busy !== null}>
-              <span className="auth-glyph"></span> {busy === "apple" ? t("auth.signingIn") : t("auth.continueApple")}
+              <span className="auth-glyph" aria-hidden></span> {busy === "apple" ? t("auth.signingIn") : t("auth.continueApple")}
             </button>
             <button type="button" className="auth-btn auth-google" onClick={signInGoogle} disabled={busy !== null}>
-              <span className="auth-glyph">G</span> {busy === "google" ? t("auth.signingIn") : t("auth.continueGoogle")}
+              <span className="auth-glyph" aria-hidden>G</span> {busy === "google" ? t("auth.signingIn") : t("auth.continueGoogle")}
             </button>
             <button type="button" className="auth-btn auth-email-btn" onClick={() => setMode("email")}>
-              <span className="auth-glyph">✉</span> {t("auth.continueEmail")}
+              <span className="auth-glyph" aria-hidden>✉</span> {t("auth.continueEmail")}
             </button>
           </div>
         ) : mode === "sent" ? (

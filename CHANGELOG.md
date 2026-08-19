@@ -8,6 +8,38 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.23.0
+
+**Added**
+
+- **A landing page for anyone who has not signed in yet.** The whole logged-out
+  surface was a 400 px sign-in card on an empty background: it asked for an email
+  address without once saying what the thing does, so everybody arriving from a
+  link, a search result or a race programme had to take it on faith. The card
+  keeps its place in the hero — signing in is still one click from the top, not
+  behind a "get started" that scrolls somewhere — and the rest of the page
+  answers the question it was skipping: where the product sits in the
+  measure → decide → supply chain, the four things the app actually does, two
+  figures drawn from the numbers the engine really runs on, and six real
+  articles from the guide, one per category. 44 new strings in all four
+  languages.
+- **A journey step that keeps it working on every screen.** The landing page is
+  checked at 320, 390, 768, 1024, 1440 and 1920 px **in German** — the longest
+  language at the narrowest width is where a marketing page breaks — and it
+  names the offending element rather than reporting that the page is too wide.
+  Verified across 96 combinations of width, language and theme while building
+  it: no sideways scroll anywhere.
+
+**Fixed**
+
+- **The Google sign-in button was invisible in the light theme.** It painted
+  `--surface-3` on white — a *surface* token used as ink, near-black in the dark
+  theme (which is why it looked right) and near-white in the light one. Measured
+  at **1.05:1**: a button whose label was simply not there. `.auth-apple` beside
+  it had it right all along with a literal black, since a brand-fixed white
+  button needs brand-fixed ink. Nothing had caught it because the contrast walk
+  only ever ran *after* signing in, so it never saw this screen.
+
 ## 0.22.2
 
 **Added**

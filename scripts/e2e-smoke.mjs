@@ -228,6 +228,69 @@ await step("the transport refuses an oversized body and limits sign-in requests"
   }
 });
 
+console.log("── the landing page, before anyone has signed in ──");
+await step("it says what the product is, and the way in is on the first screenful", async () => {
+  await page.goto(B, { waitUntil: "networkidle" });
+  // The logged-out surface used to be a sign-in card and nothing else. What
+  // makes this a landing page rather than a decorated form is that the claims,
+  // the diagrams and the guide are on it — and that the card is still right
+  // there rather than behind a "get started" that scrolls somewhere.
+  for (const sel of [".landing-hero", ".landing-chain-us", ".landing-cards", ".landing-curve", ".landing-articles"]) {
+    if (!(await page.locator(sel).count())) throw new Error(`${sel} is missing from the landing page`);
+  }
+  const cards = await page.locator(".landing-article").count();
+  if (cards < 4) throw new Error(`only ${cards} article previews — the guide is the editorial argument`);
+  if (!(await page.locator(".landing-signin .auth-card").count())) {
+    throw new Error("the sign-in card is not in the hero, so signing in now costs a scroll");
+  }
+});
+await step("it holds together from a 320 px phone to a 1920 px desktop, in German", async () => {
+  /*
+   * German is the longest of the four languages and 320 px is the narrowest
+   * screen still in use, so this is the corner where a landing page breaks.
+   * A page that scrolls sideways is the single most obvious sign that nobody
+   * looked at it on a phone, and it is invisible from a desktop browser.
+   */
+  await page.evaluate(() => localStorage.setItem("ygf.lang", "de"));
+  await page.reload({ waitUntil: "networkidle" });
+  const bad = [];
+  for (const width of [320, 390, 768, 1024, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.waitForTimeout(180);
+    const r = await page.evaluate(() => {
+      const d = document.documentElement;
+      const out = [];
+      for (const el of document.querySelectorAll(".landing *")) {
+        const b = el.getBoundingClientRect();
+        // Name the culprit: "the page is too wide" is not something anyone can
+        // act on six months from now.
+        if (b.width > 0 && (b.right > d.clientWidth + 1 || b.left < -1)) out.push(`${el.className || el.tagName}`.split(" ")[0]);
+        /*
+         * And the case a box measurement cannot see: content wider than the box
+         * holding it. `getBoundingClientRect` returns the *box*, so a heading
+         * set to `nowrap` inside a well-behaved grid track reports a perfectly
+         * innocent width while its text runs off the side. This check found
+         * exactly that on a build deliberately broken to test it.
+         */
+        if (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX === "visible") {
+          out.push(`${el.className || el.tagName}`.split(" ")[0] + "(text)");
+        }
+      }
+      return { scroll: d.scrollWidth, client: d.clientWidth, over: [...new Set(out)].slice(0, 3) };
+    });
+    if (r.scroll > r.client + 1 || r.over.length) bad.push(`${width}px: ${r.scroll}>${r.client} (${r.over.join(", ")})`);
+  }
+  await page.setViewportSize({ width: 1180, height: 900 });
+  // Put the language back. A step that leaves the app in German is a step that
+  // breaks the next one from a distance — which is exactly what this did on its
+  // first run, and the failure showed up as "login screen renders" timing out
+  // three lines later.
+  await page.evaluate(() => localStorage.removeItem("ygf.lang"));
+  await page.reload({ waitUntil: "networkidle" });
+  if (bad.length) throw new Error(bad.join("; "));
+  return "320 · 390 · 768 · 1024 · 1440 · 1920";
+});
+
 console.log("── sign in (magic link) ──");
 await page.goto(B, { waitUntil: "networkidle" });
 await step("login screen renders", () => page.waitForSelector("text=Fuel smarter, go further"));
