@@ -1,6 +1,6 @@
 {
   "name": "you-go-further",
-  "version": "0.23.2",
+  "version": "0.24.0",
   "private": true,
   "type": "module",
   "description": "Personalized Swiss sports nutrition recommendations for endurance athletes, tailored by goal and session.",

@@ -8,6 +8,41 @@ both from a running deployment.
 The platform version answers "which release is this?". A module version answers
 "has this module's contract changed?". They move independently, on purpose.
 
+## 0.24.0
+
+A session can only be judged once it has been run.
+
+**Fixed**
+
+- **The planner asked how a session went.** Under a plan for a session that has
+  not happened sat gut and energy chips and a "log session" button. Worse, that
+  log passed no activity id, so it could never become a debrief — the code says
+  so itself in `App.logSession`: *"passing the activity id is what makes the log
+  a debrief instead of an anonymous rating."* The chips and the button are gone.
+  What stays is the readout that earns its place there: it is the reason the
+  target above says 75 g/h rather than 90.
+- **A debrief required a GPS track.** `SessionDebrief` demanded a
+  `RouteFuelPlan` and therefore lived inside the route view, so the start screen
+  offered "how did it go?" only for sessions carrying GPS — and an athlete who
+  trains indoors could never review one, which is exactly why the anonymous form
+  on the planner existed. A track is what a map and a terrain plan need, not
+  what judging a session needs. `debriefSession` now takes the plan as optional
+  and falls back to rate × time, which is what a plan for a track-less session
+  amounts to; the two terrain findings stay silent rather than inventing a climb
+  nobody recorded. `RoutePanel` renders the debrief on its own for such a
+  session, and both gates on the start screen — the list and the featured card —
+  are open.
+- **Five English strings on a four-language screen**, and a history printing raw
+  enum values (`GI none`, `steady`) beside localised dates. The ratings above
+  already had translated labels; the history was not using them.
+
+**Added**
+
+- A journey step covering both halves: a track-less session must offer a review,
+  and the planner must not ask about a session that has not happened while still
+  showing what it learned. Verified end to end against an indoor sample session —
+  review, save, verdict, marked done on the start screen, no errors.
+
 ## 0.23.2
 
 Groundwork from a flow audit. The audit's findings, measured rather than assumed:

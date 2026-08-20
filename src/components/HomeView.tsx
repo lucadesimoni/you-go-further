@@ -93,9 +93,19 @@ export function HomeView({
   const recent = useMemo(() => recentSessions(activities, 3), [activities]);
   const longest = useMemo(() => longestRecent(activities), [activities]);
   const shortcuts = useMemo(() => shortcutsFor(account.role), [account.role]);
-  // A session can only be debriefed if it has a track to place the fuelling on.
+  /*
+   * Every session that has actually been run can be judged — a track is not the
+   * qualification.
+   *
+   * It used to be: `a.route && a.route.length > 1`. A GPS track is what the map
+   * and the terrain plan need, not what rating how a session felt needs, and
+   * requiring one meant an athlete who runs without GPS could never review a
+   * session — so they met an anonymous rating form on the *planner* instead, a
+   * screen for sessions that have not happened yet. `RoutePanel` now shows the
+   * debrief on its own for a track-less session.
+   */
   const reviewable = useMemo(
-    () => recent.filter((a) => a.route && a.route.length > 1 && !logForActivity(feedback, a.id)),
+    () => recent.filter((a) => !logForActivity(feedback, a.id)),
     [recent, feedback],
   );
   const bodyProfile = useMemo(() => loadProfile(), []);
@@ -292,7 +302,7 @@ export function HomeView({
               </div>
 
               <div className="session-feature-actions">
-                {onReviewSession && recent[0].route && recent[0].route.length > 1 && !logForActivity(feedback, recent[0].id) && (
+                {onReviewSession && !logForActivity(feedback, recent[0].id) && (
                   <button type="button" className="btn btn-primary" onClick={() => onReviewSession(recent[0])}>
                     {t("home.reviewIt")}
                   </button>
@@ -342,7 +352,7 @@ export function HomeView({
                 <span className="home-session-actions">
                   {/* An unreviewed run gets the question first — the debrief is
                       worth more than another plan, and it feeds the next one. */}
-                  {onReviewSession && a.route && a.route.length > 1 && (
+                  {onReviewSession && (
                     logForActivity(feedback, a.id) ? (
                       <span className="pill pill-done">{t("home.logged")}</span>
                     ) : (

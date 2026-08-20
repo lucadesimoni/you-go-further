@@ -1,7 +1,10 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { Activity as SyncedActivity } from "../model";
 import type { SessionFeedback } from "../feedback";
-import { logForActivity, sportToActivity } from "../analysis";
+import { debriefSession, logForActivity, sportToActivity } from "../analysis";
+import { computeTarget } from "../engine";
+import { loadProfile } from "../api/profileStore";
+import { SessionDebrief } from "./SessionDebrief";
 import { RouteInsights } from "./RouteInsights";
 import { RaceImport } from "./RaceImport";
 import { ChoiceRow } from "./Choice";
@@ -109,6 +112,51 @@ export function RoutePanel({
   }, [focusActivityId]);
 
   const activity = routed.find((a) => a.id === routeId) ?? routed[0] ?? null;
+
+  /*
+   * The session sent here by "How did it go?" that has no GPS track.
+   *
+   * `routed` is filtered to activities carrying a route, so before this a
+   * track-less session arrived and found nothing — which is why Home refused to
+   * offer the debrief for one at all, and why an athlete who runs without GPS
+   * met an anonymous rating form on the *planner* instead. A track is what the
+   * map and the terrain plan need; it is not what judging a session needs.
+   */
+  const trackless = useMemo(() => {
+    if (!focusActivityId) return null;
+    const a = activities.find((x) => x.id === focusActivityId);
+    return a && !(a.route && a.route.length > 1) ? a : null;
+  }, [activities, focusActivityId]);
+
+  const tracklessDebrief = useMemo(() => {
+    if (!trackless) return null;
+    const durationMin = Math.round(trackless.durationSec / 60);
+    const profile = loadProfile();
+    // The same target the planner would compute for this session's shape, so
+    // the athlete is held to one number rather than two.
+    const target = computeTarget({
+      goal: "endurance-performance",
+      activity: sportToActivity(trackless.sport),
+      durationMin,
+      // A recorded training session with no other signal: moderate effort in
+      // temperate conditions is the honest middle, and the athlete's own log is
+      // what the verdict actually leans on.
+      intensity: "moderate",
+      conditions: "temperate",
+      bodyWeightKg: profile.bodyWeightKg,
+      sweatLevel: profile.sweatLevel,
+      caffeineOk: profile.caffeineOk,
+    });
+    return {
+      durationMin,
+      carbPerHourG: target.carbPerHourG,
+      debrief: debriefSession({
+        requiredCarbPerHourG: target.carbPerHourG,
+        durationMin,
+        log: logForActivity(feedback, trackless.id),
+      }),
+    };
+  }, [trackless, feedback]);
   const unreviewed = (id: string) => !logForActivity(feedback, id);
   const dateFmt = useMemo(
     () => new Intl.DateTimeFormat(lang === "de" ? "de-CH" : "en-GB", { day: "numeric", month: "short" }),
@@ -122,6 +170,23 @@ export function RoutePanel({
         {routed.length > 0 && <span className="pill">{t("connect.withGps", { count: routed.length })}</span>}
       </div>
       <p className="detail">{t("route.intro")}</p>
+
+      {/* A session with no track still gets judged — just without a map. */}
+      {trackless && tracklessDebrief && (
+        <SessionDebrief
+          debrief={tracklessDebrief.debrief}
+          onLog={
+            onLogSession
+              ? (entry) =>
+                  onLogSession(trackless.id, {
+                    ...entry,
+                    durationMin: tracklessDebrief.durationMin,
+                    plannedCarbPerHourG: tracklessDebrief.carbPerHourG,
+                  })
+              : undefined
+          }
+        />
+      )}
 
       {/* Only worth asking when there is a choice: with nothing synced yet the
           answer is "import one", and a switcher would just be a dead half. */}

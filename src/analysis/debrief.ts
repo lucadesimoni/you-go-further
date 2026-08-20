@@ -57,14 +57,24 @@ const round = (n: number) => Math.round(n);
  * modelled — a report of bonking is evidence, our estimate is only a model.
  */
 export function debriefSession(input: {
-  plan: RouteFuelPlan;
+  /**
+   * Optional, because a debrief describes a *session* and a route is extra
+   * context. Without one the planned total is simply rate × time — which is
+   * what a plan for a session with no track amounts to anyway — and the two
+   * findings that talk about terrain stay silent, correctly: there is nothing
+   * to say about a climb nobody recorded.
+   *
+   * This is what let the debrief out of the route view. While it was required,
+   * an athlete who runs without GPS could not rate a session at all.
+   */
+  plan?: RouteFuelPlan;
   requiredCarbPerHourG: number;
   log?: SessionFeedback;
   durationMin: number;
 }): SessionDebrief {
   const { plan, requiredCarbPerHourG, log, durationMin } = input;
   const findings: DebriefFinding[] = [];
-  const plannedTotalG = plan.totalCarbG;
+  const plannedTotalG = plan ? plan.totalCarbG : Math.round((requiredCarbPerHourG * durationMin) / 60);
 
   if (durationMin < 60) {
     findings.push({
@@ -124,7 +134,7 @@ export function debriefSession(input: {
 
   // Terrain-specific coaching: the biggest climb is where an under-fuelled
   // session actually comes apart, so name it.
-  const bigClimb = [...plan.climbs].sort((a, b) => b.gainM - a.gainM)[0];
+  const bigClimb = [...(plan?.climbs ?? [])].sort((a, b) => b.gainM - a.gainM)[0];
   if (bigClimb && verdict === "under-fuelled") {
     findings.push({
       id: "climbUnfuelled",
@@ -134,7 +144,7 @@ export function debriefSession(input: {
   }
 
   // Starting late is a distinct, very common error from simply taking too little.
-  const firstStop = plan.stops[0];
+  const firstStop = plan?.stops[0];
   if (firstStop && firstStop.atMin > 45 && verdict === "under-fuelled") {
     findings.push({
       id: "startedLate",

@@ -1,12 +1,5 @@
-import { useState } from "react";
-import type { AdaptationInsight, EnergyRating, GiRating, SessionFeedback } from "../feedback";
+import type { AdaptationInsight, SessionFeedback } from "../feedback";
 import { useT, type TranslationKey } from "../i18n";
-import { ChoiceRow } from "./Choice";
-
-/* The same ratings the debrief uses, so one vocabulary describes a session
-   whether it is being logged or reviewed. */
-const GI_OPTS: GiRating[] = ["none", "mild", "severe"];
-const ENERGY_OPTS: EnergyRating[] = ["bonked", "faded", "steady", "strong"];
 
 /** Confidence, keyed rather than spelled out, so it reads in every language. */
 const CONF_KEY = {
@@ -17,32 +10,29 @@ const CONF_KEY = {
 } as const;
 
 /**
- * "Log & learn" — the feedback loop. The athlete records how a session went; the
- * insight (carb ceiling / bias) updates live and feeds back into the plan above.
+ * What the app has learned from this athlete's logged sessions, shown beside the
+ * plan it shaped.
+ *
+ * It used to *ask* here as well — gut and energy chips and a "log session"
+ * button, directly under a plan for a session that has not happened yet. A
+ * session can only be judged once it has been run, and the log was anonymous
+ * into the bargain: no activity id, so it could never become a debrief. That
+ * belongs on the session, and lives there now (`SessionDebrief`, reachable from
+ * every recorded session on the start screen).
+ *
+ * What stays is the readout, because it earns its place on this screen: it is
+ * the reason the target above says 75 g/h rather than 90.
  */
 export function FeedbackPanel({
   insight,
   feedbacks,
-  onLog,
-  onReset,
   persistence,
 }: {
   insight: AdaptationInsight;
   feedbacks: SessionFeedback[];
-  onLog: (gi: GiRating, energy: EnergyRating) => void;
-  onReset: () => void;
   persistence: "server" | "local";
 }) {
   const t = useT();
-  const [gi, setGi] = useState<GiRating>("none");
-  const [energy, setEnergy] = useState<EnergyRating>("steady");
-  const [justLogged, setJustLogged] = useState(false);
-
-  const log = () => {
-    onLog(gi, energy);
-    setJustLogged(true);
-    setTimeout(() => setJustLogged(false), 1600);
-  };
 
   return (
     <div className="panel feedback">
@@ -52,36 +42,9 @@ export function FeedbackPanel({
           <span className={`pill${persistence === "server" ? " pill-live" : ""}`}>
             {persistence === "server" ? t("log.synced") : t("profile.savedLocally")}
           </span>
-          {feedbacks.length > 0 && (
-            <button type="button" className="btn btn-ghost" onClick={onReset}>
-              {t("log.clear")}
-            </button>
-          )}
         </div>
       </div>
       <p className="detail">{t("log.sub")}</p>
-
-      {/* Chips that flow, not four equal columns: "Bonked / Faded / Steady /
-          Strong" shares a row and "Eingebrochen / Nachgelassen / Konstant /
-          Stark" does not, and the German column was being cut off. */}
-      <div className="fb-row">
-        <ChoiceRow
-          label={t("log.gut")}
-          value={gi}
-          onChange={setGi}
-          options={GI_OPTS.map((o) => ({ value: o, label: t(`debrief.gi.${o}`) }))}
-        />
-        <ChoiceRow
-          label={t("log.energy")}
-          value={energy}
-          onChange={setEnergy}
-          options={ENERGY_OPTS.map((o) => ({ value: o, label: t(`debrief.energy.${o}`) }))}
-        />
-      </div>
-
-      <button type="button" className={`btn btn-primary${justLogged ? " done" : ""}`} onClick={log}>
-        {justLogged ? t("log.logged") : t("log.logSession")}
-      </button>
 
       {/* What we learned */}
       <div className={`fb-insight${insight.samples > 0 ? " on" : ""}`}>

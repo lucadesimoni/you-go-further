@@ -160,3 +160,43 @@ describe("products on route stops", () => {
     }
   });
 });
+
+describe("a session without a track", () => {
+  /*
+   * The reason this matters is a flow bug, not a maths one: while `plan` was
+   * required the debrief could only live inside the route view, so Home offered
+   * "how did it go?" only for sessions carrying GPS — and an athlete who runs
+   * without it had no way to rate a session at all.
+   */
+  it("still judges the session, from rate and time alone", () => {
+    const d = debriefSession({ requiredCarbPerHourG: 60, durationMin: 120 });
+    // 60 g/h for two hours is 120 g, with no route needed to say so.
+    expect(d.plannedTotalG).toBe(120);
+    expect(d.requiredCarbPerHourG).toBe(60);
+  });
+
+  it("says nothing about terrain nobody recorded", () => {
+    const terrain = (d: ReturnType<typeof debriefSession>) =>
+      d.findings.filter((f) => f.id === "climbUnfuelled" || f.id === "startedLate").map((f) => f.id);
+    // Both terrain findings only fire on an under-fuelled session, so the log
+    // has to be one — a well-fuelled run produces none either way and would
+    // have made this comparison prove nothing at all.
+    const under = log({ actualCarbPerHourG: 20, energy: "bonked" });
+    // The fixture climbs 600 m, so the routed plan *must* name it.
+    expect(terrain(debriefSession({ plan, requiredCarbPerHourG: 65, durationMin: 180, log: under })))
+      .toContain("climbUnfuelled");
+    // With no track there is no climb to name, and none may be invented.
+    expect(terrain(debriefSession({ requiredCarbPerHourG: 65, durationMin: 180, log: under }))).toEqual([]);
+  });
+
+  it("reaches a verdict from the athlete's own account, with no route at all", () => {
+    const d = debriefSession({
+      requiredCarbPerHourG: 65,
+      durationMin: 180,
+      log: log({ actualCarbPerHourG: 64, energy: "strong" }),
+    });
+    expect(d.verdict).toBe("about-right");
+    expect(d.hasLog).toBe(true);
+  });
+});
+

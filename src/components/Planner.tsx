@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { buildSchedule, recommend, CATALOG } from "../engine";
 import type { AthleteInput, Product } from "../engine";
-import { deriveAdaptation, toAdaptation, type EnergyRating, type GiRating, type SessionFeedback } from "../feedback";
+import { deriveAdaptation, toAdaptation, type SessionFeedback } from "../feedback";
 import type { Role } from "../auth";
-import { addFeedback, clearFeedback, feedbackPersistence, loadFeedback } from "../api/feedbackStore";
+import { feedbackPersistence, loadFeedback } from "../api/feedbackStore";
 import { loadCatalog } from "../api/productLibrary";
 import { loadProfile } from "../api/profileStore";
 import { ACTIVITIES, CONDITIONS, GOALS, INTENSITIES, PHASE_KEYS, SWEAT_TEXT_KEYS } from "../options";
@@ -134,15 +134,15 @@ export function Planner({
   const rec = useMemo(() => recommend(effectiveInput, catalog), [effectiveInput, catalog]);
   const schedule = useMemo(() => buildSchedule(effectiveInput), [effectiveInput]);
 
-  const logFeedback = (gi: GiRating, energy: EnergyRating) => {
-    void addFeedback(role, {
-      gi,
-      energy,
-      durationMin: input.durationMin,
-      plannedCarbPerHourG: rec.target.carbPerHourG,
-    }).then(setFeedbacks);
-  };
-  const resetFeedback = () => void clearFeedback(role).then(setFeedbacks);
+  /*
+   * There is deliberately no way to log a session from here.
+   *
+   * This screen plans a session that has not happened; a session can only be
+   * judged once it has been run. The log that used to sit at the bottom of this
+   * page also passed no activity id, so it could never become a debrief — see
+   * `logSession` in App. Reviewing happens on the session itself, reachable
+   * from every recorded run on the start screen.
+   */
 
   const set = <K extends keyof SessionInput>(key: K, value: SessionInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
@@ -434,13 +434,7 @@ export function Planner({
           </ul>
         </details>
 
-        <FeedbackPanel
-          insight={insight}
-          feedbacks={feedbacks}
-          onLog={logFeedback}
-          onReset={resetFeedback}
-          persistence={feedbackPersistence.mode()}
-        />
+        <FeedbackPanel insight={insight} feedbacks={feedbacks} persistence={feedbackPersistence.mode()} />
         </div>
       </section>
     </main>

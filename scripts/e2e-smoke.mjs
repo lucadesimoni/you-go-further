@@ -362,6 +362,55 @@ await step("a session can be taken straight into the planner", async () => {
   await page.waitForSelector(".home-greeting");
 });
 
+await step("a session with no GPS can still be judged, and the planner no longer asks", async () => {
+  /*
+   * Both halves of one flow bug. A debrief used to require a track, because the
+   * panel lived inside the route view — so an athlete who trains indoors or
+   * runs without GPS could never review a session, and met an anonymous rating
+   * form on the *planner* instead: a screen for a session that has not
+   * happened, logging with no activity id attached.
+   *
+   * The sample data carries indoor sessions precisely so this path is real.
+   */
+  await page.click('button.topnav-tab:has-text("Home")');
+  await page.waitForTimeout(1200);
+  /*
+   * The invariant, rather than "find an indoor session": every recorded session
+   * that has not been reviewed must offer a review. Sample data is seeded per
+   * calendar day, so whether an indoor session lands in the recent three is a
+   * coin toss — asserting one exists would have gone red on an unrelated day
+   * and told nobody anything.
+   */
+  const gate = await page.evaluate(() =>
+    [...document.querySelectorAll(".session-feature, .home-session")]
+      .filter((r) => !r.querySelector(".pill-done"))
+      .map((r) => ({
+        what: r.innerText.replace(/\s+/g, " ").slice(0, 40),
+        // A climb figure means the session carried GPS.
+        gps: /↑/.test(r.innerText),
+        offersReview: [...r.querySelectorAll("button")].some((b) => /How did it go/i.test(b.textContent || "")),
+      })),
+  );
+  const refused = gate.filter((g) => !g.offersReview);
+  if (refused.length) {
+    throw new Error(`unreviewed session offers no review (gps=${refused[0].gps}): ${refused[0].what}`);
+  }
+  if (!gate.length) throw new Error("no unreviewed session on the start screen — this step proves nothing");
+
+  // And the planner must not ask about a session that has not been run.
+  await page.click('button.topnav-tab:has-text("Plan")');
+  await page.waitForTimeout(900);
+  const sessionMode = page.locator('.plan-mode:has-text("A session")');
+  if (await sessionMode.count()) await sessionMode.click();
+  await page.waitForTimeout(1400);
+  const asks = await page.evaluate(() => /Log session|Save and see the debrief/i.test(document.body.innerText));
+  if (asks) throw new Error("the planner is asking how a session went, on a screen for sessions that have not happened");
+  // What it must keep is the readout that explains its own target.
+  const explains = await page.evaluate(() => /learned/i.test(document.body.innerText));
+  if (!explains) throw new Error("the planner lost the 'what we learned' readout that explains its target");
+  return `${gate.length} unreviewed, all reviewable · planner asks nothing`;
+});
+
 console.log("── insights show real data ──");
 await step("own synced sessions (never sample data)", async () => {
   await page.click('button.topnav-tab:has-text("Insights")');
